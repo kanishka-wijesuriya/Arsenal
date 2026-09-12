@@ -33,18 +33,140 @@
             <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
 
+        <!-- A compact mode box: large enough to scan and tap, but visually quieter
+             than the user-configurable quick-setting tiles below it. -->
+        <Style x:Key="QuickModeChoiceStyle" TargetType="RadioButton">
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="Margin" Value="3"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource RoundedFocusVisualStyle}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid>
+                            <Border x:Name="Chrome" Background="{DynamicResource SurfaceCard}"
+                                    BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1"
+                                    CornerRadius="{StaticResource RadiusControl}"/>
+                            <Border x:Name="SelectedLayer" Opacity="0" Background="{DynamicResource AccentSubtle}"
+                                    BorderBrush="{DynamicResource AccentPrimary}" BorderThickness="1"
+                                    CornerRadius="{StaticResource RadiusControl}"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Margin="7,5" TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SurfaceCardHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="SelectedLayer" Property="Opacity" Value="1"/>
+                                <Setter Property="Foreground" Value="{DynamicResource AccentPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.42"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="QuickModeActionStyle" TargetType="Button">
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="Margin" Value="3"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceCard}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource StrokeSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Chrome" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource RadiusControl}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="7,5"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SurfaceCardHover}"/>
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource AccentPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter Property="Opacity" Value="0.72"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Compact flyout slider geometry. The wider label keeps "OLED dimming"
-             complete; the narrower value column returns that room to the track and
-             seats the current value close to its right edge. Full-window sliders keep
-             the roomier defaults from Components.xaml. -->
+             complete. There is no current-value readout here and no scale underneath:
+             on a panel this small the thumb already says where the value sits, so the
+             two ends of the range move up beside the track and everything that saves
+             goes back into track length. The low end is held well clear of the header
+             so the label and the number never read as one string. Full-window sliders
+             keep the roomier readout-and-scale layout from Components.xaml. -->
         <Style x:Key="QuickPanelValueSliderStyle"
                TargetType="{x:Type controls:ValueSlider}"
                BasedOn="{StaticResource {x:Type controls:ValueSlider}}">
             <Setter Property="Width" Value="Auto"/>
             <Setter Property="HeaderWidth" Value="100"/>
-            <Setter Property="ReadoutWidth" Value="38"/>
-            <Setter Property="ReadoutMargin" Value="6,0,0,0"/>
-            <Setter Property="ScaleMargin" Value="0,-2,0,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type controls:ValueSlider}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Text="{TemplateBinding Header}"
+                                       Width="{TemplateBinding HeaderWidth}"
+                                       Margin="0,0,16,0"
+                                       FontSize="13"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       VerticalAlignment="Center"
+                                       Visibility="{TemplateBinding Header, Converter={StaticResource HideWhenEmptyText}}"/>
+
+                            <!-- Fixed end columns, so stacked sliders start and finish
+                                 their tracks together however wide their numbers are.
+                                 Each label is aligned towards its own end of the track. -->
+                            <TextBlock Grid.Column="1"
+                                       Text="{TemplateBinding MinimumText}"
+                                       Width="30" TextAlignment="Right"
+                                       Margin="0,0,6,0"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextTertiary}"
+                                       VerticalAlignment="Center"/>
+
+                            <Slider x:Name="PART_Slider"
+                                    Grid.Column="2"
+                                    VerticalAlignment="Center"
+                                    Minimum="{TemplateBinding Minimum}"
+                                    Maximum="{TemplateBinding Maximum}"
+                                    TickFrequency="{TemplateBinding TickFrequency}"
+                                    Ticks="{TemplateBinding Ticks}"
+                                    IsSnapToTickEnabled="{TemplateBinding IsSnapToTickEnabled}"
+                                    IsEnabled="{TemplateBinding IsEnabled}"
+                                    Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Grid.Column="3"
+                                       Text="{TemplateBinding MaximumText}"
+                                       Width="34" TextAlignment="Left"
+                                       Margin="6,0,0,0"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextTertiary}"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- One row of a detail page: a checkmark gutter, the state, and what it does. -->
@@ -144,22 +266,36 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
+                        <!-- The application's own mark, not a glyph standing in for it:
+                             the panel is the first thing most people see of Arsenal. The
+                             bare chevrons rather than the app icon tile, so the mark sits
+                             on the panel itself with nothing boxed around it. -->
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Border Width="34" Height="34" CornerRadius="{StaticResource RadiusControl}"
-                                    Background="{DynamicResource AccentSubtle}" Margin="0,0,10,0">
-                                <ui:SymbolIcon Symbol="Laptop24" FontSize="18" Foreground="{DynamicResource AccentPrimary}"/>
-                            </Border>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="{loc:Loc QuickPanelQuickControls}" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold" FontSize="16"/>
-                                <TextBlock Text="Arsenal" Foreground="{DynamicResource TextSecondary}" FontSize="11"/>
-                            </StackPanel>
+                            <!-- Cropped to the chevrons' own bounds inside artwork that is
+                                 padded on every side; without the crop this height would
+                                 be the padding's height and the mark would read smaller
+                                 than the words beside it. Assembly-qualified, so it also
+                                 resolves when the window is hosted by something other than
+                                 Arsenal.exe - which is how the smoke tools render it. -->
+                            <Image Height="20" Margin="0,0,8,0" VerticalAlignment="Center"
+                                   Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality">
+                                <Image.Source>
+                                    <CroppedBitmap Source="pack://application:,,,/Arsenal;component/Assets/arsenal-mark.png"
+                                                   SourceRect="196,156,632,692"/>
+                                </Image.Source>
+                            </Image>
+                            <TextBlock Text="{loc:Loc QuickPanelYourArsenal}" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold" FontSize="16"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                             <ui:Button Content="{loc:Loc QuickPanelOpenApp}" Click="OpenFullApp_Click" Appearance="Secondary"
                                        Padding="12,5" FontSize="12" Margin="0,0,8,0"/>
+                            <!-- Square, and the same height as Open app beside it, so the
+                                 two read as one row of controls rather than two sizes. -->
                             <ui:Button Icon="{ui:SymbolIcon Dismiss24}" Click="ClosePanel_Click" Appearance="Secondary"
-                                       Width="34" Height="34" Padding="0" ToolTip="{loc:Loc QuickPanelClose}"/>
+                                       Width="28" Height="28" Padding="0" FontSize="12"
+                                       ToolTip="{loc:Loc QuickPanelClose}"/>
                         </StackPanel>
                     </Grid>
 
@@ -169,7 +305,7 @@
                             CornerRadius="{StaticResource RadiusCard}"
                             Padding="12"
                             Margin="0,0,0,16">
-                        <UniformGrid Columns="4">
+                        <UniformGrid x:Name="TelemetryReadouts" Columns="4">
                             <StackPanel>
                                 <TextBlock Text="{loc:Loc QuickPanelCPU}" Style="{StaticResource PanelReadoutLabel}"/>
                                 <TextBlock Text="{Binding Telemetry.CpuTemp, StringFormat='{}{0:F0}°'}" Style="{StaticResource PanelReadoutValue}"/>
@@ -192,6 +328,94 @@
                             </StackPanel>
                         </UniformGrid>
                     </Border>
+
+                    <!-- High-frequency choices live above the customizable tile grid.
+                         The first three performance slots are user-selected; the fourth
+                         opens the complete tuning surface. -->
+                    <StackPanel Margin="0,0,0,13">
+                        <Grid Margin="0,0,0,4">
+                            <TextBlock Text="{loc:Loc QuickPanelPerformanceModes}" Style="{StaticResource PanelSectionLabel}"
+                                       Margin="2,0,0,0" VerticalAlignment="Center"/>
+                            <ui:Button Icon="{ui:SymbolIcon Edit24}" Appearance="Transparent" Width="28" Height="28" Padding="0"
+                                       HorizontalAlignment="Right" Command="{Binding OpenPerformanceShortcutsCommand}"
+                                       ToolTip="{loc:Loc QuickPanelCustomizePerformanceShortcuts}"/>
+                        </Grid>
+                        <UniformGrid x:Name="PerformanceModeRow" Columns="4">
+                            <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickPerformanceModes"
+                                         IsChecked="{Binding IsQuickPlan1Selected, Mode=OneWay}"
+                                         Command="{Binding SelectQuickPerformancePlanCommand}" CommandParameter="{Binding QuickPlan1}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="{Binding QuickPlan1.Icon}" FontSize="14" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding QuickPlan1.Name}" FontSize="11" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis" TextAlignment="Center"/>
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickPerformanceModes"
+                                         IsChecked="{Binding IsQuickPlan2Selected, Mode=OneWay}"
+                                         Command="{Binding SelectQuickPerformancePlanCommand}" CommandParameter="{Binding QuickPlan2}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="{Binding QuickPlan2.Icon}" FontSize="14" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding QuickPlan2.Name}" FontSize="11" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis" TextAlignment="Center"/>
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickPerformanceModes"
+                                         IsChecked="{Binding IsQuickPlan3Selected, Mode=OneWay}"
+                                         Command="{Binding SelectQuickPerformancePlanCommand}" CommandParameter="{Binding QuickPlan3}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="{Binding QuickPlan3.Icon}" FontSize="14" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding QuickPlan3.Name}" FontSize="11" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis" TextAlignment="Center"/>
+                                </StackPanel>
+                            </RadioButton>
+                            <Button x:Name="CustomPerformanceButton" Style="{StaticResource QuickModeActionStyle}" Click="OpenPerformanceTuning_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Settings24" FontSize="14" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{loc:Loc Custom}" FontSize="10.5" FontWeight="SemiBold"
+                                               TextAlignment="Center" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Button>
+                        </UniformGrid>
+
+                        <TextBlock Text="{loc:Loc QuickPanelGpuModes}" Style="{StaticResource PanelSectionLabel}"
+                                   Margin="2,10,0,4"/>
+                        <UniformGrid x:Name="GpuModeRow" Columns="4">
+                            <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickGpuModes"
+                                         IsEnabled="{Binding IsEcoSupported}"
+                                         IsChecked="{Binding SelectedGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
+                                         Command="{Binding SelectGpuModeCommand}" CommandParameter="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="BatterySaver24" FontSize="14" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{loc:Loc EcoMode}" FontSize="11" FontWeight="SemiBold" TextAlignment="Center"/>
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickGpuModes"
+                                         IsChecked="{Binding SelectedGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
+                                         Command="{Binding SelectGpuModeCommand}" CommandParameter="1">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Glance24" FontSize="14" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{loc:Loc StandardMode}" FontSize="11" FontWeight="SemiBold" TextAlignment="Center"/>
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickGpuModes"
+                                         IsEnabled="{Binding IsMuxSupported}"
+                                         IsChecked="{Binding SelectedGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
+                                         Command="{Binding SelectGpuModeCommand}" CommandParameter="2">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Flash24" FontSize="14" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{loc:Loc UltimateMode}" FontSize="11" FontWeight="SemiBold" TextAlignment="Center"/>
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickGpuModes"
+                                         IsChecked="{Binding SelectedGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
+                                         Command="{Binding SelectGpuModeCommand}" CommandParameter="3">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Sparkle24" FontSize="14" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{loc:Loc Optimized}" FontSize="11" FontWeight="SemiBold" TextAlignment="Center"/>
+                                </StackPanel>
+                            </RadioButton>
+                        </UniformGrid>
+                    </StackPanel>
 
                     <!-- The grid is whatever the user put on it, so the tiles are bound
                          rather than written out here. Options that depend on the model
@@ -324,17 +548,17 @@
                             Padding="12,10">
                         <StackPanel>
                             <controls:ValueSlider Style="{StaticResource QuickPanelValueSliderStyle}"
-                                                  Header="{loc:Loc Brightness}" Margin="0,0,0,8"
+                                                  Header="{loc:Loc Brightness}" Margin="0,0,0,10"
                                                   Minimum="0" Maximum="100" TickFrequency="5"
                                                   Value="{Binding PanelBrightness}" Format="{}{0}%"/>
                             <controls:ValueSlider Style="{StaticResource QuickPanelValueSliderStyle}"
-                                                  Header="{loc:Loc DisplayOLEDDimming}" Margin="0,0,0,8"
+                                                  Header="{loc:Loc DisplayOLEDDimming}" Margin="0,0,0,10"
                                                   Minimum="0" Maximum="100" TickFrequency="5"
                                                   IsEnabled="{Binding IsOledDimmingAvailable}"
                                                   Visibility="{Binding IsOledPanel, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                   Value="{Binding OledDimming}" Format="{}{0}%"/>
                             <controls:ValueSlider Style="{StaticResource QuickPanelValueSliderStyle}"
-                                                  Header="{loc:Loc BatteryChargeLimit2}" Margin="0,0,0,8"
+                                                  Header="{loc:Loc BatteryChargeLimit2}" Margin="0,0,0,10"
                                                   Minimum="{Binding ChargeLimitMinimum}" Maximum="100" TickFrequency="5"
                                                   Ticks="{Binding ChargeLimitTicks}"
                                                   IsSnapToTickEnabled="{Binding HasSteppedChargeLimit}"
@@ -380,7 +604,9 @@
                          work area in code-behind: the card is anchored to the bottom of
                          the screen, so an uncapped list grew off the top of it. -->
                     <ScrollViewer x:Name="DetailScroll" Style="{StaticResource PageScrollStyle}">
-                    <ItemsControl x:Name="DetailOptionsList" ItemsSource="{Binding DetailOptions}">
+                    <Grid>
+                    <ItemsControl x:Name="DetailOptionsList" ItemsSource="{Binding DetailOptions}"
+                                  Visibility="{Binding IsStandardDetailPage, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Button Style="{StaticResource DetailOptionStyle}"
@@ -444,6 +670,35 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+
+                    <StackPanel Visibility="{Binding IsPerformanceShortcutEditor, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Border Background="{DynamicResource AccentSubtle}" BorderBrush="{DynamicResource AccentPrimary}"
+                                BorderThickness="1" CornerRadius="{StaticResource RadiusCard}" Padding="12" Margin="0,0,0,12">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Edit24" FontSize="16" Margin="0,1,9,0" Foreground="{DynamicResource AccentPrimary}"/>
+                                <TextBlock Text="{loc:Loc QuickPanelChooseShortcutsDescription}" TextWrapping="Wrap" FontSize="11.5"
+                                           Foreground="{DynamicResource TextSecondary}" MaxWidth="340"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="{loc:Loc QuickPanelShortcut1}" Style="{StaticResource PanelSectionLabel}" Margin="2,0,0,5"/>
+                        <ComboBox x:Name="QuickPlanSelector1" ItemsSource="{Binding PerformancePlans}" DisplayMemberPath="Name"
+                                  SelectedItem="{Binding QuickPlan1, Mode=TwoWay}" Margin="0,0,0,12"/>
+
+                        <TextBlock Text="{loc:Loc QuickPanelShortcut2}" Style="{StaticResource PanelSectionLabel}" Margin="2,0,0,5"/>
+                        <ComboBox x:Name="QuickPlanSelector2" ItemsSource="{Binding PerformancePlans}" DisplayMemberPath="Name"
+                                  SelectedItem="{Binding QuickPlan2, Mode=TwoWay}" Margin="0,0,0,12"/>
+
+                        <TextBlock Text="{loc:Loc QuickPanelShortcut3}" Style="{StaticResource PanelSectionLabel}" Margin="2,0,0,5"/>
+                        <ComboBox x:Name="QuickPlanSelector3" ItemsSource="{Binding PerformancePlans}" DisplayMemberPath="Name"
+                                  SelectedItem="{Binding QuickPlan3, Mode=TwoWay}" Margin="0,0,0,16"/>
+
+                        <ui:Button Content="{loc:Loc QuickPanelRestoreDefaultShortcuts}"
+                                   Command="{Binding ResetPerformanceShortcutsCommand}"
+                                   Appearance="Secondary" Icon="{ui:SymbolIcon ArrowReset24}"
+                                   HorizontalAlignment="Left"/>
+                    </StackPanel>
+                    </Grid>
                     </ScrollViewer>
                 </StackPanel>
             </Grid>

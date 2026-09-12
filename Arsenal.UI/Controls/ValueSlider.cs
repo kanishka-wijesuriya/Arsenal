@@ -87,6 +87,7 @@ namespace Arsenal.UI.Controls
         {
             var slider = (ValueSlider)d;
             if (slider._rangeSettled) slider.CoerceValue(ValueProperty);
+            slider.UpdateEndText();
         }
 
         public static readonly DependencyProperty TickFrequencyProperty =
@@ -217,7 +218,7 @@ namespace Arsenal.UI.Controls
 
         public static readonly DependencyProperty FormatProperty =
             DependencyProperty.Register(nameof(Format), typeof(string), typeof(ValueSlider),
-                new PropertyMetadata("{0}", OnDisplayInputChanged));
+                new PropertyMetadata("{0}", OnFormatChanged));
 
         /// <summary>Composite format string for the readout, for example "{0} W".</summary>
         public string Format
@@ -249,12 +250,42 @@ namespace Arsenal.UI.Controls
         /// <summary>Text actually shown in the readout column.</summary>
         public string DisplayText => (string)GetValue(DisplayTextProperty);
 
+        private static readonly DependencyPropertyKey MinimumTextPropertyKey =
+            DependencyProperty.RegisterReadOnly(nameof(MinimumText), typeof(string), typeof(ValueSlider),
+                new PropertyMetadata(string.Empty));
+
+        public static readonly DependencyProperty MinimumTextProperty = MinimumTextPropertyKey.DependencyProperty;
+
+        /// <summary>
+        /// The lowest value the slider accepts, worded the way the readout words the
+        /// current one. Surfaces that drop the readout label the two ends of the track
+        /// with this and <see cref="MaximumText"/> instead.
+        /// </summary>
+        public string MinimumText => (string)GetValue(MinimumTextProperty);
+
+        private static readonly DependencyPropertyKey MaximumTextPropertyKey =
+            DependencyProperty.RegisterReadOnly(nameof(MaximumText), typeof(string), typeof(ValueSlider),
+                new PropertyMetadata(string.Empty));
+
+        public static readonly DependencyProperty MaximumTextProperty = MaximumTextPropertyKey.DependencyProperty;
+
+        /// <summary>The highest value the slider accepts. See <see cref="MinimumText"/>.</summary>
+        public string MaximumText => (string)GetValue(MaximumTextProperty);
+
         private static void OnDisplayInputChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
             => ((ValueSlider)d).UpdateDisplayText();
+
+        private static void OnFormatChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var slider = (ValueSlider)d;
+            slider.UpdateDisplayText();
+            slider.UpdateEndText();
+        }
 
         public ValueSlider()
         {
             UpdateDisplayText();
+            UpdateEndText();
             Loaded += (_, _) =>
             {
                 _rangeSettled = true;
@@ -270,16 +301,27 @@ namespace Arsenal.UI.Controls
                 return;
             }
 
+            SetValue(DisplayTextPropertyKey, FormatValue(Value));
+        }
+
+        private void UpdateEndText()
+        {
+            SetValue(MinimumTextPropertyKey, FormatValue(Minimum));
+            SetValue(MaximumTextPropertyKey, FormatValue(Maximum));
+        }
+
+        private string FormatValue(double value)
+        {
             string format = string.IsNullOrEmpty(Format) ? "{0}" : Format;
-            double rounded = Math.Round(Value);
+            double rounded = Math.Round(value);
 
             try
             {
-                SetValue(DisplayTextPropertyKey, string.Format(CultureInfo.CurrentCulture, format, rounded));
+                return string.Format(CultureInfo.CurrentCulture, format, rounded);
             }
             catch (FormatException)
             {
-                SetValue(DisplayTextPropertyKey, rounded.ToString(CultureInfo.CurrentCulture));
+                return rounded.ToString(CultureInfo.CurrentCulture);
             }
         }
     }

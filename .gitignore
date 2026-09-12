@@ -6,6 +6,9 @@ artifacts/
 # Smoke tools render PNGs beside themselves; they are evidence for a handover, not source.
 tools/**/*.png
 
+# Local QA renders and measurement output are evidence for a handover, not source.
+/scratch/
+
 # Store listing art is rendered from tools/store-listing-art by render.cjs, and the zip
 # is just those files bundled for the submission form. Both are outputs; the page that
 # produces them is the source and it is tracked.

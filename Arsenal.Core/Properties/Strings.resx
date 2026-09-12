@@ -2194,9 +2194,6 @@ and restarts them automatically when the GPU is enabled</value>
   <data name="QuickPanelOpenApp" xml:space="preserve">
     <value>Open app</value>
   </data>
-  <data name="QuickPanelQuickControls" xml:space="preserve">
-    <value>Quick controls</value>
-  </data>
   <data name="QuickPanelQuickSettings" xml:space="preserve">
     <value>Quick settings</value>
   </data>
@@ -2208,6 +2205,9 @@ and restarts them automatically when the GPU is enabled</value>
   </data>
   <data name="QuickPanelScrollToThePreviousTile" xml:space="preserve">
     <value>Scroll to the previous tile page</value>
+  </data>
+  <data name="QuickPanelYourArsenal" xml:space="preserve">
+    <value>Your Arsenal</value>
   </data>
   <data name="QuickTilesAutomaticModes" xml:space="preserve">
     <value>Automatic modes</value>

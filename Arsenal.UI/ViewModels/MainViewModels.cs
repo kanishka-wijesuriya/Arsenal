@@ -235,6 +235,21 @@ namespace Arsenal.UI.ViewModels
         private int _selectedPerformanceMode = 0;
 
         [ObservableProperty]
+        private PerformancePlanItem? _quickPlan1;
+
+        [ObservableProperty]
+        private PerformancePlanItem? _quickPlan2;
+
+        [ObservableProperty]
+        private PerformancePlanItem? _quickPlan3;
+
+        private bool _isRefreshingPerformancePlans;
+        public ObservableCollection<PerformancePlanItem> PerformancePlans { get; } = new();
+        public bool IsQuickPlan1Selected => QuickPlan1?.ModeIndex == SelectedPerformanceMode;
+        public bool IsQuickPlan2Selected => QuickPlan2?.ModeIndex == SelectedPerformanceMode;
+        public bool IsQuickPlan3Selected => QuickPlan3?.ModeIndex == SelectedPerformanceMode;
+
+        [ObservableProperty]
         private int _selectedGpuMode = 0;
 
         [ObservableProperty]
@@ -358,7 +373,7 @@ namespace Arsenal.UI.ViewModels
                 ChargeLimitTicks = ticks;
             }
 
-            SelectedPerformanceMode = AppConfig.Get("performance_" + Program.PerformanceKey());
+            SelectedPerformanceMode = _performanceService.CurrentMode;
             SelectedGpuMode = _gpuService.CurrentGpuMode;
             RefreshRate = _displayService.CurrentRefreshRate;
             IsOverdrive = _displayService.IsOverdriveEnabled;
@@ -389,6 +404,8 @@ namespace Arsenal.UI.ViewModels
             {
                 QueueUiUpdate(() => SelectedPerformanceMode = m);
             };
+
+            _performanceService.ProfilesChanged += () => QueueUiUpdate(RefreshPerformancePlans);
 
             _gpuService.GpuModeChanged += (g) =>
             {
@@ -435,6 +452,7 @@ namespace Arsenal.UI.ViewModels
             // Seeding the properties above must not write back to the hardware.
             _isReady = true;
 
+            RefreshPerformancePlans();
             LoadTiles();
         }
 
@@ -444,6 +462,112 @@ namespace Arsenal.UI.ViewModels
             int mode = ToInt(modeParam, 0);
             SelectedPerformanceMode = mode;
             _performanceService.SetMode(mode);
+        }
+
+        [RelayCommand]
+        public void SelectQuickPerformancePlan(object? planParam)
+        {
+            if (planParam is PerformancePlanItem plan) SelectPerformanceMode(plan.ModeIndex);
+        }
+
+        [RelayCommand]
+        public void OpenPerformanceShortcuts() => OpenDetail(QuickDetailPage.PerformanceShortcuts);
+
+        [RelayCommand]
+        public void ResetPerformanceShortcuts()
+        {
+            _isRefreshingPerformancePlans = true;
+            try
+            {
+                QuickPlan1 = PerformancePlans.FirstOrDefault(plan => plan.ModeIndex == 2) ?? PerformancePlans.ElementAtOrDefault(0);
+                QuickPlan2 = PerformancePlans.FirstOrDefault(plan => plan.ModeIndex == 0) ?? PerformancePlans.ElementAtOrDefault(1);
+                QuickPlan3 = PerformancePlans.FirstOrDefault(plan => plan.ModeIndex == 1) ?? PerformancePlans.ElementAtOrDefault(2);
+            }
+            finally
+            {
+                _isRefreshingPerformancePlans = false;
+            }
+            SavePerformanceShortcuts();
+            RaisePerformanceShortcutSelection();
+        }
+
+        private void RefreshPerformancePlans()
+        {
+            int[] preferred = ReadPerformanceShortcutIds();
+            _isRefreshingPerformancePlans = true;
+            try
+            {
+                PerformancePlans.Clear();
+                foreach (PerformancePlanInfo plan in _performanceService.GetProfiles())
+                    PerformancePlans.Add(new PerformancePlanItem(plan));
+
+                List<PerformancePlanItem> choices = new();
+                foreach (int id in preferred.Concat(new[] { 2, 0, 1 }).Concat(PerformancePlans.Select(plan => plan.ModeIndex)))
+                {
+                    PerformancePlanItem? plan = PerformancePlans.FirstOrDefault(item => item.ModeIndex == id);
+                    if (plan is not null && choices.All(item => item.ModeIndex != id)) choices.Add(plan);
+                    if (choices.Count == 3) break;
+                }
+
+                QuickPlan1 = choices.ElementAtOrDefault(0);
+                QuickPlan2 = choices.ElementAtOrDefault(1);
+                QuickPlan3 = choices.ElementAtOrDefault(2);
+            }
+            finally
+            {
+                _isRefreshingPerformancePlans = false;
+            }
+            SavePerformanceShortcuts();
+            RaisePerformanceShortcutSelection();
+        }
+
+        private static int[] ReadPerformanceShortcutIds() => (AppConfig.GetString("quick_performance_plans") ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(value => int.TryParse(value, out int mode) ? mode : -1)
+            .Where(mode => mode >= 0)
+            .Take(3)
+            .ToArray();
+
+        private void SavePerformanceShortcuts()
+        {
+            int[] values = new[] { QuickPlan1?.ModeIndex ?? -1, QuickPlan2?.ModeIndex ?? -1, QuickPlan3?.ModeIndex ?? -1 };
+            if (values.Any(value => value < 0)) return;
+            AppConfig.Set("quick_performance_plans", string.Join(',', values));
+        }
+
+        partial void OnQuickPlan1Changed(PerformancePlanItem? oldValue, PerformancePlanItem? newValue) =>
+            OnPerformanceShortcutChanged(1, oldValue, newValue);
+
+        partial void OnQuickPlan2Changed(PerformancePlanItem? oldValue, PerformancePlanItem? newValue) =>
+            OnPerformanceShortcutChanged(2, oldValue, newValue);
+
+        partial void OnQuickPlan3Changed(PerformancePlanItem? oldValue, PerformancePlanItem? newValue) =>
+            OnPerformanceShortcutChanged(3, oldValue, newValue);
+
+        private void OnPerformanceShortcutChanged(int slot, PerformancePlanItem? oldValue, PerformancePlanItem? newValue)
+        {
+            if (_isRefreshingPerformancePlans || newValue is null) return;
+
+            _isRefreshingPerformancePlans = true;
+            try
+            {
+                if (slot != 1 && QuickPlan1?.ModeIndex == newValue.ModeIndex) QuickPlan1 = oldValue;
+                if (slot != 2 && QuickPlan2?.ModeIndex == newValue.ModeIndex) QuickPlan2 = oldValue;
+                if (slot != 3 && QuickPlan3?.ModeIndex == newValue.ModeIndex) QuickPlan3 = oldValue;
+            }
+            finally
+            {
+                _isRefreshingPerformancePlans = false;
+            }
+            SavePerformanceShortcuts();
+            RaisePerformanceShortcutSelection();
+        }
+
+        private void RaisePerformanceShortcutSelection()
+        {
+            OnPropertyChanged(nameof(IsQuickPlan1Selected));
+            OnPropertyChanged(nameof(IsQuickPlan2Selected));
+            OnPropertyChanged(nameof(IsQuickPlan3Selected));
         }
 
         [RelayCommand]
@@ -600,6 +724,7 @@ namespace Arsenal.UI.ViewModels
         partial void OnSelectedPerformanceModeChanged(int value)
         {
             OnPropertyChanged(nameof(PerformanceModeName));
+            RaisePerformanceShortcutSelection();
             SyncDetailSelection();
             RefreshTiles();
         }
@@ -697,14 +822,17 @@ namespace Arsenal.UI.ViewModels
         private QuickTileSlot? _slotBeingPicked;
 
         /// <summary>
-        /// Tiles on screen at once: five rows of two. A page taller than this makes the
-        /// flyout taller than the screen space a flyout should take, so the rest goes on
-        /// a second page rather than making the panel grow.
+        /// Tiles on screen at once: three rows of two. A page taller than this makes the
+        /// flyout taller than the screen space a flyout should take, so the rest is paged
+        /// rather than making the panel grow.
         /// </summary>
-        public const int TilesPerPage = 10;
+        public const int TilesPerPage = 6;
 
-        /// <summary>Two pages of tiles. A third would be a list, not a panel.</summary>
-        private const int MaxTiles = TilesPerPage * 2;
+        /// <summary>
+        /// Shrinking the visible page must not discard existing choices, so the original
+        /// capacity remains available across compact pages.
+        /// </summary>
+        private const int MaxTiles = 20;
 
         public bool CanAddTile => Tiles.Count < MaxTiles;
         public bool CanRemoveTile => Tiles.Count > 1;
@@ -1101,7 +1229,15 @@ namespace Arsenal.UI.ViewModels
 
         public bool IsDetailOpen => DetailPage != QuickDetailPage.None;
 
-        partial void OnDetailPageChanged(QuickDetailPage value) => OnPropertyChanged(nameof(IsDetailOpen));
+        public bool IsPerformanceShortcutEditor => DetailPage == QuickDetailPage.PerformanceShortcuts;
+        public bool IsStandardDetailPage => DetailPage != QuickDetailPage.PerformanceShortcuts;
+
+        partial void OnDetailPageChanged(QuickDetailPage value)
+        {
+            OnPropertyChanged(nameof(IsDetailOpen));
+            OnPropertyChanged(nameof(IsPerformanceShortcutEditor));
+            OnPropertyChanged(nameof(IsStandardDetailPage));
+        }
 
         [RelayCommand]
         public void OpenDetail(object? pageParam)
@@ -1113,9 +1249,21 @@ namespace Arsenal.UI.ViewModels
             {
                 case QuickDetailPage.Performance:
                     DetailTitle = AppStrings.Get("HomePerformanceMode");
-                    DetailOptions.Add(new QuickOptionItem(page, 2, AppStrings.Get("Silent"), AppStrings.Get("MainQuietestFansLowestPower")));
-                    DetailOptions.Add(new QuickOptionItem(page, 0, AppStrings.Get("Balanced"), AppStrings.Get("MainDefaultFanCurveAndLimits")));
-                    DetailOptions.Add(new QuickOptionItem(page, 1, AppStrings.Get("Turbo"), AppStrings.Get("MainHighestLimitsLoudestFans")));
+                    foreach (PerformancePlanInfo plan in _performanceService.GetProfiles())
+                    {
+                        string detail = plan.ModeIndex switch
+                        {
+                            2 => AppStrings.Get("MainQuietestFansLowestPower"),
+                            0 => AppStrings.Get("MainDefaultFanCurveAndLimits"),
+                            1 => AppStrings.Get("MainHighestLimitsLoudestFans"),
+                            _ => AppStrings.Get("PerformanceTunePlanDescription")
+                        };
+                        DetailOptions.Add(new QuickOptionItem(page, plan.ModeIndex, plan.Name, detail));
+                    }
+                    break;
+
+                case QuickDetailPage.PerformanceShortcuts:
+                    DetailTitle = AppStrings.Get("QuickPanelChooseShortcuts");
                     break;
 
                 case QuickDetailPage.Gpu:

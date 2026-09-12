@@ -4,14 +4,17 @@ using Arsenal.UI.Views.Pages;
 using Arsenal.UI.Views.Windows;
 using Arsenal.UI.Controls;
 using Arsenal.Display;
+using Arsenal.Mode;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Wpf.Ui.Appearance;
+using SymbolIcon = Wpf.Ui.Controls.SymbolIcon;
 using Color = System.Windows.Media.Color;
 using Colors = System.Windows.Media.Colors;
 
@@ -36,6 +39,7 @@ internal static class Program
             var application = new App();
             application.InitializeComponent();
             App.ApplyConfiguredTheme();
+            AssertCustomPerformancePlans();
 
             AssertAccentResources(application, expectedSubtleAlpha: 0x2E);
             Color darkAccent = ResourceColor(application, "AccentPrimary");
@@ -51,6 +55,8 @@ internal static class Program
             var lightingPage = new LightingPage(null!);
             Assert(lightingPage is not null, "Lighting page with AniMe Matrix controls failed to load.");
             AssertQuickPanelSliderGeometry();
+            if (args.FirstOrDefault() is { Length: > 0 } output && !output.StartsWith("--", StringComparison.Ordinal))
+                RenderQuickPanelPreview(output);
             AssertColorPipelineIsolation();
             AssertOpaqueByDefault(application);
 
@@ -86,7 +92,7 @@ internal static class Program
         // Placement belongs to the window and does not depend on hardware state. A null
         // view model keeps this diagnostic isolated from every ASUS service while still
         // rendering the exact production chrome, shadow, DPI and work-area anchor.
-        var panel = new QuickPanelWindow(null!);
+        var panel = new QuickPanelWindow(null!, null!);
         var timeout = new DispatcherTimer { Interval = TimeSpan.FromSeconds(60) };
         timeout.Tick += (_, _) =>
         {
@@ -172,13 +178,27 @@ internal static class Program
 
     private static void AssertQuickPanelSliderGeometry()
     {
-        var panel = new QuickPanelWindow(null!);
+        var panel = new QuickPanelWindow(null!, null!);
         var sliders = Descendants(panel).OfType<ValueSlider>().ToArray();
         ValueSlider oled = sliders.Single(slider => slider.Header == "OLED dimming");
 
         Assert(oled.HeaderWidth == 100, "OLED dimming did not receive the expanded label column.");
-        Assert(oled.ReadoutWidth == 38, "Quick Panel retained the oversized value column.");
-        Assert(oled.ReadoutMargin.Left == 6, "Quick Panel retained the oversized track-to-value gap.");
+        AssertQuickPanelSliderRow(oled, "0%", "100%");
+        Assert(panel.FindName("PerformanceModeRow") is System.Windows.Controls.Primitives.UniformGrid { Children.Count: 4 },
+            "Quick Panel performance row does not contain three shortcuts and Custom.");
+        Assert(panel.FindName("GpuModeRow") is System.Windows.Controls.Primitives.UniformGrid { Children.Count: 4 },
+            "Quick Panel GPU row does not expose all four GPU modes.");
+        Assert(panel.FindName("CustomPerformanceButton") is System.Windows.Controls.Button,
+            "Quick Panel is missing the Custom entry point.");
+        Assert(QuickPanelViewModel.TilesPerPage == 6,
+            "Quick Panel quick settings are not limited to three two-column rows per page.");
+        Assert(Descendants((DependencyObject)panel.FindName("PerformanceModeRow")).OfType<SymbolIcon>().Count() == 4,
+            "Quick Panel performance choices do not all have icons.");
+        Assert(Descendants((DependencyObject)panel.FindName("GpuModeRow")).OfType<SymbolIcon>().Count() == 4,
+            "Quick Panel GPU choices do not all have icons.");
+        Assert(new[] { "QuickPlanSelector1", "QuickPlanSelector2", "QuickPlanSelector3" }
+                .All(name => panel.FindName(name) is System.Windows.Controls.ComboBox),
+            "Quick Panel performance shortcut editor does not contain three plan selectors.");
         var enabledBinding = System.Windows.Data.BindingOperations.GetBinding(oled, UIElement.IsEnabledProperty);
         Assert(enabledBinding?.Path?.Path == "IsOledDimmingAvailable",
             "Quick Panel OLED dimming is not gated by the GameVisual profile state.");
@@ -201,6 +221,130 @@ internal static class Program
             "OLED dimming still cannot fit on one line without trimming.");
 
         panel.Close();
+    }
+
+    /// <summary>
+    /// The compact panel carries no current-value readout and no scale under the
+    /// track: the row is the label, the lowest value, the track, and the highest
+    /// value. Checking the applied template is the only way to see that, since the
+    /// pieces that were removed were removed from the template itself.
+    /// </summary>
+    private static void AssertQuickPanelSliderRow(ValueSlider slider, string minimum, string maximum)
+    {
+        slider.ApplyTemplate();
+        var row = (System.Windows.Controls.Grid)VisualTreeHelper.GetChild(slider, 0);
+        var labels = row.Children.OfType<System.Windows.Controls.TextBlock>().ToArray();
+
+        Assert(labels.Length == 3,
+            "A Quick Panel slider row is not exactly its label, its lowest value and its highest value.");
+        Assert(labels[0].Text == slider.Header, "The Quick Panel slider label is not first in its row.");
+        Assert(labels[1].Text == minimum && slider.MinimumText == minimum,
+            $"The Quick Panel slider does not open its track with {minimum}.");
+        Assert(labels[2].Text == maximum && slider.MaximumText == maximum,
+            $"The Quick Panel slider does not close its track with {maximum}.");
+        Assert(row.Children.OfType<System.Windows.Controls.Slider>().Count() == 1,
+            "The Quick Panel slider row lost its track.");
+        Assert(!row.Children.OfType<SliderScale>().Any(),
+            "The Quick Panel slider still draws the scale under its track.");
+        Assert(labels[0].Margin.Right >= 12,
+            "The Quick Panel slider label crowds the lowest value beside it.");
+    }
+
+    private static void AssertCustomPerformancePlans()
+    {
+        for (int mode = 3; mode < Modes.MaxModes; mode++) Modes.Remove(mode);
+        Modes.SetCurrent(0);
+        AppConfig.SetMode("limit_total", 47);
+
+        int studio = Modes.Add("  Studio  ");
+        Assert(studio == 3 && Modes.GetName(studio) == "Studio",
+            "The first custom plan was not created and trimmed correctly.");
+        Assert(Modes.GetBase(studio) == 0 && AppConfig.Get("limit_total_3") == 47,
+            "A custom plan did not inherit the active plan's base mode and power settings.");
+
+        int automatic = Modes.Add();
+        Assert(automatic == 4 && Modes.GetName(automatic) == "Custom Plan 1",
+            "Default custom plan naming did not start at Custom Plan 1.");
+        Assert(Modes.Rename(automatic, "Travel") && Modes.GetName(automatic) == "Travel",
+            "A custom plan name did not persist.");
+        Modes.Remove(automatic);
+        Assert(!Modes.Exists(automatic), "A deleted custom plan remained in the mode list.");
+
+        Modes.Remove(studio);
+        Modes.SetCurrent(0);
+    }
+
+    private static void RenderQuickPanelPreview(string output)
+    {
+        var panel = new QuickPanelWindow(null!, null!)
+        {
+            DataContext = new QuickPanelPreview()
+        };
+        FrameworkElement root = (FrameworkElement)panel.Content;
+        root.Measure(new System.Windows.Size(452, 940));
+        root.Arrange(new System.Windows.Rect(0, 0, 452, Math.Min(940, Math.Max(1, root.DesiredSize.Height))));
+        root.UpdateLayout();
+        typeof(QuickPanelWindow).GetMethod("FitTilePageViewport", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(panel, null);
+        root.Measure(new System.Windows.Size(452, 940));
+        root.Arrange(new System.Windows.Rect(0, 0, 452, Math.Min(940, Math.Max(1, root.DesiredSize.Height))));
+        root.UpdateLayout();
+
+        int width = 452;
+        int height = Math.Max(1, (int)Math.Ceiling(root.ActualHeight));
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(root);
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
+        using FileStream stream = File.Create(output);
+        encoder.Save(stream);
+        panel.Close();
+    }
+
+    private sealed class QuickPanelPreview
+    {
+        public PerformancePlanItem QuickPlan1 { get; set; } = new(new Arsenal.Application.Models.PerformancePlanInfo(2, "Silent", 2, false));
+        public PerformancePlanItem QuickPlan2 { get; set; } = new(new Arsenal.Application.Models.PerformancePlanInfo(0, "Balanced", 0, false));
+        public PerformancePlanItem QuickPlan3 { get; set; } = new(new Arsenal.Application.Models.PerformancePlanInfo(3, "Creator", 0, true));
+        public bool IsQuickPlan1Selected => false;
+        public bool IsQuickPlan2Selected => true;
+        public bool IsQuickPlan3Selected => false;
+        public int SelectedGpuMode => 1;
+        public bool IsEcoSupported => true;
+        public bool IsMuxSupported => true;
+        public int RefreshRate => 240;
+        public int PanelBrightness { get; set; } = 68;
+        public bool IsOledPanel => true;
+        public bool IsOledDimmingAvailable => true;
+        public int OledDimming { get; set; } = 82;
+        public int ChargeLimitMinimum => 40;
+        public int ChargeLimit { get; set; } = 80;
+        public int KeyboardBrightness { get; set; } = 2;
+        public IEnumerable<PerformancePlanItem> PerformancePlans => new[] { QuickPlan1, QuickPlan2, QuickPlan3 };
+        public bool HasTilePages => false;
+        public bool IsEditingTiles => false;
+        public bool IsDetailOpen => false;
+        public IEnumerable<QuickTileSlot> Tiles { get; } = CreateTiles();
+
+        private static QuickTileSlot[] CreateTiles()
+        {
+            (string key, string state)[] choices =
+            {
+                ("full_charge", "Stops at 100%"),
+                ("performance", "Balanced"),
+                ("gpu", "Standard"),
+                ("refresh", "240 Hz"),
+                ("keyboard", "2"),
+                ("overlay", "On")
+            };
+
+            return choices.Select(choice => new QuickTileSlot(QuickTileCatalog.Find(choice.key)!, null)
+            {
+                State = choice.state,
+                IsChecked = true
+            }).ToArray();
+        }
     }
 
     private static void AssertColorPipelineIsolation()

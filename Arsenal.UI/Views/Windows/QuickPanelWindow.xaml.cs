@@ -14,12 +14,15 @@ namespace Arsenal.UI.Views.Windows
     {
         private bool _targetVisible;
         private readonly DispatcherTimer _tilePageWheelIdleTimer;
+        private readonly PerformanceViewModel _performanceViewModel;
+        private PerformanceTuningWindow? _performanceTuningWindow;
         public bool IsOpenOrOpening => IsVisible && _targetVisible;
 
-        public QuickPanelWindow(QuickPanelViewModel viewModel)
+        public QuickPanelWindow(QuickPanelViewModel viewModel, PerformanceViewModel performanceViewModel)
         {
             InitializeComponent();
             DataContext = viewModel;
+            _performanceViewModel = performanceViewModel;
 
             _tilePageWheelIdleTimer = new DispatcherTimer
             {
@@ -39,9 +42,9 @@ namespace Arsenal.UI.Views.Windows
                         TransitionToView(viewModel.IsDetailOpen);
                 };
 
-                // The grid is no longer a fixed six, so the card's height is no longer a
-                // constant either. Deferred to Background so the containers for the new
-                // tiles exist by the time it is measured.
+                // A page can be partially filled, so the card's height is not a constant.
+                // Deferred to Background so the containers for the new tiles exist by
+                // the time it is measured.
                 viewModel.Tiles.CollectionChanged += (_, _) =>
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
@@ -654,6 +657,19 @@ namespace Arsenal.UI.Views.Windows
                 return;
             }
 
+            HideAnimated();
+        }
+
+        private void OpenPerformanceTuning_Click(object sender, RoutedEventArgs e)
+        {
+            if (_performanceTuningWindow is null)
+            {
+                _performanceTuningWindow = new PerformanceTuningWindow(_performanceViewModel);
+                _performanceTuningWindow.Closed += (_, _) => _performanceTuningWindow = null;
+            }
+
+            _performanceTuningWindow.Show();
+            _performanceTuningWindow.Activate();
             HideAnimated();
         }
 

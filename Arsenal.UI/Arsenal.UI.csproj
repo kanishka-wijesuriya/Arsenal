@@ -49,6 +49,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\arsenal-app-icon.png" />
+    <Resource Include="Assets\arsenal-mark.png" />
     <Content Include="arsenal.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

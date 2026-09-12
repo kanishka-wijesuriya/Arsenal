@@ -17,6 +17,7 @@ namespace Arsenal.UI.ViewModels
         Matrix,
         ChargeLimit,
         Overlay,
+        PerformanceShortcuts,
 
         /// <summary>Choosing which tile occupies a slot. Reached only from edit mode.</summary>
         TilePicker
