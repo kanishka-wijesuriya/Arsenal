@@ -244,7 +244,9 @@ and it is short enough to read in one sitting.
 | `autoupdate` | Run the update path |
 
 `--quick-test` and `--tray-test` are diagnostic variants that expose the quick panel and
-tray menu for automated UI inspection.
+tray menu for automated UI inspection. `--panel-edge=bottom|top|left|right` forces the
+quick panel to open in the corner that taskbar edge would put it in, so all four layouts
+can be seen without moving the real taskbar and restarting the shell.
 
 <br>
 

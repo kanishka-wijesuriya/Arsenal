@@ -49,7 +49,7 @@ public partial class TrayMenuWindow : Window
         _menuFade.Stop();
         _menuSlide.Stop();
         Opacity = 0;
-        MenuTransform.Y = 10;
+        MenuTransform.Y = 0;
         Show();
 
         // The menu sizes itself to its rows, and rows the hardware does not support are
@@ -57,10 +57,25 @@ public partial class TrayMenuWindow : Window
         // transparent first lets us measure, then place it against the tray corner.
         UpdateLayout();
         PositionNearTray();
+
+        // Set after placement, because the placement is what decides which side of the
+        // pointer the menu ended up on - and the menu has to rise towards the pointer
+        // from whichever side that is.
+        MenuTransform.Y = _enterY;
         Activate();
         _menuFade.Start(0, 1, 180, Arsenal.UI.Controls.FrameEase.QuinticOut, v => Opacity = v);
-        _menuSlide.Start(10, 0, 180, Arsenal.UI.Controls.FrameEase.QuinticOut, y => MenuTransform.Y = y);
+        _menuSlide.Start(_enterY, 0, 180, Arsenal.UI.Controls.FrameEase.QuinticOut, y => MenuTransform.Y = y);
     }
+
+    /// <summary>
+    /// Where the menu starts, in DIPs. Positive means it comes up from below the
+    /// pointer, which is what a taskbar along the bottom calls for; a taskbar along the
+    /// top flips the menu underneath the pointer and this flips with it.
+    /// </summary>
+    private double _enterY = EnterDistance;
+
+    private const double EnterDistance = 10;
+    private const double ExitDistance = 28;
 
     public void HideAnimated()
     {
@@ -79,7 +94,7 @@ public partial class TrayMenuWindow : Window
         _menuFade.Start(currentOpacity, 0, 130, Arsenal.UI.Controls.FrameEase.CubicIn, v => Opacity = v);
         _menuSlide.Start(
             currentY,
-            28,
+            Math.Sign(_enterY) * ExitDistance,
             160,
             Arsenal.UI.Controls.FrameEase.CubicIn,
             y => MenuTransform.Y = y,
@@ -123,8 +138,15 @@ public partial class TrayMenuWindow : Window
         // the final bounds so the complete menu remains visible on that monitor.
         if (left < areaLeft + 8) left = cursorX + 8;
         if (left + width > areaRight - 8) left = areaRight - width - 8;
-        if (top < areaTop + 8) top = anchorY + 8;
+
+        bool below = top < areaTop + 8;
+        if (below) top = anchorY + 8;
         if (top + height > areaBottom - 8) top = areaBottom - height - 8;
+
+        // A taskbar along the top puts the pointer near the top of the work area, which
+        // is what flips the menu below it. Opening downwards while sliding upwards reads
+        // as the menu being dragged away from the icon that opened it.
+        _enterY = below ? -EnterDistance : EnterDistance;
 
         Left = left;
         Top = top;

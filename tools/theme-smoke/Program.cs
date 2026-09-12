@@ -98,20 +98,58 @@ internal static class Program
         var frame = new DispatcherFrame();
         panel.Closed += (_, _) => frame.Continue = false;
         panel.ShowAnimated();
-        panel.Dispatcher.BeginInvoke(new Action(() =>
-        {
-            if (panel.FindName("PanelChrome") is not System.Windows.FrameworkElement chrome) return;
-            System.Windows.Point cardBottomRight = chrome.PointToScreen(
-                new System.Windows.Point(chrome.ActualWidth, chrome.ActualHeight));
-            var area = System.Windows.Forms.Screen.FromPoint(System.Windows.Forms.Cursor.Position).WorkingArea;
-            Console.WriteLine(
-                $"Quick Panel physical gaps: right={area.Right - cardBottomRight.X:0.###}px, " +
-                $"bottom={area.Bottom - cardBottomRight.Y:0.###}px");
-        }), DispatcherPriority.ContextIdle);
+
+        // Reported synchronously, on the frame the panel was placed on. Anything queued
+        // behind this is racing whatever else the host application decides to do, and a
+        // diagnostic that sometimes prints nothing is worse than no diagnostic at all.
+        ReportPanelPlacement(panel);
+
         // Pump only this diagnostic window instead of constructing the full hardware
         // application host. The timeout closes it and releases the nested frame.
         Dispatcher.PushFrame(frame);
         return 0;
+    }
+
+    /// <summary>
+    /// Prints where the Quick Panel's card came to rest, and which way it travels to
+    /// get there.
+    /// </summary>
+    /// <remarks>
+    /// Two numbers decide whether the panel follows the taskbar. The gaps say which
+    /// corner of the work area the card landed in - the two edges it is seated against
+    /// read as the same small number, the other two as hundreds of pixels. The entrance
+    /// offset says which axis carries the motion and which way it points, which a
+    /// screenshot of the settled panel cannot show: a bar along the bottom must start
+    /// the card below its resting place and nowhere to either side, a bar down the left
+    /// must start it to the left and no lower.
+    /// </remarks>
+    private static void ReportPanelPlacement(QuickPanelWindow panel)
+    {
+        if (panel.FindName("PanelChrome") is not System.Windows.FrameworkElement chrome) return;
+        var transform = panel.FindName("PanelTransform") as TranslateTransform;
+
+        Console.WriteLine($"Quick Panel entrance offset: ({transform?.X ?? 0:0.#},{transform?.Y ?? 0:0.#})");
+
+        // Measured at rest. The entrance offset is a live render transform and
+        // PointToScreen carries it, so it is taken out and put back rather than
+        // reported as part of the card's seated geometry.
+        double offsetX = transform?.X ?? 0;
+        double offsetY = transform?.Y ?? 0;
+        if (transform is not null) { transform.X = 0; transform.Y = 0; }
+        panel.UpdateLayout();
+
+        System.Windows.Point cardTopLeft = chrome.PointToScreen(new System.Windows.Point(0, 0));
+        System.Windows.Point cardBottomRight = chrome.PointToScreen(
+            new System.Windows.Point(chrome.ActualWidth, chrome.ActualHeight));
+
+        if (transform is not null) { transform.X = offsetX; transform.Y = offsetY; }
+
+        var area = System.Windows.Forms.Screen.FromPoint(System.Windows.Forms.Cursor.Position).WorkingArea;
+        Console.WriteLine(
+            $"Quick Panel physical gaps: left={cardTopLeft.X - area.Left:0.###}px, " +
+            $"top={cardTopLeft.Y - area.Top:0.###}px, " +
+            $"right={area.Right - cardBottomRight.X:0.###}px, " +
+            $"bottom={area.Bottom - cardBottomRight.Y:0.###}px");
     }
 
     /// <summary>

@@ -1,3 +1,4 @@
+using Arsenal.Application.Models;
 using Arsenal.UI.ViewModels;
 using System.Windows;
 using System.Runtime.InteropServices;
@@ -675,8 +676,14 @@ namespace Arsenal.UI.Views.Windows
                 vm.SetKeyboardBrightness(vm.KeyboardBrightness);
         }
 
-        private double _anchorRight;
-        private double _anchorBottom;
+        /// <summary>The work area the panel is anchored in, in DIPs.</summary>
+        private FlyoutBounds _anchorWorkArea;
+
+        /// <summary>Set once the first capture has run, whatever it found.</summary>
+        private bool _anchorCaptured;
+
+        /// <summary>Which edge of that work area the taskbar, and so the tray, is on.</summary>
+        private TaskbarEdge _anchorEdge = TaskbarEdge.Bottom;
 
         /// <summary>Height of the work area the panel is anchored in, in DIPs.</summary>
         private double _anchorHeight;
@@ -689,22 +696,113 @@ namespace Arsenal.UI.Views.Windows
         private System.Drawing.Rectangle _anchorWorkingAreaPixels;
 
         /// <summary>
-        /// Records the corner the panel is pinned to. Captured once per open: the height
-        /// animation re-places the window on every frame, and re-reading the cursor's
-        /// screen each time would make the panel jump if the pointer crossed monitors
-        /// mid-transition.
+        /// Records the corner the panel is pinned to, and the edge that put it there.
+        /// Captured once per open: the height animation re-places the window on every
+        /// frame, and re-reading the cursor's screen each time would make the panel jump
+        /// if the pointer crossed monitors mid-transition. Once per open is also what
+        /// makes a taskbar moved while Arsenal is running take effect - the next press
+        /// reads the new layout with nothing to restart.
         /// </summary>
         private void CaptureTrayAnchor()
         {
             var point = System.Windows.Forms.Cursor.Position;
-            var workingArea = System.Windows.Forms.Screen.FromPoint(point).WorkingArea;
+            var screen = System.Windows.Forms.Screen.FromPoint(point);
+            var workingArea = screen.WorkingArea;
             _anchorWorkingAreaPixels = workingArea;
             IntPtr hwnd = new WindowInteropHelper(this).EnsureHandle();
             uint dpi = GetDpiForWindow(hwnd);
             double scale = dpi > 0 ? dpi / 96d : 1d;
-            _anchorRight = workingArea.Right / scale;
-            _anchorBottom = workingArea.Bottom / scale;
+            _anchorWorkArea = new FlyoutBounds(
+                workingArea.Left / scale,
+                workingArea.Top / scale,
+                workingArea.Right / scale,
+                workingArea.Bottom / scale);
             _anchorHeight = workingArea.Height / scale;
+            _anchorEdge = TaskbarEdgeForScreen(screen);
+            _anchorCaptured = true;
+
+            // Before anything measures: the card is glued to one edge of a window that is
+            // taller than it is, and which edge that is changes what a detail page does
+            // to the layout it grows into.
+            ApplyCardAlignment();
+        }
+
+        /// <summary>
+        /// Glues the card to the edge of the window nearest the taskbar, so the window
+        /// slack it floats in is always on the far side of it.
+        /// </summary>
+        private void ApplyCardAlignment()
+        {
+            VerticalAlignment alignment = TrayFlyout.TrayIsAtTheTop(_anchorEdge)
+                ? VerticalAlignment.Top
+                : VerticalAlignment.Bottom;
+
+            if (PanelChrome.VerticalAlignment == alignment) return;
+            PanelChrome.VerticalAlignment = alignment;
+            PanelShadow.VerticalAlignment = alignment;
+        }
+
+        /// <summary>
+        /// Answers which edge the taskbar is docked to for the monitor the panel is about
+        /// to open on.
+        /// </summary>
+        /// <remarks>
+        /// The shell reports the position of the primary taskbar only, so that answer is
+        /// used directly when that bar is actually on this monitor - it is exact, and it
+        /// stays right for an auto-hidden bar, which reserves no work area to infer from.
+        /// On any other monitor the reserved space is the better signal, because that is
+        /// what a secondary taskbar moves; the primary bar's edge is the fallback, since
+        /// Windows docks every secondary taskbar to the same edge as the primary.
+        /// </remarks>
+        private static TaskbarEdge TaskbarEdgeForScreen(System.Windows.Forms.Screen screen)
+        {
+            if (EdgeOverride is TaskbarEdge forced) return forced;
+
+            TaskbarEdge shellEdge = TaskbarEdge.Bottom;
+            if (TryGetTaskbarPosition(out TaskbarEdge edge, out System.Drawing.Rectangle taskbar))
+            {
+                shellEdge = edge;
+                if (taskbar.IntersectsWith(screen.Bounds)) return shellEdge;
+            }
+
+            return TrayFlyout.EdgeFromReservedSpace(screen.Bounds, screen.WorkingArea, shellEdge);
+        }
+
+        /// <summary>
+        /// Forces an edge for a <c>--quick-test</c> run, so all four layouts can be seen
+        /// without restarting the shell. Null in every normal launch.
+        /// </summary>
+        private static readonly TaskbarEdge? EdgeOverride = ReadEdgeOverride();
+
+        private static TaskbarEdge? ReadEdgeOverride()
+        {
+            const string Prefix = "--panel-edge=";
+            string? value = Environment.GetCommandLineArgs()
+                .FirstOrDefault(arg => arg.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase));
+            if (value is null) return null;
+            return Enum.TryParse(value[Prefix.Length..], ignoreCase: true, out TaskbarEdge edge)
+                ? edge
+                : null;
+        }
+
+        private static bool TryGetTaskbarPosition(out TaskbarEdge edge, out System.Drawing.Rectangle bounds)
+        {
+            edge = TaskbarEdge.Bottom;
+            bounds = System.Drawing.Rectangle.Empty;
+
+            var data = new AppBarData { cbSize = Marshal.SizeOf<AppBarData>() };
+            if (SHAppBarMessage(AbmGetTaskbarPos, ref data) == IntPtr.Zero) return false;
+
+            edge = data.uEdge switch
+            {
+                AbeLeft => TaskbarEdge.Left,
+                AbeTop => TaskbarEdge.Top,
+                AbeRight => TaskbarEdge.Right,
+                _ => TaskbarEdge.Bottom
+            };
+            bounds = System.Drawing.Rectangle.FromLTRB(
+                data.rc.Left, data.rc.Top, data.rc.Right, data.rc.Bottom);
+            return bounds.Width > 0 && bounds.Height > 0;
         }
 
         /// <summary>
@@ -716,7 +814,7 @@ namespace Arsenal.UI.Views.Windows
 
         public void PositionNearTray()
         {
-            if (_anchorBottom <= 0) CaptureTrayAnchor();
+            if (!_anchorCaptured) CaptureTrayAnchor();
 
             double panelWidth = ActualWidth > 0 ? ActualWidth : Width;
             double panelHeight = ActualHeight > 0 ? ActualHeight : 650;
@@ -724,35 +822,84 @@ namespace Arsenal.UI.Views.Windows
             // The card is inset from the window by the gutter its shadow needs, so the
             // window is placed that much nearer the edge to land the card on the gap.
             // Read from the live margin: shrinking the gutter must not move the card.
-            Thickness gutter = MotionRoot.Margin;
-            Left = _anchorRight - panelWidth - Math.Max(0, TrayGap - gutter.Right);
-            Top = _anchorBottom - panelHeight - Math.Max(0, TrayGap - gutter.Bottom);
+            Thickness margin = MotionRoot.Margin;
+            FlyoutPlacement placement = TrayFlyout.Place(
+                _anchorEdge,
+                _anchorWorkArea,
+                panelWidth,
+                panelHeight,
+                TrayGap,
+                new FlyoutGutter(margin.Left, margin.Top, margin.Right, margin.Bottom));
+
+            Left = placement.Left;
+            Top = placement.Top;
+            _enterX = placement.EnterX;
+            _enterY = placement.EnterY;
 
             // 11 DIPs at 150% is 16.5 physical pixels. Depending on the fractional
-            // window origin, WPF can resolve that as 16px on the right and 17px on the
-            // bottom. Measure the rendered card after layout and move only the native
-            // HWND by the residual pixel delta; this guarantees the visible bottom gap
-            // is exactly the already-established right gap at every DPI.
+            // window origin, WPF can resolve that as 16px on one axis and 17px on the
+            // other. Measure the rendered card after layout and move only the native
+            // HWND by the residual pixel delta; this guarantees the gap against the
+            // taskbar is exactly the gap against the screen edge at every DPI.
             UpdateLayout();
-            MatchBottomGapToRightGap();
+            MatchTaskbarGapToScreenGap();
         }
 
-        private void MatchBottomGapToRightGap()
+        /// <summary>
+        /// Equalises the two visible gaps in physical pixels, after WPF has rounded the
+        /// placement above onto the device grid.
+        /// </summary>
+        /// <remarks>
+        /// The gap against the screen edge is the reference and the gap against the
+        /// taskbar is moved onto it, because the screen edge is the one the eye has a
+        /// straight line to compare against. Which axis is which follows the taskbar: a
+        /// bar along the bottom leaves the right-hand gap as the reference, a bar down
+        /// either side leaves the bottom one.
+        /// </remarks>
+        private void MatchTaskbarGapToScreenGap()
         {
             if (_anchorWorkingAreaPixels.IsEmpty || PanelChrome.ActualWidth <= 0 || PanelChrome.ActualHeight <= 0)
                 return;
 
-            System.Windows.Point cardBottomRight = PanelChrome.PointToScreen(
+            var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(this);
+            System.Windows.Point topLeft = PanelChrome.PointToScreen(new System.Windows.Point(0, 0));
+            System.Windows.Point bottomRight = PanelChrome.PointToScreen(
                 new System.Windows.Point(PanelChrome.ActualWidth, PanelChrome.ActualHeight));
-            // Opening/closing motion is a render-only Y translation. Remove its current
+
+            // Opening/closing motion is a render-only translation. Remove its current
             // device-pixel contribution so placement is based on the card's resting
             // geometry even when PositionNearTray runs before the first animation.
-            double dpiScaleY = System.Windows.Media.VisualTreeHelper.GetDpi(this).DpiScaleY;
-            cardBottomRight.Y -= PanelTransform.Y * dpiScaleY;
-            double rightGap = _anchorWorkingAreaPixels.Right - cardBottomRight.X;
-            double bottomGap = _anchorWorkingAreaPixels.Bottom - cardBottomRight.Y;
-            int verticalAdjustment = (int)Math.Round(bottomGap - rightGap, MidpointRounding.AwayFromZero);
-            if (verticalAdjustment == 0) return;
+            double shiftX = PanelTransform.X * dpi.DpiScaleX;
+            double shiftY = PanelTransform.Y * dpi.DpiScaleY;
+            topLeft.X -= shiftX;
+            topLeft.Y -= shiftY;
+            bottomRight.X -= shiftX;
+            bottomRight.Y -= shiftY;
+
+            double leftGap = topLeft.X - _anchorWorkingAreaPixels.Left;
+            double rightGap = _anchorWorkingAreaPixels.Right - bottomRight.X;
+            double topGap = topLeft.Y - _anchorWorkingAreaPixels.Top;
+            double bottomGap = _anchorWorkingAreaPixels.Bottom - bottomRight.Y;
+
+            int horizontal = 0;
+            int vertical = 0;
+            switch (_anchorEdge)
+            {
+                case TaskbarEdge.Bottom:
+                    vertical = Delta(bottomGap, rightGap);
+                    break;
+                case TaskbarEdge.Top:
+                    vertical = -Delta(topGap, rightGap);
+                    break;
+                case TaskbarEdge.Left:
+                    horizontal = -Delta(leftGap, bottomGap);
+                    break;
+                case TaskbarEdge.Right:
+                    horizontal = Delta(rightGap, bottomGap);
+                    break;
+            }
+
+            if (horizontal == 0 && vertical == 0) return;
 
             IntPtr hwnd = new WindowInteropHelper(this).Handle;
             if (hwnd == IntPtr.Zero || !GetWindowRect(hwnd, out NativeRect bounds)) return;
@@ -760,11 +907,16 @@ namespace Arsenal.UI.Views.Windows
             SetWindowPos(
                 hwnd,
                 IntPtr.Zero,
-                bounds.Left,
-                bounds.Top + verticalAdjustment,
+                bounds.Left + horizontal,
+                bounds.Top + vertical,
                 0,
                 0,
                 SetWindowPositionFlags.NoSize | SetWindowPositionFlags.NoZOrder | SetWindowPositionFlags.NoActivate);
+
+            // How far the window has to move, in whole device pixels, for the first gap
+            // to equal the second. Positive shrinks the first gap.
+            static int Delta(double gap, double reference)
+                => (int)Math.Round(gap - reference, MidpointRounding.AwayFromZero);
         }
 
         /// <summary>
@@ -1387,6 +1539,30 @@ namespace Arsenal.UI.Views.Windows
             PositionNearTray();
         }
 
+        /// <summary>How far back along its entrance the card starts, in DIPs.</summary>
+        private const double EnterDistance = 54;
+
+        /// <summary>How far back the card retreats on the way out. Shorter than it came.</summary>
+        private const double ExitDistance = 40;
+
+        /// <summary>
+        /// Unit vector pointing at the taskbar: the direction the card arrives from and
+        /// leaves towards. Set with the placement, so one ease drives whichever axis the
+        /// current taskbar edge calls for.
+        /// </summary>
+        private double _enterX;
+        private double _enterY = 1;
+
+        /// <summary>Current distance back along that vector, in DIPs.</summary>
+        private double _panelOffset;
+
+        private void SetPanelOffset(double distance)
+        {
+            _panelOffset = distance;
+            PanelTransform.X = _enterX * distance;
+            PanelTransform.Y = _enterY * distance;
+        }
+
         public void ShowAnimated()
         {
             _targetVisible = true;
@@ -1396,20 +1572,30 @@ namespace Arsenal.UI.Views.Windows
             _panelFade.Stop();
             _panelSlide.Stop();
             Opacity = 0;
-            PanelTransform.Y = 54;
+
+            // Placed and measured at rest, so neither the entrance offset nor a previous
+            // exit can be mistaken for the card's own geometry.
+            SetPanelOffset(0);
             Show();
 
-            // The window sizes itself to its content and is anchored to the bottom of the
-            // work area only on its first show. Lock that measured viewport before the
-            // first visible frame; later opens reuse it and cannot tremble from relayout.
+            // Read the taskbar first: which edge it is on decides which edge of the
+            // window the card is glued to, and that has to be settled before the
+            // viewport below is measured and pinned.
+            CaptureTrayAnchor();
+
+            // The window sizes itself to its content and is anchored to the tray corner
+            // only on its first show. Lock that measured viewport before the first
+            // visible frame; later opens reuse it and cannot tremble from relayout.
             UpdateLayout();
             LockNativeViewport();
-            CaptureTrayAnchor();
             PositionNearTray();
+
+            // Render-only, so it costs no layout and cannot disturb the placement above.
+            SetPanelOffset(EnterDistance);
             TakeForeground();
 
             _panelFade.Start(0, 1, 160, Controls.FrameEase.QuinticOut, v => Opacity = v);
-            _panelSlide.Start(54, 0, 220, Controls.FrameEase.QuinticOut, y => PanelTransform.Y = y);
+            _panelSlide.Start(EnterDistance, 0, 220, Controls.FrameEase.QuinticOut, SetPanelOffset);
         }
 
         private readonly Controls.FrameEase _panelFade = new();
@@ -1425,21 +1611,21 @@ namespace Arsenal.UI.Views.Windows
             }
 
             double currentOpacity = Opacity;
-            double currentY = PanelTransform.Y;
+            double currentOffset = _panelOffset;
             _panelFade.Stop();
             _panelSlide.Stop();
             Opacity = currentOpacity;
-            PanelTransform.Y = currentY;
+            SetPanelOffset(currentOffset);
 
             // Kept short: the panel is a layered window, so each frame costs a full
             // surface copy and a long exit reads as the window lagging behind the click.
             _panelFade.Start(currentOpacity, 0, 120, Controls.FrameEase.QuarticIn, v => Opacity = v);
             _panelSlide.Start(
-                currentY,
-                40,
+                currentOffset,
+                ExitDistance,
                 140,
                 Controls.FrameEase.QuarticIn,
-                y => PanelTransform.Y = y,
+                SetPanelOffset,
                 completed: () =>
                 {
                     if (!_targetVisible)
@@ -1452,7 +1638,7 @@ namespace Arsenal.UI.Views.Windows
                         ResetToMainView();
                     }
                     Opacity = 1;
-                    PanelTransform.Y = 0;
+                    SetPanelOffset(0);
                     completed?.Invoke();
                 });
         }
@@ -1479,6 +1665,25 @@ namespace Arsenal.UI.Views.Windows
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool PhysicalToLogicalPointForPerMonitorDPI(IntPtr hwnd, ref PointI point);
+
+        private const uint AbmGetTaskbarPos = 0x00000005;
+        private const uint AbeLeft = 0;
+        private const uint AbeTop = 1;
+        private const uint AbeRight = 2;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct AppBarData
+        {
+            public int cbSize;
+            public IntPtr hWnd;
+            public uint uCallbackMessage;
+            public uint uEdge;
+            public NativeRect rc;
+            public int lParam;
+        }
+
+        [DllImport("shell32.dll", CallingConvention = CallingConvention.StdCall)]
+        private static extern IntPtr SHAppBarMessage(uint message, ref AppBarData data);
 
         [StructLayout(LayoutKind.Sequential)]
         private struct NativeRect
