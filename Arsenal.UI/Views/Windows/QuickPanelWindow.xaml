@@ -1,0 +1,476 @@
+<Window x:Class="Arsenal.UI.Views.Windows.QuickPanelWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:controls="clr-namespace:Arsenal.UI.Controls"
+        xmlns:loc="clr-namespace:Arsenal.UI.Markup"
+        Title="{loc:Loc QuickPanelArsenalQuickPanel}" Width="452" SizeToContent="Height" MaxHeight="940"
+        WindowStartupLocation="Manual" ShowInTaskbar="False" Topmost="True"
+        ResizeMode="NoResize" WindowStyle="None" AllowsTransparency="True" Background="Transparent">
+
+    <Window.Resources>
+        <Style x:Key="PanelSectionLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="Margin" Value="2,0,0,8"/>
+        </Style>
+        <Style x:Key="PanelReadoutLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="PanelReadoutValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+        <Style x:Key="PanelReadoutDetail" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Compact flyout slider geometry. The wider label keeps "OLED dimming"
+             complete; the narrower value column returns that room to the track and
+             seats the current value close to its right edge. Full-window sliders keep
+             the roomier defaults from Components.xaml. -->
+        <Style x:Key="QuickPanelValueSliderStyle"
+               TargetType="{x:Type controls:ValueSlider}"
+               BasedOn="{StaticResource {x:Type controls:ValueSlider}}">
+            <Setter Property="Width" Value="Auto"/>
+            <Setter Property="HeaderWidth" Value="100"/>
+            <Setter Property="ReadoutWidth" Value="38"/>
+            <Setter Property="ReadoutMargin" Value="6,0,0,0"/>
+            <Setter Property="ScaleMargin" Value="0,-2,0,0"/>
+        </Style>
+
+        <!-- One row of a detail page: a checkmark gutter, the state, and what it does. -->
+        <Style x:Key="DetailOptionStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="10,9"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource RoundedFocusVisualStyle}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="Chrome" Background="{TemplateBinding Background}"
+                                    CornerRadius="{StaticResource RadiusControl}"/>
+                            <Border x:Name="HoverLayer" Opacity="0" IsHitTestVisible="False"
+                                    Background="{DynamicResource SurfaceCardHover}"
+                                    CornerRadius="{StaticResource RadiusControl}"/>
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard TargetName="HoverLayer">
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="{StaticResource StateFadeDuration}">
+                                                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard TargetName="HoverLayer">
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="{StaticResource StateFadeDuration}">
+                                                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid x:Name="MotionRoot" Margin="10" RenderTransformOrigin="0.5,1">
+        <Grid.RenderTransform>
+            <TranslateTransform x:Name="PanelTransform"/>
+        </Grid.RenderTransform>
+
+        <!-- The shadow is cast by a shape of its own, sitting behind the card and holding
+             nothing. An Effect on the card itself is invalidated whenever anything inside
+             it changes, so a page slide or tile drag would re-blur the whole panel. This
+             separate surface changes only when the card height does. -->
+        <Border x:Name="PanelShadow"
+                VerticalAlignment="Bottom"
+                IsHitTestVisible="False"
+                Background="{DynamicResource SurfaceLayer}"
+                CornerRadius="{StaticResource RadiusFlyout}"
+                Height="{Binding ActualHeight, ElementName=PanelChrome}">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="18" ShadowDepth="6" Opacity="0.45" Color="Black"
+                                  RenderingBias="Performance"/>
+            </Border.Effect>
+        </Border>
+
+        <Border x:Name="PanelChrome"
+                VerticalAlignment="Bottom"
+                Background="{DynamicResource SurfaceLayer}"
+                BorderBrush="{DynamicResource StrokeSubtle}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource RadiusFlyout}"
+                Padding="16"
+                TextElement.Foreground="{DynamicResource TextPrimary}">
+
+            <!-- The host is clipped to the active view's animated height. The native
+                 layered window stays fixed, preventing resize flashes and tray jitter. -->
+            <Grid x:Name="TransitionHost" ClipToBounds="True">
+                <!-- ================= Main view =================
+                     Deliberately uncached because live telemetry changes it. The tile
+                     strip inside carries its own retained cache, so paging remains a
+                     compositor-only transform without freezing the readouts. -->
+                <StackPanel x:Name="MainView"
+                            VerticalAlignment="Top">
+                    <StackPanel.RenderTransform>
+                        <TranslateTransform x:Name="MainViewShift"/>
+                    </StackPanel.RenderTransform>
+
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Width="34" Height="34" CornerRadius="{StaticResource RadiusControl}"
+                                    Background="{DynamicResource AccentSubtle}" Margin="0,0,10,0">
+                                <ui:SymbolIcon Symbol="Laptop24" FontSize="18" Foreground="{DynamicResource AccentPrimary}"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{loc:Loc QuickPanelQuickControls}" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold" FontSize="16"/>
+                                <TextBlock Text="Arsenal" Foreground="{DynamicResource TextSecondary}" FontSize="11"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <ui:Button Content="{loc:Loc QuickPanelOpenApp}" Click="OpenFullApp_Click" Appearance="Secondary"
+                                       Padding="12,5" FontSize="12" Margin="0,0,8,0"/>
+                            <ui:Button Icon="{ui:SymbolIcon Dismiss24}" Click="ClosePanel_Click" Appearance="Secondary"
+                                       Width="34" Height="34" Padding="0" ToolTip="{loc:Loc QuickPanelClose}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Background="{DynamicResource SurfaceCard}"
+                            BorderBrush="{DynamicResource StrokeSubtle}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusCard}"
+                            Padding="12"
+                            Margin="0,0,0,16">
+                        <UniformGrid Columns="4">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Loc QuickPanelCPU}" Style="{StaticResource PanelReadoutLabel}"/>
+                                <TextBlock Text="{Binding Telemetry.CpuTemp, StringFormat='{}{0:F0}°'}" Style="{StaticResource PanelReadoutValue}"/>
+                                <TextBlock Text="{Binding Telemetry.FanCpuRpm, StringFormat='{}{0} rpm'}" Style="{StaticResource PanelReadoutDetail}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="{loc:Loc QuickPanelGPU}" Style="{StaticResource PanelReadoutLabel}"/>
+                                <TextBlock Text="{Binding Telemetry.GpuTemp, StringFormat='{}{0:F0}°'}" Style="{StaticResource PanelReadoutValue}"/>
+                                <TextBlock Text="{Binding Telemetry.FanGpuRpm, StringFormat='{}{0} rpm'}" Style="{StaticResource PanelReadoutDetail}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="{loc:Loc Battery}" Style="{StaticResource PanelReadoutLabel}"/>
+                                <TextBlock Text="{Binding Telemetry.BatteryPercentage, StringFormat='{}{0}%'}" Style="{StaticResource PanelReadoutValue}"/>
+                                <TextBlock Text="{Binding Telemetry.BatteryDischargeRate, StringFormat='{}{0:F1} W'}" Style="{StaticResource PanelReadoutDetail}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="{loc:Loc AboutDisplay}" Style="{StaticResource PanelReadoutLabel}"/>
+                                <TextBlock Text="{Binding RefreshRate, StringFormat='{}{0} Hz'}" Style="{StaticResource PanelReadoutValue}"/>
+                                <TextBlock Text="{loc:Loc QuickPanelLive}" Style="{StaticResource PanelReadoutDetail}"/>
+                            </StackPanel>
+                        </UniformGrid>
+                    </Border>
+
+                    <!-- The grid is whatever the user put on it, so the tiles are bound
+                         rather than written out here. Options that depend on the model
+                         live inside the detail pages; a tile the machine cannot offer is
+                         kept out of the picker instead of appearing and doing nothing. -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <!-- Equal outer columns keep the pager on the panel's true
+                                 centre line even though the edit controls are wider than
+                                 the section label. -->
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="{loc:Loc QuickPanelQuickSettings}" Style="{StaticResource PanelSectionLabel}"
+                                   VerticalAlignment="Center" Margin="2,0,0,0"/>
+
+                        <!-- Pages move vertically, while their complete pager stays in
+                             one compact, symmetric row directly above the tiles. -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Margin="0,0,0,8"
+                                    Visibility="{Binding HasTilePages, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <ui:Button Icon="{ui:SymbolIcon ChevronUp24}" Command="{Binding PreviousTilePageCommand}"
+                                       IsEnabled="{Binding CanGoBackTilePage}"
+                                       Appearance="Secondary" Width="22" Height="22" Padding="0" FontSize="10"
+                                       ToolTip="{loc:Loc QuickPanelScrollToThePreviousTile}"/>
+
+                            <ItemsControl ItemsSource="{Binding TilePages}" Margin="6,0" VerticalAlignment="Center">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <RadioButton Style="{StaticResource TilePageDotStyle}"
+                                                     GroupName="TilePages"
+                                                     IsChecked="{Binding IsCurrent, Mode=OneWay}"
+                                                     Command="{Binding DataContext.GoToTilePageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                     CommandParameter="{Binding Index}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <ui:Button Icon="{ui:SymbolIcon ChevronDown24}" Command="{Binding NextTilePageCommand}"
+                                       IsEnabled="{Binding CanGoForwardTilePage}"
+                                       Appearance="Secondary" Width="22" Height="22" Padding="0" FontSize="10"
+                                       ToolTip="{loc:Loc QuickPanelScrollToTheNextTile}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Margin="0,0,0,8">
+                            <ui:Button Icon="{ui:SymbolIcon Add24}" Command="{Binding AddTileCommand}"
+                                       IsEnabled="{Binding CanAddTile}"
+                                       Appearance="Secondary" Width="26" Height="26" Padding="0"
+                                       FontSize="11" Margin="0,0,6,0" ToolTip="{loc:Loc QuickPanelAddATile}"/>
+                            <ui:Button Icon="{ui:SymbolIcon ArrowReset24}" Command="{Binding ResetTilesCommand}"
+                                       Appearance="Secondary" Width="26" Height="26" Padding="0"
+                                       FontSize="11" Margin="0,0,6,0" ToolTip="{loc:Loc QuickPanelRestoreTheDefaultTiles}"
+                                       Visibility="{Binding IsEditingTiles, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            <ui:Button Command="{Binding ToggleTileEditingCommand}"
+                                       Appearance="Secondary" Height="26" Padding="8,0"
+                                       FontSize="11"
+                                       Content="{Binding IsEditingTiles, Converter={StaticResource BoolToTextConverter}, ConverterParameter='Done|Edit'}"
+                                       ToolTip="{loc:Loc QuickPanelChangeWhichTilesThePanel}"/>
+                        </StackPanel>
+                    </Grid>
+
+                <!-- One flat list of tiles in a viewport clipped to a page's worth of
+                      rows; wheel input and the centered pager move the strip vertically
+                      rather than rebuilding it. That is what lets a tile be dragged from
+                      the end of one page onto the next. -->
+                <!-- Keep the tile margins inside the panel. Pulling this viewport three
+                     pixels past each edge made the left tile outline and edit affordance
+                     look cut off, especially at fractional display scaling. -->
+                <Grid Margin="0,0,0,13">
+                    <!-- The list sits on a Canvas rather than directly in the Border. A
+                         Border passes its own height down as the measure constraint, and
+                         WPF then layout-clips a child that measures taller than what it
+                         was offered - so the rows past the first page were not merely
+                         hidden, they were never rendered. A Canvas measures its children
+                         unconstrained, leaving the Border to do the clipping it is here
+                         for and nothing else. -->
+                    <!-- A transparent background is intentional: WPF does not hit-test
+                         a Border's unpainted area. Without it, touchpad/mouse wheel
+                         paging only works over an actual tile and not over the empty
+                         cells on a partially filled final page. -->
+                    <Border x:Name="TilePageViewport"
+                            Background="Transparent"
+                            ClipToBounds="True"
+                            PreviewMouseWheel="TilePageViewport_PreviewMouseWheel">
+                        <Canvas>
+                        <ItemsControl x:Name="QuickTilesGrid" ItemsSource="{Binding Tiles}"
+                                      Width="{Binding ActualWidth, ElementName=TilePageViewport}">
+                            <ItemsControl.RenderTransform>
+                                <TranslateTransform x:Name="TilePageShift"/>
+                            </ItemsControl.RenderTransform>
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <controls:AnimatedTileGrid x:Name="TileGridPanel" Columns="2"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <controls:QuickTile Icon="{Binding Icon}"
+                                                    Label="{Binding Label}"
+                                                    State="{Binding State}"
+                                                    IsChecked="{Binding IsChecked, Mode=OneWay}"
+                                                    Command="{Binding DataContext.ActivateTileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    ExpandCommand="{Binding ExpandCommand}"
+                                                    ExpandCommandParameter="{Binding}"
+                                                    IsEditing="{Binding DataContext.IsEditingTiles, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    RemoveCommand="{Binding DataContext.RemoveTileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    RemoveCommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        </Canvas>
+                    </Border>
+
+                </Grid>
+
+                    <Border Background="{DynamicResource SurfaceCard}"
+                            BorderBrush="{DynamicResource StrokeSubtle}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusCard}"
+                            Padding="12,10">
+                        <StackPanel>
+                            <controls:ValueSlider Style="{StaticResource QuickPanelValueSliderStyle}"
+                                                  Header="{loc:Loc Brightness}" Margin="0,0,0,8"
+                                                  Minimum="0" Maximum="100" TickFrequency="5"
+                                                  Value="{Binding PanelBrightness}" Format="{}{0}%"/>
+                            <controls:ValueSlider Style="{StaticResource QuickPanelValueSliderStyle}"
+                                                  Header="{loc:Loc DisplayOLEDDimming}" Margin="0,0,0,8"
+                                                  Minimum="0" Maximum="100" TickFrequency="5"
+                                                  IsEnabled="{Binding IsOledDimmingAvailable}"
+                                                  Visibility="{Binding IsOledPanel, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                  Value="{Binding OledDimming}" Format="{}{0}%"/>
+                            <controls:ValueSlider Style="{StaticResource QuickPanelValueSliderStyle}"
+                                                  Header="{loc:Loc BatteryChargeLimit2}" Margin="0,0,0,8"
+                                                  Minimum="{Binding ChargeLimitMinimum}" Maximum="100" TickFrequency="5"
+                                                  Ticks="{Binding ChargeLimitTicks}"
+                                                  IsSnapToTickEnabled="{Binding HasSteppedChargeLimit}"
+                                                  Value="{Binding ChargeLimit}" Format="{}{0}%"
+                                                  PreviewMouseLeftButtonUp="ChargeLimitSlider_Commit"
+                                                  KeyUp="ChargeLimitSlider_KeyUp"/>
+                            <controls:ValueSlider Style="{StaticResource QuickPanelValueSliderStyle}"
+                                                  Header="{loc:Loc Keyboard}"
+                                                  Minimum="0" Maximum="3" TickFrequency="1" IsSnapToTickEnabled="True"
+                                                  Value="{Binding KeyboardBrightness}" Format="{}{0}"
+                                                  PreviewMouseLeftButtonUp="KeyboardBrightnessSlider_Commit"
+                                                  KeyUp="KeyboardBrightnessSlider_KeyUp"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ================= Detail view ================= -->
+                <!-- No BitmapCache here, unlike the tile page. The option list scrolls, and
+                     a cached subtree has to be re-rasterised for every frame of that -
+                     which on a layered window costs more than the transition it would
+                     save. The tile page never scrolls, so it keeps its cache. -->
+                <StackPanel x:Name="DetailView"
+                            VerticalAlignment="Top"
+                            Visibility="Collapsed"
+                            Opacity="0">
+                    <StackPanel.RenderTransform>
+                        <TranslateTransform x:Name="DetailViewShift"/>
+                    </StackPanel.RenderTransform>
+                    <Grid x:Name="DetailHeader" Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <ui:Button Icon="{ui:SymbolIcon ArrowLeft24}" Command="{Binding CloseDetailCommand}"
+                                   Appearance="Secondary" Width="34" Height="34" Padding="0"
+                                   Margin="0,0,10,0" ToolTip="{loc:Loc QuickPanelBackToQuickSettings}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding DetailTitle}" VerticalAlignment="Center"
+                                   FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                    </Grid>
+
+                    <!-- The tile picker lists every tile this machine supports, which is
+                         far more than a flyout can show at once. The cap is set from the
+                         work area in code-behind: the card is anchored to the bottom of
+                         the screen, so an uncapped list grew off the top of it. -->
+                    <ScrollViewer x:Name="DetailScroll" Style="{StaticResource PageScrollStyle}">
+                    <ItemsControl x:Name="DetailOptionsList" ItemsSource="{Binding DetailOptions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource DetailOptionStyle}"
+                                        Command="{Binding DataContext.SelectDetailOptionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="26"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ui:SymbolIcon Symbol="Checkmark24" FontSize="15"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource AccentPrimary}"
+                                                       Visibility="{Binding IsSelected, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                        <!-- Only ever set on the tile picker, whose rows are
+                                             tiles rather than states, so it cannot collide
+                                             with the tick above. -->
+                                        <ui:SymbolIcon Symbol="{Binding Icon}" FontSize="15"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource TextSecondary}"
+                                                       Visibility="{Binding Icon, Converter={StaticResource HideWhenNoIcon}}"/>
+                                        <StackPanel Grid.Column="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="Medium"
+                                                           Margin="0,0,8,0"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource TextPrimary}"/>
+                                                <Border Grid.Column="1"
+                                                        Padding="6,2"
+                                                        CornerRadius="5"
+                                                        Background="{DynamicResource AccentSubtle}"
+                                                        BorderBrush="{DynamicResource AccentPrimary}"
+                                                        BorderThickness="1"
+                                                        VerticalAlignment="Center"
+                                                        Visibility="{Binding Placement, Converter={StaticResource HideWhenEmptyText}}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <ui:SymbolIcon Symbol="Checkmark24"
+                                                                       FontSize="11"
+                                                                       Margin="0,0,4,0"
+                                                                       VerticalAlignment="Center"
+                                                                       Foreground="{DynamicResource AccentPrimary}"/>
+                                                        <TextBlock Text="{Binding Placement}"
+                                                                   FontSize="10.5"
+                                                                   FontWeight="SemiBold"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="{DynamicResource AccentPrimary}"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+                                            <TextBlock Text="{Binding Detail}" FontSize="11.5" Margin="0,1,0,0"
+                                                       TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource TextSecondary}"
+                                                       Visibility="{Binding Detail, Converter={StaticResource HideWhenEmptyText}}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Clipped to the panel's own rounded chrome rather than the window, so the
+             scrim does not spill into the shadow margin. -->
+        <!-- No Background and no IsHitTestVisible here: the Border is only a clip, and
+             hit testing is owned by the overlay, which blocks input while active and
+             lets it through once idle. -->
+        <Border CornerRadius="{StaticResource RadiusFlyout}" ClipToBounds="True"
+                VerticalAlignment="Bottom"
+                Height="{Binding ActualHeight, ElementName=PanelChrome}">
+            <!-- A lower rate than the main window's on purpose. This panel is
+                 per-pixel transparent, so WPF composes it in software and cannot hold
+                 the display rate while something spins in front of it; a rate it can
+                 actually meet looks steadier than a higher one it keeps missing. -->
+            <Grid>
+                <controls:BusyOverlay IsActive="{Binding IsGpuSwitching}"
+                                      Message="{Binding GpuSwitchingMessage}"
+                                      FrameRate="45"/>
+                <controls:BusyOverlay IsActive="{Binding IsAsusServicesChanging}"
+                                      Message="{Binding AsusServicesMessage}"
+                                      Detail="{Binding AsusServicesDetail}"
+                                      FrameRate="45"/>
+            </Grid>
+        </Border>
+
+    </Grid>
+</Window>

@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest a control or behaviour Arsenal should have
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: >
+        Describe the situation, not the solution. "My fans spin up on battery when the
+        lid is shut" tells us more than "add a lid setting".
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like Arsenal to do
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Laptop model
+      description: If the request is specific to one machine's hardware.
+      placeholder: ROG Zephyrus G16 GU605MI
+
+  - type: textarea
+    id: prior-art
+    attributes:
+      label: Where this exists already
+      description: >
+        Armoury Crate, G-Helper, a registry key, an ACPI method: anything that shows
+        the hardware supports this. Arsenal can only expose what the firmware exposes,
+        so a working example is the difference between a feature and a wish.

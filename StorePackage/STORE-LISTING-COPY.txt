@@ -1,0 +1,26 @@
+SHORT TITLE
+Arsenal
+
+VOICE TITLE
+Arsenal
+
+SHORT DESCRIPTION
+A lightweight, native control centre for supported ASUS ROG and TUF devices. Manage performance, cooling, GPU modes, display, battery, lighting, drivers and live hardware information without an Arsenal account.
+
+KEYWORDS - enter each line separately
+ASUS ROG
+ASUS TUF
+laptop fan control
+GPU mode
+battery charge limit
+hardware monitoring
+performance profiles
+
+COPYRIGHT AND TRADEMARK INFO
+Copyright 2026 Kanishka Wijesuriya. ASUS, ROG and TUF are trademarks of ASUSTeK Computer Inc. Arsenal is independent and is not affiliated with, endorsed by or supported by ASUS.
+
+ADDITIONAL LICENSE TERMS
+https://get-arsenal.com/license
+
+DEVELOPED BY
+Kanishka Wijesuriya

@@ -1,0 +1,210 @@
+<UserControl x:Class="Arsenal.UI.Views.Pages.PerformancePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Arsenal.UI.Controls"
+             xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
+             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+    <ScrollViewer Style="{StaticResource PageScrollStyle}">
+        <StackPanel Style="{StaticResource PageBodyStyle}">
+
+            <Grid Style="{StaticResource PageHeaderStyle}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,24,0">
+                    <TextBlock Text="{loc:Loc MousePerformance}" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="{loc:Loc PerformanceProfilesPowerLimitsUndervolting}" Style="{StaticResource PageSubtitleStyle}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Style="{StaticResource ActionBarStyle}">
+                    <ui:Button Style="{StaticResource ActionButtonStyle}" Content="{loc:Loc PerformanceResetProfile}" Command="{Binding ResetSettingsCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowReset24}"/>
+                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="{loc:Loc PerformanceApplyChanges}" Command="{Binding ApplySettingsCommand}" Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}"/>
+                </StackPanel>
+            </Grid>
+
+            <controls:SettingsGroup Header="{loc:Loc PerformanceActiveProfile}"
+                                    Icon="Gauge24"
+                                    Description="{loc:Loc PerformanceTheTuningBelowBelongsTo}">
+                <controls:SettingsRow Header="{loc:Loc Profile}">
+                    <controls:SettingsRow.ContentBelow>
+                        <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="PerformanceProfile" Content="{loc:Loc Silent}"
+                                         IsChecked="{Binding CurrentMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
+                                         Command="{Binding SelectProfileModeCommand}" CommandParameter="2"/>
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="PerformanceProfile" Content="{loc:Loc Balanced}"
+                                         IsChecked="{Binding CurrentMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
+                                         Command="{Binding SelectProfileModeCommand}" CommandParameter="0"/>
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="PerformanceProfile" Content="{loc:Loc Turbo}"
+                                         IsChecked="{Binding CurrentMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
+                                         Command="{Binding SelectProfileModeCommand}" CommandParameter="1"/>
+                        </WrapPanel>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
+            </controls:SettingsGroup>
+
+            <controls:SettingsGroup Header="{loc:Loc PerformanceCPUPowerAndThermals}" Icon="DeveloperBoard24">
+                <controls:SettingsRow Header="{loc:Loc PerformanceApplyCustomPowerLimits}"
+                                      Description="{loc:Loc PerformanceWriteTheValuesBelowTo}">
+                    <ui:ToggleSwitch IsChecked="{Binding ApplyPower}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceCPUBoostPolicy}"
+                                      Description="{loc:Loc PerformanceWindowsProcessorPerformanceBoost}">
+                    <ComboBox SelectedIndex="{Binding CpuBoost}" MinWidth="240">
+                        <ComboBoxItem Content="{loc:Loc DisplayDisabled}"/>
+                        <ComboBoxItem Content="{loc:Loc PerformanceEnabled}"/>
+                        <ComboBoxItem Content="{loc:Loc PerformanceAggressive}"/>
+                        <ComboBoxItem Content="{loc:Loc PerformanceEfficientEnabled}"/>
+                        <ComboBoxItem Content="{loc:Loc PerformanceEfficientAggressive}"/>
+                        <ComboBoxItem Content="{loc:Loc PerformanceAggressiveAtGuaranteed}"/>
+                        <ComboBoxItem Content="{loc:Loc PerformanceEfficientAtGuaranteed}"/>
+                    </ComboBox>
+                </controls:SettingsRow>
+
+                <!-- Every range below comes from the view model rather than from a number
+                     typed here: the writers reject anything outside the machine's own
+                     bounds, and those bounds differ per chassis and per CPU. Minimum and
+                     Maximum are written before Value on each slider so the track is sized
+                     before the value lands on it. -->
+                <controls:SettingsRow Header="{loc:Loc PerformanceSustainedPower}" Description="{loc:Loc PerformanceSPLPL1TheLimitThe}">
+                    <controls:ValueSlider Minimum="{Binding PowerLimitRange.Minimum}" Maximum="{Binding PowerLimitRange.Maximum}"
+                                          Value="{Binding Spl}" Format="{}{0} W"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceSlowBurst}" Description="{loc:Loc PerformanceSPPTPL2ShortBurstsAbove}">
+                    <controls:ValueSlider Minimum="{Binding PowerLimitRange.Minimum}" Maximum="{Binding PowerLimitRange.Maximum}"
+                                          Value="{Binding Sppt}" Format="{}{0} W"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceFastPeak}" Description="{loc:Loc PerformanceFPPTTheMomentaryCeilingFor}">
+                    <controls:ValueSlider Minimum="{Binding PowerLimitRange.Minimum}" Maximum="{Binding PowerLimitRange.Maximum}"
+                                          Value="{Binding Fppt}" Format="{}{0} W"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceTemperatureLimit}" Description="{loc:Loc PerformanceTheCPUThrottlesOnceIt}">
+                    <controls:ValueSlider Minimum="{Binding CpuTempRange.Minimum}" Maximum="{Binding CpuTempRange.Maximum}"
+                                          Value="{Binding CpuTempLimit}" Format="{}{0}°C"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceCPUUndervolt}" Description="{loc:Loc PerformanceCurveOptimizerOffsetToo}"
+                                      Visibility="{Binding IsUndervoltSupported, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:ValueSlider Minimum="{Binding CpuUndervoltRange.Minimum}" Maximum="{Binding CpuUndervoltRange.Maximum}"
+                                          Value="{Binding CpuUndervolt}" Format="{}{0} mV"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceIGPUUndervolt}" Description="{loc:Loc PerformanceVoltageOffsetForTheIntegrated}"
+                                      Visibility="{Binding IsIgpuUndervoltSupported, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:ValueSlider Minimum="{Binding IgpuUndervoltRange.Minimum}" Maximum="{Binding IgpuUndervoltRange.Maximum}"
+                                          Value="{Binding IgpuUndervolt}" Format="{}{0} mV"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceApplyUndervoltWithThisProfile}"
+                                      Description="{loc:Loc PerformanceLeaveOffToTuneThe}"
+                                      Visibility="{Binding IsUndervoltRowVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding ApplyUndervolt}"/>
+                </controls:SettingsRow>
+            </controls:SettingsGroup>
+
+            <controls:SettingsGroup Header="{loc:Loc PerformanceDedicatedGPU}" Icon="Glance24"
+                                    Description="{loc:Loc PerformanceClockOffsetsAndPowerTargets}"
+                                    Visibility="{Binding IsDedicatedGpuPresent, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <controls:SettingsRow Header="{loc:Loc PerformanceCoreClockOffset}">
+                    <controls:ValueSlider Minimum="{Binding GpuCoreOffsetRange.Minimum}" Maximum="{Binding GpuCoreOffsetRange.Maximum}"
+                                          Value="{Binding GpuCoreOffset}" Format="{}{0} MHz"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceMemoryClockOffset}">
+                    <controls:ValueSlider Minimum="{Binding GpuMemoryOffsetRange.Minimum}" Maximum="{Binding GpuMemoryOffsetRange.Maximum}"
+                                          Value="{Binding GpuMemoryOffset}" Format="{}{0} MHz"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceDynamicBoost}" Description="{loc:Loc PerformanceExtraWattageTheGPUMay}">
+                    <controls:ValueSlider Minimum="{Binding GpuBoostRange.Minimum}" Maximum="{Binding GpuBoostRange.Maximum}"
+                                          Value="{Binding GpuBoost}" Format="{}{0} W"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceTemperatureTarget}">
+                    <controls:ValueSlider Minimum="{Binding GpuTempRange.Minimum}" Maximum="{Binding GpuTempRange.Maximum}"
+                                          Value="{Binding GpuTempTarget}" Format="{}{0}°C"/>
+                </controls:SettingsRow>
+
+                <!-- Shown as the whole TGP, not as the offset the register takes; the view
+                     model shifts it back. Hidden where the firmware reports no base to
+                     offset, which is also what the ceiling is derived from. -->
+                <controls:SettingsRow Header="{loc:Loc PerformancePowerTarget}"
+                                      Visibility="{Binding IsGpuPowerAdjustable, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:ValueSlider Minimum="{Binding GpuPowerTotalRange.Minimum}" Maximum="{Binding GpuPowerTotalRange.Maximum}"
+                                          Value="{Binding GpuPowerTotal}" Format="{}{0} W"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceMaximumGPUClock}">
+                    <controls:ValueSlider Minimum="{Binding GpuClockLimitRange.Minimum}" Maximum="{Binding GpuClockLimitRange.Maximum}"
+                                          TickFrequency="50" Value="{Binding GpuClockLimit}" ValueText="{Binding GpuClockLimitText}"/>
+                </controls:SettingsRow>
+            </controls:SettingsGroup>
+
+            <controls:SettingsGroup Header="{loc:Loc PerformanceFanCurves}" Icon="WeatherDuststorm24"
+                                    Description="{loc:Loc PerformanceDragTheEightControlPoints}"
+                                    Visibility="{Binding IsCustomFansSupported, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <controls:SettingsRow Header="{loc:Loc PerformanceApplyCustomFanCurvesWith}">
+                    <ui:ToggleSwitch IsChecked="{Binding ApplyFans}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow>
+                    <controls:SettingsRow.ContentBelow>
+                        <StackPanel>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{loc:Loc PerformanceCurveEditor}" Style="{StaticResource SettingLabelStyle}" HorizontalAlignment="Left"/>
+                                <ui:Button Grid.Column="1" Content="{loc:Loc PerformanceCalibrateMaxRPM}" Command="{Binding StartFanCalibrationCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Play24}"/>
+                            </Grid>
+
+                            <!-- The same segmented control the profile row above uses,
+                                 rather than a TabControl. The stock tab strip kept its own
+                                 chrome around a restyled TabItem, which clipped the
+                                 selected pill's corners and left it sitting on a band that
+                                 belonged to neither the page nor the card. One canvas is
+                                 bound to whichever curve is chosen, so switching fans no
+                                 longer builds three editors either. -->
+                            <WrapPanel Style="{StaticResource ChoiceGroupStyle}" Margin="0,0,0,12">
+                                <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="FanCurve"
+                                             Content="{loc:Loc PerformanceCPUFan}"
+                                             IsChecked="{Binding SelectedFanTab, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
+                                             Command="{Binding SelectFanTabCommand}" CommandParameter="0"/>
+                                <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="FanCurve"
+                                             Content="{loc:Loc PerformanceGPUFan}"
+                                             IsChecked="{Binding SelectedFanTab, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
+                                             Command="{Binding SelectFanTabCommand}" CommandParameter="1"/>
+                                <!-- Only on chassis that have a third fan. -->
+                                <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="FanCurve"
+                                             Content="{loc:Loc PerformanceMidFan}"
+                                             Visibility="{Binding HasMidFan, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                             IsChecked="{Binding SelectedFanTab, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
+                                             Command="{Binding SelectFanTabCommand}" CommandParameter="2"/>
+                            </WrapPanel>
+
+                            <Border Style="{StaticResource InsetSurfaceStyle}" Height="230">
+                                <controls:FanCurveCanvas CurveModel="{Binding SelectedFanCurve}" Margin="10"/>
+                            </Border>
+                        </StackPanel>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceRampUpHysteresis}" Description="{loc:Loc PerformanceHowFarTheTemperatureMust}">
+                    <controls:ValueSlider Minimum="{Binding FanHysteresisRange.Minimum}" Maximum="{Binding FanHysteresisRange.Maximum}"
+                                          Value="{Binding FanHysteresisUp}" Format="{}{0}°"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc PerformanceRampDownHysteresis}" Description="{loc:Loc PerformanceHowFarItMustFall}">
+                    <controls:ValueSlider Minimum="{Binding FanHysteresisRange.Minimum}" Maximum="{Binding FanHysteresisRange.Maximum}"
+                                          Value="{Binding FanHysteresisDown}" Format="{}{0}°"/>
+                </controls:SettingsRow>
+            </controls:SettingsGroup>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

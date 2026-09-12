@@ -1,0 +1,213 @@
+<UserControl x:Class="Arsenal.UI.Views.Pages.DevicesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Arsenal.UI.Controls"
+             xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
+             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+    <ScrollViewer Style="{StaticResource PageScrollStyle}">
+        <StackPanel Style="{StaticResource PageBodyStyle}">
+
+            <Grid Style="{StaticResource PageHeaderStyle}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,24,0">
+                    <TextBlock Text="{loc:Loc DevicesDevices}" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="{loc:Loc DevicesASUSMiceOmniReceiverPeripherals}" Style="{StaticResource PageSubtitleStyle}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Style="{StaticResource ActionBarStyle}">
+                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="{loc:Loc DevicesScanForDevices}" Command="{Binding RefreshDevicesCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowSync24}"/>
+                </StackPanel>
+            </Grid>
+
+            <controls:SettingsGroup Header="{loc:Loc DevicesConnectedPeripherals}" Icon="Keyboard24"
+                                    Description="{loc:Loc DevicesSelectADeviceToEdit}">
+                <controls:SettingsRow>
+                    <controls:SettingsRow.ContentBelow>
+                      <StackPanel>
+                        <TextBlock Text="{loc:Loc DevicesNoASUSPeripheralsDetectedConnect}"
+                                   Style="{StaticResource CaptionStyle}"
+                                   Visibility="{Binding Devices.Count, Converter={StaticResource EmptyCountToVisibleConverter}}"/>
+                        <ListBox ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}"
+                                 Background="Transparent" BorderThickness="0" Padding="0"
+                                 HorizontalContentAlignment="Stretch"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="Margin" Value="0,0,0,8"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource InsetSurfaceStyle}" Padding="14,12">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <ui:SymbolIcon x:Name="DeviceIcon" Symbol="Cursor24" FontSize="22" Margin="0,0,14,0" VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource AccentPrimary}"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                                                <TextBlock Text="{Binding Name}" Style="{StaticResource SettingLabelStyle}" HorizontalAlignment="Left"/>
+                                                <TextBlock Text="{Binding SummaryText}" Style="{StaticResource SettingDescriptionStyle}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Text="{Binding BatteryText}"
+                                                       VerticalAlignment="Center" FontWeight="SemiBold" FontSize="14"
+                                                       Foreground="{DynamicResource TextPrimary}"/>
+                                        </Grid>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsKeyboard}" Value="True">
+                                            <Setter TargetName="DeviceIcon" Property="Symbol" Value="Keyboard24"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                      </StackPanel>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
+            </controls:SettingsGroup>
+
+            <controls:SettingsGroup Header="{loc:Loc DevicesMousePerformance}" Icon="Gauge24"
+                                    Description="{loc:Loc DevicesChangesAreWrittenToThe}"
+                                    Visibility="{Binding IsMouseSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <!-- Both tracks are drawn from the selected mouse rather than from a range
+                     wide enough to cover every mouse: the service clamps DPI to the
+                     sensor's own bounds and snaps the rate to one the device reports at,
+                     so anything else on the track is unreachable. -->
+                <controls:SettingsRow Header="{loc:Loc DevicesDPI}">
+                    <controls:ValueSlider Minimum="{Binding SelectedDevice.MinDpi}" Maximum="{Binding SelectedDevice.MaxDpi}"
+                                          TickFrequency="{Binding SelectedDevice.DpiStep}" IsSnapToTickEnabled="True"
+                                          Value="{Binding DeviceDpi}" Format="{}{0}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc DevicesPollingRate}" Description="{loc:Loc DevicesHigherRatesReportPositionMore}"
+                                      IsEnabled="{Binding HasPollingRateChoice}">
+                    <controls:ValueSlider Minimum="{Binding DevicePollingRateMinimum}" Maximum="{Binding DevicePollingRateMaximum}"
+                                          Ticks="{Binding DevicePollingRateTicks}" IsSnapToTickEnabled="True"
+                                          Value="{Binding DevicePollingRate}" Format="{}{0} Hz"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc DevicesSleepTimeout}" Description="{loc:Loc DevicesIdleTimeBeforeTheDevice}">
+                    <ComboBox ItemsSource="{Binding SleepTimeoutOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding DeviceSleepMinutes, Mode=TwoWay}" MinWidth="240"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsGroup.Footer>
+                    <ui:Button Content="{loc:Loc DevicesApplyToDevice}" Command="{Binding ApplyDeviceSettingsCommand}" Appearance="Primary"
+                               HorizontalAlignment="Right" Icon="{ui:SymbolIcon Save24}"/>
+                </controls:SettingsGroup.Footer>
+            </controls:SettingsGroup>
+
+            <controls:SettingsGroup Header="{loc:Loc DevicesKeyboardLighting}" Icon="Color24"
+                                    Description="{loc:Loc DevicesKeyboardLightingDescription}"
+                                    Visibility="{Binding SelectedDevice.HasKeyboardLighting, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <controls:SettingsRow Header="{loc:Loc DevicesKeyboardAuraSync}" Description="{loc:Loc DevicesKeyboardAuraSyncDescription}">
+                    <ui:ToggleSwitch IsChecked="{Binding KeyboardAuraSync, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="{loc:Loc AuraLightingMode}">
+                    <ComboBox IsEnabled="{Binding IsKeyboardManualLighting}" ItemsSource="{Binding SelectedDevice.LightingModes}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding KeyboardLightingMode, Mode=TwoWay}" MinWidth="240"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="{loc:Loc Brightness}">
+                    <controls:ValueSlider IsEnabled="{Binding IsKeyboardManualLighting}" Minimum="0" Maximum="{Binding SelectedDevice.MaxLightingBrightness}" TickFrequency="5"
+                                          Value="{Binding KeyboardLightingBrightness}" Format="{}{0}%"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="{loc:Loc AnimationSpeed}">
+                    <ComboBox IsEnabled="{Binding IsKeyboardManualLighting}" SelectedIndex="{Binding KeyboardLightingSpeed, Mode=TwoWay}" MinWidth="240">
+                        <ComboBoxItem Content="{loc:Loc AuraSlow}"/>
+                        <ComboBoxItem Content="{loc:Loc AuraNormal}"/>
+                        <ComboBoxItem Content="{loc:Loc AuraFast}"/>
+                    </ComboBox>
+                </controls:SettingsRow>
+                <controls:SettingsRow IsEnabled="{Binding IsKeyboardManualLighting}" Header="{loc:Loc DisplayColour}" Description="{loc:Loc DevicesKeyboardColorDescription}">
+                    <controls:SettingsRow.ContentBelow>
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{loc:Loc DevicesPrimaryColor}" Style="{StaticResource SettingLabelStyle}" Margin="0,0,0,8"/>
+                                <controls:ColorSpectrumPicker SelectedColor="{Binding KeyboardPrimaryColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="170"/>
+                                <Border Height="42" Margin="0,8,0,0" CornerRadius="{StaticResource RadiusControl}" Background="{Binding KeyboardPrimaryBrush}">
+                                    <TextBlock Text="{Binding KeyboardPrimaryHex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                </Border>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="{loc:Loc DevicesSecondaryColor}" Style="{StaticResource SettingLabelStyle}" Margin="0,0,0,8"/>
+                                <controls:ColorSpectrumPicker SelectedColor="{Binding KeyboardSecondaryColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="170"/>
+                                <Border Height="42" Margin="0,8,0,0" CornerRadius="{StaticResource RadiusControl}" Background="{Binding KeyboardSecondaryBrush}">
+                                    <TextBlock Text="{Binding KeyboardSecondaryHex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
+                <controls:SettingsGroup.Footer>
+                    <ui:Button IsEnabled="{Binding IsKeyboardManualLighting}" Content="{loc:Loc DevicesApplyKeyboardLighting}" Command="{Binding ApplyKeyboardLightingCommand}"
+                               Appearance="Primary" HorizontalAlignment="Right" Icon="{ui:SymbolIcon Save24}"/>
+                </controls:SettingsGroup.Footer>
+            </controls:SettingsGroup>
+
+            <controls:SettingsGroup Header="{loc:Loc DevicesKeyboardProfiles}" Icon="Stack24"
+                                    Description="{loc:Loc DevicesKeyboardProfilesDescription}"
+                                    Visibility="{Binding SelectedDevice.HasProfiles, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <controls:SettingsRow Header="{loc:Loc DevicesActiveProfile}">
+                    <ComboBox ItemsSource="{Binding KeyboardProfileOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding KeyboardProfile, Mode=TwoWay}" MinWidth="240"/>
+                </controls:SettingsRow>
+                <controls:SettingsGroup.Footer>
+                    <ui:Button Content="{loc:Loc DevicesSwitchProfile}" Command="{Binding SetKeyboardProfileCommand}" CommandParameter="{Binding KeyboardProfile}"
+                               Appearance="Primary" HorizontalAlignment="Right" Icon="{ui:SymbolIcon ArrowSync24}"/>
+                </controls:SettingsGroup.Footer>
+            </controls:SettingsGroup>
+
+            <controls:SettingsGroup Header="{loc:Loc DevicesKeyboardPower}" Icon="BatteryCharge24"
+                                    Description="{loc:Loc DevicesKeyboardPowerDescription}"
+                                    Visibility="{Binding SelectedDevice.HasKeyboardPower, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <controls:SettingsRow Header="{loc:Loc DevicesSleepTimeout}">
+                    <ComboBox ItemsSource="{Binding SleepTimeoutOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding DeviceSleepMinutes, Mode=TwoWay}" MinWidth="240"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="{loc:Loc DevicesLowBatteryWarning}">
+                    <controls:ValueSlider Minimum="0" Maximum="{Binding SelectedDevice.LowBatteryWarningMaximum}"
+                                          TickFrequency="{Binding SelectedDevice.LowBatteryWarningStep}" IsSnapToTickEnabled="True"
+                                          Value="{Binding KeyboardLowBatteryWarning}" Format="{}{0}%"/>
+                </controls:SettingsRow>
+                <controls:SettingsGroup.Footer>
+                    <ui:Button Content="{loc:Loc DevicesApplyPowerSettings}" Command="{Binding ApplyKeyboardEnergyCommand}"
+                               Appearance="Primary" HorizontalAlignment="Right" Icon="{ui:SymbolIcon Save24}"/>
+                </controls:SettingsGroup.Footer>
+            </controls:SettingsGroup>
+
+            <controls:SettingsGroup Header="{loc:Loc DevicesKeyboardOLED}" Icon="Desktop24"
+                                    Description="{loc:Loc DevicesKeyboardOLEDDescription}"
+                                    Visibility="{Binding SelectedDevice.HasKeyboardOled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <controls:SettingsRow Header="{loc:Loc DevicesOLEDEnabled}">
+                    <ui:ToggleSwitch IsChecked="{Binding KeyboardOledEnabled, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="{loc:Loc Brightness}">
+                    <controls:ValueSlider Minimum="0" Maximum="100" TickFrequency="5"
+                                          Value="{Binding KeyboardOledBrightness}" Format="{}{0}%"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="{loc:Loc AuraLightingMode}">
+                    <ComboBox ItemsSource="{Binding KeyboardOledOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding KeyboardOledMode, Mode=TwoWay}" MinWidth="240"/>
+                </controls:SettingsRow>
+                <controls:SettingsGroup.Footer>
+                    <ui:Button Content="{loc:Loc DevicesApplyOLED}" Command="{Binding ApplyKeyboardOledCommand}"
+                               Appearance="Primary" HorizontalAlignment="Right" Icon="{ui:SymbolIcon Save24}"/>
+                </controls:SettingsGroup.Footer>
+            </controls:SettingsGroup>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

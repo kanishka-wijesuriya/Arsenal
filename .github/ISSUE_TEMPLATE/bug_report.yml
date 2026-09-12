@@ -1,0 +1,76 @@
+name: Bug report
+description: Something in Arsenal behaves incorrectly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Arsenal talks to ASUS firmware, and what it can do differs from one machine to
+        the next. The model and version fields below are what make a report actionable.
+
+        **Security issues do not belong here.** See
+        [SECURITY.md](https://github.com/kanishka-wijesuriya/Arsenal/blob/main/docs/SECURITY.md).
+
+  - type: input
+    id: model
+    attributes:
+      label: Laptop model
+      description: The full model code, from the sticker or from Arsenal's About page.
+      placeholder: ROG Zephyrus G16 GU605MI
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Arsenal version
+      description: Shown on the About page.
+      placeholder: v1.0
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows build
+      description: Run `winver`, or Settings → System → About.
+      placeholder: Windows 11 24H2 (26100.2314)
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what Arsenal did, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: armoury-crate
+    attributes:
+      label: What Armoury Crate shows
+      description: >
+        Only if you have it installed, and only if this is about a control that is
+        missing or has the wrong range. Arsenal hides controls it believes your machine
+        does not expose, so this is often the fastest way to tell a wrong probe from a
+        real hardware limit.
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: >
+        `%AppData%\Arsenal\log.txt` if there is anything relevant in it. Paste the lines
+        around the problem rather than the whole file.
+      render: text
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I am running the latest Arsenal release.
+          required: true
+        - label: I searched existing issues for this.
+          required: true

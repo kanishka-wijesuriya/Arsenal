@@ -1,0 +1,100 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!--
+        Design tokens.
+
+        Colours are declared here with their dark-theme values so the designer and a
+        cold start have something to resolve. App.ApplyConfiguredTheme() replaces the
+        brush instances at runtime for the light theme, so every surface in the app must
+        consume these through DynamicResource (never StaticResource, never a literal hex).
+    -->
+
+    <!-- ===== Colour ===== -->
+    <Color x:Key="SurfaceBaseColor">#171819</Color>
+    <Color x:Key="SurfaceLayerColor">#1D1F20</Color>
+    <Color x:Key="SurfaceCardColor">#252728</Color>
+    <Color x:Key="SurfaceCardHoverColor">#2C2F30</Color>
+    <Color x:Key="SurfaceSunkenColor">#141516</Color>
+    <Color x:Key="SurfaceSelectedColor">#373736</Color>
+    <Color x:Key="StrokeSubtleColor">#2AFFFFFF</Color>
+    <Color x:Key="StrokeDividerColor">#18FFFFFF</Color>
+    <Color x:Key="TextPrimaryColor">#F4F4F4</Color>
+    <Color x:Key="TextSecondaryColor">#B6B8BA</Color>
+    <Color x:Key="TextTertiaryColor">#86898C</Color>
+    <!-- Neutral designer/cold-start fallbacks. At runtime App resolves these from
+         Windows Personalisation or the user's explicit in-app override. -->
+    <Color x:Key="AccentPrimaryColor">#8A8886</Color>
+    <Color x:Key="AccentForegroundColor">#000000</Color>
+    <Color x:Key="AccentSubtleColor">#2E8A8886</Color>
+    <Color x:Key="StatusSuccessColor">#6CCB5F</Color>
+    <Color x:Key="StatusWarningColor">#F2C94C</Color>
+    <Color x:Key="StatusCriticalColor">#FF6B6B</Color>
+
+    <!-- The window's two grounds. Transparent by default so the Mica backdrop shows
+         through; ApplyConfiguredTheme replaces them with flat colours when the user
+         turns the app's transparency off. Declared here so the window still resolves
+         them before any theme has been applied. -->
+    <SolidColorBrush x:Key="AppSidebarBackground" Color="Transparent"/>
+    <SolidColorBrush x:Key="AppContentBackground" Color="Transparent"/>
+
+    <SolidColorBrush x:Key="SurfaceBase" Color="{StaticResource SurfaceBaseColor}"/>
+    <SolidColorBrush x:Key="SurfaceLayer" Color="{StaticResource SurfaceLayerColor}"/>
+    <SolidColorBrush x:Key="SurfaceCard" Color="{StaticResource SurfaceCardColor}"/>
+    <SolidColorBrush x:Key="SurfaceCardHover" Color="{StaticResource SurfaceCardHoverColor}"/>
+    <SolidColorBrush x:Key="SurfaceSunken" Color="{StaticResource SurfaceSunkenColor}"/>
+    <SolidColorBrush x:Key="SurfaceSelected" Color="{StaticResource SurfaceSelectedColor}"/>
+    <SolidColorBrush x:Key="StrokeSubtle" Color="{StaticResource StrokeSubtleColor}"/>
+    <SolidColorBrush x:Key="StrokeDivider" Color="{StaticResource StrokeDividerColor}"/>
+    <SolidColorBrush x:Key="TextPrimary" Color="{StaticResource TextPrimaryColor}"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="{StaticResource TextSecondaryColor}"/>
+    <SolidColorBrush x:Key="TextTertiary" Color="{StaticResource TextTertiaryColor}"/>
+    <SolidColorBrush x:Key="AccentPrimary" Color="{StaticResource AccentPrimaryColor}"/>
+    <SolidColorBrush x:Key="AccentForeground" Color="{StaticResource AccentForegroundColor}"/>
+    <SolidColorBrush x:Key="AccentSubtle" Color="{StaticResource AccentSubtleColor}"/>
+    <SolidColorBrush x:Key="StatusSuccess" Color="{StaticResource StatusSuccessColor}"/>
+    <SolidColorBrush x:Key="StatusWarning" Color="{StaticResource StatusWarningColor}"/>
+    <SolidColorBrush x:Key="StatusCritical" Color="{StaticResource StatusCriticalColor}"/>
+
+    <!-- Rules between rows. A flat hairline stopping dead at both ends reads as a
+         scratch across the card; fading the ends out lets the line separate the rows
+         without drawing attention to itself. Rebuilt per theme in ApplyConfiguredTheme. -->
+    <LinearGradientBrush x:Key="DividerBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Offset="0" Color="#00FFFFFF"/>
+        <GradientStop Offset="0.06" Color="#26FFFFFF"/>
+        <GradientStop Offset="0.94" Color="#26FFFFFF"/>
+        <GradientStop Offset="1" Color="#00FFFFFF"/>
+    </LinearGradientBrush>
+
+    <!-- ===== Spacing =====
+         Layout spacing comes from these named thicknesses, on a 4pt scale, so no
+         page invents its own number. -->
+
+    <Thickness x:Key="PagePadding">32,24,32,40</Thickness>
+    <Thickness x:Key="CardPadding">20</Thickness>
+
+    <!-- Gap below a page header and between two stacked sections. -->
+    <Thickness x:Key="PageHeaderGap">0,0,0,24</Thickness>
+    <Thickness x:Key="SectionGap">0,0,0,20</Thickness>
+
+    <!-- Horizontal gap between two adjacent buttons / chips. -->
+    <Thickness x:Key="InlineGap">0,0,8,0</Thickness>
+    <Thickness x:Key="ChipGap">0,0,8,8</Thickness>
+
+    <!-- ===== Shape ===== -->
+    <CornerRadius x:Key="RadiusControl">6</CornerRadius>
+    <CornerRadius x:Key="RadiusCard">8</CornerRadius>
+    <CornerRadius x:Key="RadiusOverlay">12</CornerRadius>
+    <CornerRadius x:Key="RadiusFlyout">16</CornerRadius>
+
+    <!-- ===== Metrics =====
+         One shared width for every slider + readout pair, and one shared minimum
+         width for segmented choices, so controls line up down the whole page. -->
+    <sys:Double x:Key="SliderRowWidth">340</sys:Double>
+    <sys:Double x:Key="SliderReadoutWidth">62</sys:Double>
+    <sys:Double x:Key="SegmentMinWidth">108</sys:Double>
+    <sys:Double x:Key="RowMinHeight">52</sys:Double>
+    <sys:Double x:Key="ContentMaxWidth">1120</sys:Double>
+
+</ResourceDictionary>

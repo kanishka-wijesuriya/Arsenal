@@ -1,0 +1,32 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+artifacts/
+
+# Smoke tools render PNGs beside themselves; they are evidence for a handover, not source.
+tools/**/*.png
+
+# Store listing art is rendered from tools/store-listing-art by render.cjs, and the zip
+# is just those files bundled for the submission form. Both are outputs; the page that
+# produces them is the source and it is tracked.
+StorePackage/ListingAssets/
+StorePackage/*.zip
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo
+
+# Signing material must never be committed. The certificate lives on a hardware token
+# and tools/sign-release.ps1 reads it by thumbprint, so nothing here should ever appear.
+# This is a backstop, not a workflow.
+*.pfx
+*.p12
+*.snk
+*.pem
+
+# Smoke tools write here when "--replace" is passed as a positional path by mistake.
+/--replace
+/--replace-*
+**/--replace/

@@ -1,0 +1,645 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="DesignTokens.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- ===================================================================
+         Interaction motion.
+
+         WPF's stock focus visual is a dotted rectangle drawn on the element's
+         bounding box, which ignores corner radius and looks like a Win95 artefact
+         on rounded controls. Every interactive style below replaces it with an
+         accent ring that follows the control's own radius.
+
+         State changes animate rather than snap. Colours here come from
+         DynamicResource brushes, which are frozen and cannot be animated in place,
+         so each template stacks a hover and a press layer and animates their
+         Opacity - cheap, composition-only, and theme-safe.
+         =================================================================== -->
+
+    <Duration x:Key="StateFadeDuration">0:0:0.13</Duration>
+    <Duration x:Key="PressFadeDuration">0:0:0.07</Duration>
+
+    <Style x:Key="RoundedFocusVisualStyle">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border CornerRadius="{StaticResource RadiusControl}"
+                            BorderBrush="{DynamicResource AccentPrimary}"
+                            BorderThickness="2"
+                            Margin="-2"
+                            SnapsToDevicePixels="True"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+    <!-- ===================================================================
+         Type ramp. Four sizes only: page title, section title, body, caption.
+
+         A keyed style replaces the app-wide implicit TextBlock style rather than
+         extending it, so the shared face is restated here and inherited by the rest.
+         =================================================================== -->
+
+    <Style x:Key="TextBaseStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI"/>
+    </Style>
+
+    <Style x:Key="PageTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBaseStyle}">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI"/>
+        <Setter Property="FontSize" Value="28"/>
+        <Setter Property="LineHeight" Value="36"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+    </Style>
+
+    <Style x:Key="PageSubtitleStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBaseStyle}">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="LineHeight" Value="18"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        <Setter Property="Margin" Value="0,6,0,0"/>
+    </Style>
+
+    <Style x:Key="SectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBaseStyle}">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="LineHeight" Value="22"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+    </Style>
+
+
+    <Style x:Key="SectionIconStyle" TargetType="ui:SymbolIcon">
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="Foreground" Value="{DynamicResource AccentPrimary}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,10,0"/>
+    </Style>
+
+    <Style x:Key="SettingLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBaseStyle}">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="LineHeight" Value="20"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+    </Style>
+
+
+    <Style x:Key="SettingDescriptionStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBaseStyle}">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="LineHeight" Value="16"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Margin" Value="0,3,0,0"/>
+    </Style>
+
+
+    <Style x:Key="CaptionStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBaseStyle}">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="LineHeight" Value="16"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+    </Style>
+
+    <!-- ===================================================================
+         Page scaffolding.
+         =================================================================== -->
+
+    <!-- Header block at the top of every page: title, subtitle, and room below. -->
+    <Style x:Key="PageHeaderStyle" TargetType="Grid">
+        <Setter Property="Margin" Value="{StaticResource PageHeaderGap}"/>
+    </Style>
+
+    <!-- Column of page content. It fills the page and stops growing at the cap, so
+         cards keep one width per page instead of shrinking to fit their own text. -->
+    <Style x:Key="PageBodyStyle" TargetType="StackPanel">
+        <Setter Property="MaxWidth" Value="{StaticResource ContentMaxWidth}"/>
+        <!-- Page padding lives on the content, not on the ScrollViewer. As ScrollViewer
+             padding it inset the viewport, so content vanished at the inset edge instead
+             of running to the window edge as it scrolled. -->
+        <Setter Property="Margin" Value="{StaticResource PagePadding}"/>
+    </Style>
+
+    <!-- Row of page-level actions. Buttons inside pick up the shared gap. -->
+    <Style x:Key="ActionBarStyle" TargetType="StackPanel">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+    </Style>
+
+    <!-- WPF has no gap property, so adjacent buttons carry their own trailing space.
+         The last button in a bar sets Margin="0" explicitly. BasedOn is required:
+         a keyed style with no base replaces the library's default template outright,
+         which would leave these buttons unthemed. -->
+    <Style x:Key="ActionButtonStyle" TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+        <Setter Property="Margin" Value="{StaticResource InlineGap}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <!-- The library keeps its own hover and rest visuals; this only replaces the
+             dotted focus rectangle and adds the press nudge the other controls have. -->
+        <Setter Property="FocusVisualStyle" Value="{StaticResource RoundedFocusVisualStyle}"/>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsPressed" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="0.97" Duration="{StaticResource PressFadeDuration}"/>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="0.97" Duration="{StaticResource PressFadeDuration}"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="1" Duration="{StaticResource StateFadeDuration}">
+                                <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4"/></DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="1" Duration="{StaticResource StateFadeDuration}">
+                                <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4"/></DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.ExitActions>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Wrapping row of choice chips. The negative margin cancels the trailing
+         gap the chips carry, so the group's edges align with everything else. -->
+    <Style x:Key="ChoiceGroupStyle" TargetType="WrapPanel">
+        <Setter Property="Margin" Value="0,0,-8,-8"/>
+    </Style>
+
+    <!--
+        The same group, sitting in a settings row's control column instead of on a line
+        of its own. The chips carry an 8px gap on their trailing and bottom edges, which
+        has to come back off the panel in both directions here or the group sits low
+        against a vertically centred row.
+    -->
+    <Style x:Key="RowChoiceGroupStyle" TargetType="WrapPanel" BasedOn="{StaticResource ChoiceGroupStyle}">
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="Margin" Value="0,-4,-8,-4"/>
+    </Style>
+
+    <!-- Freeform card for content that is not a list of settings rows. -->
+    <Style x:Key="CardSurfaceStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource SurfaceCard}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StrokeSubtle}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusCard}"/>
+        <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
+        <Setter Property="Margin" Value="{StaticResource SectionGap}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
+    <!-- Inset panel used inside a card, one step quieter than the card itself. -->
+    <Style x:Key="InsetSurfaceStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource SurfaceSunken}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StrokeDivider}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
+
+    <Style x:Key="CompactStatusPillStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource SurfaceCard}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StrokeSubtle}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}"/>
+        <Setter Property="Padding" Value="9,3"/>
+        <Setter Property="Margin" Value="6,0,0,0"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
+    <Style x:Key="PillTextStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBaseStyle}">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- ===================================================================
+         Selection controls.
+         =================================================================== -->
+
+    <!-- A choice chip. Carries its own trailing gap and a shared minimum width so a
+         row of options reads as one evenly spaced set instead of ragged buttons. -->
+    <Style x:Key="SegmentedRadioButtonStyle" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="Background" Value="{DynamicResource SurfaceCardHover}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StrokeSubtle}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="14,0"/>
+        <Setter Property="MinHeight" Value="34"/>
+        <Setter Property="MinWidth" Value="{StaticResource SegmentMinWidth}"/>
+        <Setter Property="Margin" Value="{StaticResource ChipGap}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource RoundedFocusVisualStyle}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1"/>
+                        </Grid.RenderTransform>
+                        <Border x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource RadiusControl}"
+                                SnapsToDevicePixels="True"/>
+                        <!-- Checked sits under hover so a checked chip still lifts on
+                             hover instead of looking inert. -->
+                        <Border x:Name="CheckedLayer" Opacity="0" IsHitTestVisible="False"
+                                Background="{DynamicResource AccentPrimary}"
+                                BorderBrush="{DynamicResource AccentPrimary}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource RadiusControl}"/>
+                        <Border x:Name="HoverLayer" Opacity="0" IsHitTestVisible="False"
+                                Background="{DynamicResource SurfaceSelected}"
+                                CornerRadius="{StaticResource RadiusControl}"/>
+                        <ContentPresenter x:Name="Content"
+                                          Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard TargetName="HoverLayer">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1"
+                                                         Duration="{StaticResource StateFadeDuration}">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard TargetName="HoverLayer">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0"
+                                                         Duration="{StaticResource StateFadeDuration}">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource AccentForeground}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter TargetName="HoverLayer" Property="Opacity" Value="0"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard TargetName="CheckedLayer">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1"
+                                                         Duration="{StaticResource StateFadeDuration}">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard TargetName="CheckedLayer">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0"
+                                                         Duration="{StaticResource StateFadeDuration}">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+
+                        <!-- A short inward nudge on press, so a click reads as physical. -->
+                        <Trigger Property="IsPressed" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard TargetName="PressScale">
+                                        <DoubleAnimation Storyboard.TargetProperty="ScaleX" To="0.97" Duration="{StaticResource PressFadeDuration}"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="ScaleY" To="0.97" Duration="{StaticResource PressFadeDuration}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard TargetName="PressScale">
+                                        <DoubleAnimation Storyboard.TargetProperty="ScaleX" To="1" Duration="{StaticResource StateFadeDuration}">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetProperty="ScaleY" To="1" Duration="{StaticResource StateFadeDuration}">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        A segment sized to its own label, for the control column of a settings row.
+        The full-width variant reserves 108px per choice so that stacked groups line up
+        down a page; four of those will not fit beside a label and a description, and
+        the labels there are single words anyway.
+    -->
+    <Style x:Key="RowSegmentStyle" TargetType="RadioButton" BasedOn="{StaticResource SegmentedRadioButtonStyle}">
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="Padding" Value="13,0"/>
+    </Style>
+
+    <!-- One page of quick panel tiles, as a dot in the centered pager above the grid. -->
+    <Style x:Key="TilePageDotStyle" TargetType="RadioButton">
+        <Setter Property="Width" Value="8"/>
+        <Setter Property="Height" Value="8"/>
+        <Setter Property="Margin" Value="3,0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid Background="Transparent">
+                        <Ellipse x:Name="Dot" Fill="{DynamicResource TextTertiary}" Opacity="0.55"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Dot" Property="Opacity" Value="0.85"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource AccentPrimary}"/>
+                            <Setter TargetName="Dot" Property="Opacity" Value="1"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Square tile toggle used by the quick panel. -->
+    <Style x:Key="QuickToggleStyle" TargetType="ToggleButton">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="Background" Value="{DynamicResource SurfaceCardHover}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StrokeSubtle}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="8"/>
+        <Setter Property="MinHeight" Value="60"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource RoundedFocusVisualStyle}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Grid RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform x:Name="PressScale" ScaleX="1" ScaleY="1"/>
+                        </Grid.RenderTransform>
+                        <Border x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource RadiusControl}"
+                                SnapsToDevicePixels="True"/>
+                        <Border x:Name="CheckedLayer" Opacity="0" IsHitTestVisible="False"
+                                Background="{DynamicResource AccentSubtle}"
+                                BorderBrush="{DynamicResource AccentPrimary}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource RadiusControl}"/>
+                        <Border x:Name="HoverLayer" Opacity="0" IsHitTestVisible="False"
+                                Background="{DynamicResource SurfaceSelected}"
+                                CornerRadius="{StaticResource RadiusControl}"/>
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard TargetName="HoverLayer">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="{StaticResource StateFadeDuration}">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard TargetName="HoverLayer">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="{StaticResource StateFadeDuration}">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource AccentPrimary}"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard TargetName="CheckedLayer">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="{StaticResource StateFadeDuration}">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard TargetName="CheckedLayer">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="{StaticResource StateFadeDuration}">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+
+                        <Trigger Property="IsPressed" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard TargetName="PressScale">
+                                        <DoubleAnimation Storyboard.TargetProperty="ScaleX" To="0.97" Duration="{StaticResource PressFadeDuration}"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="ScaleY" To="0.97" Duration="{StaticResource PressFadeDuration}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard TargetName="PressScale">
+                                        <DoubleAnimation Storyboard.TargetProperty="ScaleX" To="1" Duration="{StaticResource StateFadeDuration}">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetProperty="ScaleY" To="1" Duration="{StaticResource StateFadeDuration}">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Tab strip that reads as a segmented control rather than browser tabs. -->
+    <Style x:Key="ModernTabItemStyle" TargetType="TabItem">
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Padding" Value="16,0"/>
+        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="MinWidth" Value="88"/>
+        <Setter Property="Margin" Value="0,0,4,0"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border x:Name="Chrome"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource RadiusControl}"
+                            Padding="{TemplateBinding Padding}"
+                            MinHeight="{TemplateBinding MinHeight}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter ContentSource="Header"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SurfaceCardHover}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource AccentPrimary}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource AccentForeground}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+    <Style TargetType="ToolTip">
+        <Setter Property="Background" Value="{DynamicResource SurfaceCard}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StrokeSubtle}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="FontSize" Value="12"/>
+    </Style>
+
+    <!-- Checkboxes appear in lists; give them a consistent line rhythm. -->
+    <Style x:Key="ListCheckBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+        <Setter Property="Margin" Value="0,0,0,10"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <!-- A bare glyph in the title bar: no resting border, no resting fill, so the icon
+         is the whole control. A button still has to answer the pointer, so hover and
+         press keep a faint wash - the affordance without the chrome. -->
+    <Style x:Key="TitleBarIconButtonStyle" TargetType="{x:Type ui:Button}">
+        <!-- Matches a collapsed navigation item exactly: 40x40, laid back to back so the
+             pitch is 40 as well. -->
+        <Setter Property="Width" Value="40"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ui:Button}">
+                    <Border x:Name="Chrome"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{StaticResource RadiusControl}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter Content="{TemplateBinding Icon}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SurfaceCardHover}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SurfaceSelected}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===================================================================
+         Clickable things look clickable.
+
+         ActionButtonStyle has always set a hand cursor, but it is only worn by the
+         buttons in page header bars. Every other button in the application - the
+         per-row actions on Drivers and Devices, the colour swatches on Lighting -
+         kept the arrow, so whether a button admitted it was a button depended on
+         which style it happened to carry.
+
+         Applied implicitly, from an aliased base rather than from
+         {x:Type ui:Button} directly: a style whose BasedOn names its own key is a
+         self-reference, and WPF throws on it at load.
+         =================================================================== -->
+    <Style x:Key="FluentButtonBase" TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}"/>
+
+    <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource FluentButtonBase}">
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <Style x:Key="FluentHyperlinkButtonBase" TargetType="{x:Type ui:HyperlinkButton}" BasedOn="{StaticResource {x:Type ui:HyperlinkButton}}"/>
+
+    <Style TargetType="{x:Type ui:HyperlinkButton}" BasedOn="{StaticResource FluentHyperlinkButtonBase}">
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+</ResourceDictionary>

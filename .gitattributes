@@ -1,0 +1,34 @@
+# Line endings, decided here rather than by each contributor's core.autocrlf.
+#
+# Without this, whether a file is stored with LF or CRLF depends on the Git
+# configuration of whoever committed it, and a clone on a differently-configured
+# machine reports the whole tree as modified with no visible diff.
+
+# Normalise every text file to LF in the repository; Git checks it out to match the
+# platform. Anything Git does not detect as text is left alone.
+* text=auto
+
+# Windows-only tooling, kept CRLF in the working tree so Notepad and the PowerShell
+# ISE do not render it as one long line.
+*.ps1   text eol=crlf
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+
+*.cs    text diff=csharp
+*.xaml  text
+*.csproj text
+*.slnx  text
+*.props text
+*.resx  text
+*.json  text
+*.md    text
+
+# Binary. Marking these explicitly keeps Git from attempting line-ending conversion
+# on a file that would be corrupted by it.
+*.png   binary
+*.ico   binary
+*.bmp   binary
+*.jpg   binary
+*.dll   binary
+*.exe   binary
+*.pfx   binary

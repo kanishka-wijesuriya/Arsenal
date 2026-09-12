@@ -1,0 +1,48 @@
+<Project>
+
+  <!--
+    The version, in one place.
+
+    It used to live in Arsenal.UI.csproj and Arsenal.Core.csproj, duplicated, while
+    Arsenal.Application declared none at all and therefore stamped 1.0.0.0 forever.
+    The written rule named only the first two projects, so it had the same gap.
+    Every project now inherits from here, and there is one line to change when
+    releasing. CONTRIBUTING.md documents the rule.
+
+    AssemblyVersion and FileVersion stay numeric. A pre-release label belongs only in
+    InformationalVersion, which is what the About page reads and what
+    ReleaseVersion.CurrentString parses.
+
+    Before bumping, read the stamped version of the newest build rather than trusting a
+    folder name:
+
+        (Get-Item Arsenal.exe).VersionInfo.ProductVersion
+
+    and go one past it. Bump on every test build, not only on release. Five different
+    binaries were once stamped 1.0.1, which made it impossible to say which one any
+    given file was.
+  -->
+
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>1.0.0</InformationalVersion>
+
+    <!--
+      Now that the project is in a repository, the SDK appends "+<commit sha>" to
+      InformationalVersion, and that is what ProductVersion reports. The release ritual
+      compares ProductVersion against the version being claimed, so the suffix would
+      make every check fail on a string mismatch. ReleaseVersion.CurrentString already
+      splits it off, but the stamped value should read correctly on its own.
+    -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <!-- Store packages are updated by Microsoft Store. The symbol is inherited by
+       every project so no portable self-update path can be reached accidentally. -->
+  <PropertyGroup Condition="'$(ArsenalStoreBuild)' == 'true'">
+    <DefineConstants>$(DefineConstants);ARSENAL_STORE</DefineConstants>
+  </PropertyGroup>
+
+</Project>

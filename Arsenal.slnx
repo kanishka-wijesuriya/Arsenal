@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Arsenal.Application/Arsenal.Application.csproj" />
+  <Project Path="Arsenal.Core/Arsenal.Core.csproj" />
+  <Project Path="Arsenal.Tests/Arsenal.Tests.csproj" />
+  <Project Path="Arsenal.UI/Arsenal.UI.csproj" />
+</Solution>

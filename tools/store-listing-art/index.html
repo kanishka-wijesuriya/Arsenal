@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Arsenal Store artwork</title>
+<style>
+@font-face{font-family:Inter;src:url('../../../app_website/public/assets/fonts/inter-latin.woff2') format('woff2');font-weight:100 900;font-display:block}
+:root{color-scheme:dark;font-family:Inter,"Segoe UI",sans-serif}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:transparent}
+.art{position:relative;width:100vw;height:100vh;overflow:hidden;background:#0b0e11;color:#f0f3f5}
+.art::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 78% 17%,rgba(96,205,255,.16),transparent 30%),radial-gradient(circle at 18% 75%,rgba(46,159,232,.09),transparent 34%),linear-gradient(140deg,#0d1318 0%,#090c0f 62%,#0a1015 100%)}
+.grid{position:absolute;inset:0;opacity:.34;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:96px 96px;mask-image:linear-gradient(to bottom,black,transparent 82%)}
+.edge{position:absolute;inset:72px;border:1px solid rgba(124,146,160,.18);pointer-events:none}
+.edge::before,.edge::after{content:"";position:absolute;background:#60cdff}
+.edge::before{left:-1px;top:-1px;width:118px;height:3px}
+.edge::after{right:-1px;bottom:-1px;width:3px;height:118px}
+.ghost{position:absolute;right:-22%;top:9%;width:118%;opacity:.045;color:#60cdff;transform:rotate(-8deg)}
+.mark{display:block;color:#60cdff}
+.mark svg,.ghost svg{display:block;width:100%;height:auto}
+.brand-lockup{position:absolute;z-index:2;display:flex;align-items:center;gap:28px}
+.brand-lockup .mark{width:58px}
+.brand-lockup strong{display:block;font-size:42px;line-height:1;letter-spacing:-.045em}
+.brand-lockup small{display:block;margin-top:10px;color:#7f8b94;font:600 15px/1.2 ui-monospace,"Cascadia Mono",monospace;letter-spacing:.22em;text-transform:uppercase}
+.hero-mark{position:absolute;z-index:2;filter:drop-shadow(0 32px 70px rgba(47,169,235,.17))}
+.copy{position:absolute;z-index:2}
+.eyebrow{display:flex;align-items:center;gap:18px;margin:0 0 28px;color:#60cdff;font:650 18px/1 ui-monospace,"Cascadia Mono",monospace;letter-spacing:.2em;text-transform:uppercase}
+.eyebrow::before{content:"";width:50px;height:2px;background:#60cdff}
+h1{margin:0;font-weight:650;letter-spacing:-.065em;line-height:.94}
+h1 span{display:block;color:#60cdff}
+.descriptor{margin:38px 0 0;color:#a3adb5;font-size:30px;line-height:1.45;letter-spacing:-.02em}
+.meta{position:absolute;z-index:2;display:flex;align-items:center;gap:24px;color:#77838d;font:600 16px/1 ui-monospace,"Cascadia Mono",monospace;letter-spacing:.13em;text-transform:uppercase}
+.meta i{width:4px;height:4px;background:#60cdff;transform:rotate(45deg)}
+
+.poster .brand-lockup{left:120px;top:118px}
+.poster .hero-mark{left:50%;top:370px;width:590px;transform:translateX(-50%)}
+.poster .copy{left:120px;right:120px;bottom:280px}
+.poster h1{font-size:113px}
+.poster .descriptor{max-width:990px}
+.poster .meta{left:120px;bottom:120px}
+
+.box .edge{inset:100px}
+.box .grid{background-size:112px 112px}
+.box .brand-lockup{left:150px;top:145px}
+.box .brand-lockup .mark{width:74px}
+.box .brand-lockup strong{font-size:54px}
+.box .hero-mark{right:145px;top:320px;width:900px}
+.box .ghost{right:-32%;top:-8%;width:112%}
+.box .copy{left:150px;right:150px;bottom:245px}
+.box h1{max-width:1600px;font-size:150px}
+.box .descriptor{max-width:1180px;font-size:38px}
+.box .meta{left:150px;bottom:130px;font-size:20px}
+
+.tile{background:transparent}
+.tile .art{border-radius:21.5%;background:linear-gradient(155deg,#1c2228,#090c0f 76%);box-shadow:inset 0 0 0 max(1px,.7vw) rgba(255,255,255,.16)}
+.tile .art::before{background:radial-gradient(circle at 52% 27%,rgba(96,205,255,.1),transparent 46%)}
+.tile .grid,.tile .edge,.tile .ghost,.tile .brand-lockup,.tile .copy,.tile .meta{display:none}
+.tile .hero-mark{left:50%;top:50%;width:64%;transform:translate(-50%,-48%);filter:none}
+</style>
+</head>
+<body>
+<main class="art">
+    <div class="grid"></div>
+    <div class="edge"></div>
+    <div class="ghost" aria-hidden="true">
+        <svg viewBox="0 0 1024 1024"><path d="M512 156 828 392v148L512 304 196 540V392Zm0 308 316 236v148L512 612 196 848V700Z" fill="currentColor"/></svg>
+    </div>
+    <div class="brand-lockup">
+        <span class="mark"><svg viewBox="0 0 1024 1024"><path d="M512 156 828 392v148L512 304 196 540V392Z" fill="#7edcff"/><path d="M512 464 828 700v148L512 612 196 848V700Z" fill="#3aa9ed"/></svg></span>
+        <div><strong>Arsenal</strong><small>For ASUS ROG &amp; TUF</small></div>
+    </div>
+    <span class="hero-mark mark"><svg viewBox="0 0 1024 1024"><path d="M512 156 828 392v148L512 304 196 540V392Z" fill="#7edcff"/><path d="M512 464 828 700v148L512 612 196 848V700Z" fill="#3aa9ed"/></svg></span>
+    <div class="copy">
+        <p class="eyebrow">Native Windows control</p>
+        <h1>All your power.<span>On your terms.</span></h1>
+        <p class="descriptor">Performance, cooling, graphics, display, battery and lighting for supported ASUS laptops.</p>
+    </div>
+    <div class="meta"><span>Windows 11</span><i></i><span>Free to use</span><i></i><span>No account</span></div>
+</main>
+<script>
+const kind=new URLSearchParams(location.search).get('kind')||'poster';
+document.body.className=kind;
+</script>
+</body>
+</html>

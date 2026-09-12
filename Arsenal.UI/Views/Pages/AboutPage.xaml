@@ -1,0 +1,144 @@
+<UserControl x:Class="Arsenal.UI.Views.Pages.AboutPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Arsenal.UI.Controls"
+             xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
+             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+    <ScrollViewer Style="{StaticResource PageScrollStyle}">
+        <StackPanel Style="{StaticResource PageBodyStyle}">
+
+            <Grid Style="{StaticResource PageHeaderStyle}">
+                <StackPanel>
+                    <TextBlock Text="{loc:Loc AboutAbout}" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="{loc:Loc AboutVersionAndWhatArsenalDetected}" Style="{StaticResource PageSubtitleStyle}"/>
+                </StackPanel>
+            </Grid>
+
+            <Border Style="{StaticResource CardSurfaceStyle}" Padding="24">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Image Width="56" Height="56" Margin="0,0,18,0" VerticalAlignment="Center"
+                           Source="pack://application:,,,/Assets/arsenal-app-icon.png"
+                           Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding AppName}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                        <TextBlock Text="{Binding Version}" Style="{StaticResource CaptionStyle}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <controls:SettingsGroup Header="{loc:Loc AboutArsenalUpdates}" Icon="ArrowDownload24"
+                                    Description="{loc:Loc AboutApplicationReleasesAreChecked}"
+                                    Visibility="{Binding CanSelfUpdate, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <controls:SettingsRow Header="{Binding UpdateStatus}">
+                    <controls:SettingsRow.Description>
+                        <MultiBinding StringFormat="Installed {0}  ·  latest v{1}">
+                            <Binding Path="Version"/>
+                            <Binding Path="UpdateInfo.LatestVersion"/>
+                        </MultiBinding>
+                    </controls:SettingsRow.Description>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button Content="{loc:Loc AboutCheck}" Command="{Binding CheckForUpdateCommand}"
+                                   Appearance="Secondary" Icon="{ui:SymbolIcon ArrowSync24}"
+                                   IsEnabled="{Binding IsCheckingForUpdate, Converter={StaticResource InverseBoolConverter}}"/>
+                        <ui:Button Content="{loc:Loc AboutDownloadAndInstall}" Command="{Binding DownloadUpdateCommand}"
+                                   Appearance="Primary" Icon="{ui:SymbolIcon ArrowDownload24}" Margin="8,0,0,0"
+                                   IsEnabled="{Binding IsInstallingUpdate, Converter={StaticResource InverseBoolConverter}}"
+                                   Visibility="{Binding UpdateInfo.IsUpdateAvailable, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    </StackPanel>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="What’s new"
+                                      Description="{Binding UpdateInfo.ReleaseNotes}"
+                                      Visibility="{Binding UpdateInfo.IsUpdateAvailable, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            </controls:SettingsGroup>
+
+            <!-- Ordinary SettingsRows, so the group draws its own hairlines and every row
+                 lines up with the rest of the application. A value the machine would not
+                 report leaves its row hidden rather than labelled and blank, which is the
+                 same treatment the capability-gated rows elsewhere get. -->
+            <controls:SettingsGroup Header="{loc:Loc AboutThisLaptop}" Icon="Info24">
+
+                <controls:SettingsRow Header="{loc:Loc AboutReadingSpecifications}"
+                                      Description="{loc:Loc AboutAskingTheSystemAboutThe}"
+                                      Visibility="{Binding IsLoadingSpecifications, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ProgressRing IsIndeterminate="True" Width="22" Height="22"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc AboutModel}" Icon="Laptop24"
+                                      Visibility="{Binding SpecModel, Converter={StaticResource HideWhenEmptyText}}">
+                    <TextBlock Text="{Binding SpecModel}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc AboutBIOS}" Icon="Info24"
+                                      Visibility="{Binding SpecBios, Converter={StaticResource HideWhenEmptyText}}">
+                    <TextBlock Text="{Binding SpecBios}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc AboutProcessor}" Icon="DeveloperBoard24"
+                                      Visibility="{Binding SpecProcessor, Converter={StaticResource HideWhenEmptyText}}">
+                    <TextBlock Text="{Binding SpecProcessor}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc AboutMemory}" Icon="Stack24"
+                                      Visibility="{Binding SpecMemory, Converter={StaticResource HideWhenEmptyText}}">
+                    <TextBlock Text="{Binding SpecMemory}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc AboutGraphics}" Icon="Desktop24"
+                                      Visibility="{Binding SpecGraphics, Converter={StaticResource HideWhenEmptyText}}">
+                    <TextBlock Text="{Binding SpecGraphics}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc AboutDisplay}" Icon="TvUsb24"
+                                      Visibility="{Binding SpecDisplay, Converter={StaticResource HideWhenEmptyText}}">
+                    <TextBlock Text="{Binding SpecDisplay}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc AboutStorage}" Icon="Storage24"
+                                      Visibility="{Binding SpecStorage, Converter={StaticResource HideWhenEmptyText}}">
+                    <TextBlock Text="{Binding SpecStorage}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc AboutOperatingSystem}" Icon="Window24"
+                                      Visibility="{Binding SpecOperatingSystem, Converter={StaticResource HideWhenEmptyText}}">
+                    <TextBlock Text="{Binding SpecOperatingSystem}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
+                </controls:SettingsRow>
+
+            </controls:SettingsGroup>
+
+            <!-- Arsenal is GPL-3.0, and the licence asks that recipients be told so and
+                 be able to reach the source. This group is that notice, and the credit
+                 to G-Helper belongs beside it rather than tucked away: the hardware
+                 layer below this interface is that project's work. -->
+            <controls:SettingsGroup Header="Licence and source" Icon="Book24"
+                                    Description="Arsenal is free software, and its hardware layer is G-Helper.">
+
+                <controls:SettingsRow Header="GNU General Public License v3"
+                                      Icon="DocumentBulletList24"
+                                      Description="Arsenal may be used, studied, changed and shared. Anything you pass on carries the same freedoms, and comes with no warranty.">
+                    <ui:Button Content="Read the licence" Command="{Binding OpenLicenseCommand}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Source code"
+                                      Icon="Code24"
+                                      Description="The complete corresponding source for this exact build. You are entitled to it, and you can rebuild this binary from it.">
+                    <ui:Button Content="View source" Command="{Binding OpenSourceCommand}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Built on G-Helper by @seerge"
+                                      Icon="Heart24"
+                                      Description="Everything Arsenal knows about ASUS hardware (ACPI, fans, GPU modes, the panel, battery and lighting) comes from G-Helper. Arsenal exists because that work came first, and is GPL-3.0 because it is.">
+                    <ui:Button Content="Visit G-Helper" Command="{Binding OpenUpstreamCommand}"/>
+                </controls:SettingsRow>
+
+            </controls:SettingsGroup>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

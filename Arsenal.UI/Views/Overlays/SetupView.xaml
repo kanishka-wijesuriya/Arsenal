@@ -1,0 +1,961 @@
+<UserControl x:Class="Arsenal.UI.Views.Overlays.SetupView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Arsenal.UI.Controls"
+             xmlns:loc="clr-namespace:Arsenal.UI.Markup"
+             Width="820" Height="556">
+
+    <!--
+        First-run wizard.
+
+        Fixed size on purpose: the panels slide past each other, and a card that
+        resized to each panel's content would lurch on every step. The rail, the
+        header and the footer stay put; only the panel between them moves.
+    -->
+
+    <UserControl.Resources>
+
+        <!-- ===============================================================
+             Shared pieces of the panels.
+             =============================================================== -->
+
+        <!-- Heading block at the top of a panel. Part of the panel rather than the
+             frame, so the title travels in with the content it belongs to. -->
+        <Style x:Key="StepTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource PageTitleStyle}">
+            <Setter Property="FontSize" Value="26"/>
+            <Setter Property="LineHeight" Value="32"/>
+        </Style>
+
+        <Style x:Key="StepCaptionStyle" TargetType="TextBlock" BasedOn="{StaticResource PageSubtitleStyle}">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="MaxWidth" Value="470"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Margin" Value="0,8,0,0"/>
+        </Style>
+
+        <!-- A step is a heading pinned to the top of the panel and a body sitting in the
+             middle of whatever is left.
+
+             The card is a fixed height because the panels slide past each other, so a
+             body hung from the top left the short steps - three switches, then nothing -
+             pressed against the heading with a hand's width of empty card beneath them.
+             Centring the body fills that space; pinning the heading is what keeps the
+             title from hopping as the steps change. -->
+        <Style x:Key="StepFrameStyle" TargetType="Grid">
+            <Setter Property="Margin" Value="40,34,40,28"/>
+        </Style>
+
+        <Style x:Key="StepBodyStyle" TargetType="StackPanel">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- The welcome and finish panels are single compositions rather than a question
+             under a heading, so they are centred whole. -->
+        <Style x:Key="CoverBodyStyle" TargetType="StackPanel">
+            <Setter Property="Margin" Value="40,0,40,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="StepScrollStyle" TargetType="ScrollViewer">
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="Padding" Value="0,0,10,0"/>
+            <Setter Property="Margin" Value="0,24,0,0"/>
+            <Setter Property="controls:SmoothScroll.IsEnabled" Value="True"/>
+        </Style>
+
+        <!-- The pairing code, and the address under it. -->
+        <Style x:Key="PairingCodeStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBaseStyle}">
+            <Setter Property="FontFamily" Value="Consolas, Cascadia Mono, Segoe UI"/>
+            <Setter Property="FontSize" Value="32"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        </Style>
+
+        <Style x:Key="MonoDetailStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBaseStyle}">
+            <Setter Property="FontFamily" Value="Consolas, Cascadia Mono, Segoe UI"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        </Style>
+
+        <!-- A single "what you get" line on the welcome panel: glyph, label, one line
+             of explanation. -->
+        <Style x:Key="HighlightIconStyle" TargetType="Border">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Background" Value="{DynamicResource AccentSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource StrokeSubtle}"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Margin" Value="0,0,16,0"/>
+        </Style>
+
+        <!-- ===============================================================
+             Step rail.
+             =============================================================== -->
+
+        <!-- One node of the rail. Visited steps are buttons back to themselves; the
+             ones ahead are inert, so the rail cannot be used to skip a question.
+
+             Every state change animates an Opacity rather than a colour: the theme
+             brushes are frozen DynamicResources and cannot be animated in place. -->
+        <DataTemplate x:Key="SetupRailItemTemplate">
+            <!-- The library's implicit Button style still applies its own metrics even
+                 though the template is replaced, so they are zeroed here. -->
+            <Button Command="{Binding DataContext.GoToStepCommand, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"
+                    CommandParameter="{Binding Index}"
+                    IsEnabled="{Binding IsDone}"
+                    Focusable="{Binding IsDone}"
+                    Background="Transparent" BorderThickness="0"
+                    Padding="0" Margin="0" MinWidth="0" MinHeight="0"
+                    HorizontalContentAlignment="Stretch">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="26"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="26"/>
+                                <RowDefinition Height="16"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Line down to the next node. Sits under the marker so the
+                                 marker's fill covers its top end.
+
+                                 Two lines, not one: the accent copy fades in over the
+                                 subtle one once the step above it is answered, so the
+                                 rail fills from the top as the wizard is worked through.
+                                 Stacked rather than recoloured because the theme brushes
+                                 are frozen and cannot be animated in place. -->
+                            <Grid Grid.Row="1" Grid.Column="0" Width="2" HorizontalAlignment="Center"
+                                  Visibility="{Binding ShowConnector, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Border Background="{DynamicResource StrokeSubtle}"/>
+                                <Border x:Name="ConnectorDone" Opacity="0"
+                                        Background="{DynamicResource AccentPrimary}"/>
+                            </Grid>
+
+                            <Grid Grid.Row="0" Grid.Column="0" Width="26" Height="26"
+                                  RenderTransformOrigin="0.5,0.5">
+                                <Grid.RenderTransform>
+                                    <ScaleTransform x:Name="MarkerScale" ScaleX="1" ScaleY="1"/>
+                                </Grid.RenderTransform>
+
+                                <!-- Resting ring, for steps not yet reached. -->
+                                <Border CornerRadius="13" BorderThickness="1.5"
+                                        BorderBrush="{DynamicResource StrokeSubtle}"/>
+
+                                <!-- Filled disc, faded in for the active step. -->
+                                <Border x:Name="ActiveFill" CornerRadius="13" Opacity="0"
+                                        Background="{DynamicResource AccentPrimary}"/>
+
+                                <!-- Quieter fill for steps already answered. -->
+                                <Border x:Name="DoneFill" CornerRadius="13" Opacity="0"
+                                        Background="{DynamicResource AccentSubtle}"
+                                        BorderThickness="1.5" BorderBrush="{DynamicResource AccentPrimary}"/>
+
+                                <TextBlock x:Name="Number" Text="{Binding Number}"
+                                           FontSize="12" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextTertiary}"/>
+
+                                <ui:SymbolIcon x:Name="Tick" Symbol="Checkmark24" FontSize="13" Opacity="0"
+                                               Foreground="{DynamicResource AccentPrimary}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <TextBlock x:Name="Label" Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding RailLabel}"
+                                       Margin="12,0,0,0" VerticalAlignment="Center"
+                                       FontSize="13" TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource TextTertiary}"/>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <!-- Finish carries no number. Until it is reached its marker
+                                 is an empty ring - a tick sitting there from the start
+                                 would read as a step already done. -->
+                            <DataTrigger Binding="{Binding ShowNumber}" Value="False">
+                                <Setter TargetName="Number" Property="Opacity" Value="0"/>
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding IsDone}" Value="True">
+                                <Setter TargetName="Number" Property="Opacity" Value="0"/>
+                                <Setter TargetName="Tick" Property="Opacity" Value="1"/>
+                                <Setter TargetName="DoneFill" Property="Opacity" Value="1"/>
+                                <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <!-- Drawn downwards from the node just
+                                                 answered, a beat behind the tick that
+                                                 answered it. -->
+                                            <DoubleAnimation Storyboard.TargetName="ConnectorDone"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0.55" BeginTime="0:0:0.08" Duration="0:0:0.3"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ConnectorDone"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0" Duration="0:0:0.18"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                <Setter TargetName="Label" Property="FontWeight" Value="SemiBold"/>
+                                <Setter TargetName="Number" Property="Foreground" Value="{DynamicResource AccentForeground}"/>
+                                <Setter TargetName="Tick" Property="Foreground" Value="{DynamicResource AccentForeground}"/>
+                                <Setter TargetName="DoneFill" Property="Opacity" Value="0"/>
+
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveFill"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="1" Duration="0:0:0.22"/>
+                                            <!-- A small overshoot marks the step the wizard
+                                                 has just landed on. -->
+                                            <DoubleAnimation Storyboard.TargetName="MarkerScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             From="0.82" To="1" Duration="0:0:0.34">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.6"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="MarkerScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             From="0.82" To="1" Duration="0:0:0.34">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.6"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveFill"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0" Duration="0:0:0.18"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+
+                            <!-- Reaching Finish turns its empty ring into the tick. -->
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding ShowNumber}" Value="False"/>
+                                    <Condition Binding="{Binding IsActive}" Value="True"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter TargetName="Tick" Property="Opacity" Value="1"/>
+                            </MultiDataTrigger>
+
+                            <!-- Only visited steps are enabled, so IsEnabled stands in for
+                                 "this node can be gone back to". -->
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsEnabled" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </DataTemplate>
+
+        <!-- ===============================================================
+             Completion checklist.
+             =============================================================== -->
+
+        <DataTemplate x:Key="SetupTaskTemplate">
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="22"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid Grid.Column="0" Width="18" Height="18" VerticalAlignment="Top" Margin="0,1,0,0">
+                    <!-- Waiting: a hollow ring. -->
+                    <Border CornerRadius="9" BorderThickness="1.5"
+                            BorderBrush="{DynamicResource StrokeSubtle}"
+                            Visibility="{Binding IsPending, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                    <!-- Bound rather than always true: the spinner's storyboard stops
+                         with the task instead of clocking behind a collapsed element. -->
+                    <ui:ProgressRing Width="16" Height="16" IsIndeterminate="{Binding IsRunning}"
+                                     Foreground="{DynamicResource AccentPrimary}"
+                                     Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                    <ui:SymbolIcon Symbol="CheckmarkCircle24" FontSize="17"
+                                   Foreground="{DynamicResource StatusSuccess}"
+                                   Visibility="{Binding IsDone, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                    <ui:SymbolIcon Symbol="Info24" FontSize="16"
+                                   Foreground="{DynamicResource TextTertiary}"
+                                   Visibility="{Binding IsSkipped, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                    <ui:SymbolIcon Symbol="Warning24" FontSize="16"
+                                   Foreground="{DynamicResource StatusWarning}"
+                                   Visibility="{Binding IsFailed, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                </Grid>
+
+                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                    <TextBlock Text="{Binding Label}" FontSize="13"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextPrimary}"/>
+                    <TextBlock Text="{Binding Detail}" Style="{StaticResource SettingDescriptionStyle}"
+                               Visibility="{Binding Detail, Converter={StaticResource HideWhenEmptyText}}"/>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <!-- ===============================================================
+             Panel 0 - Welcome.
+             =============================================================== -->
+
+        <DataTemplate x:Key="SetupStep0">
+            <StackPanel Style="{StaticResource CoverBodyStyle}">
+
+                <!-- Mark and machine on one line. The chip used to sit between the title
+                     and the line explaining it, which broke the one place on this panel
+                     where two pieces of text belong together. Up here it reads as what it
+                     is: what Arsenal thinks it is running on. -->
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="52" Height="52" CornerRadius="16"
+                            Background="{DynamicResource AccentSubtle}"
+                            BorderThickness="1" BorderBrush="{DynamicResource StrokeSubtle}">
+                        <ui:SymbolIcon Symbol="Sparkle24" FontSize="24"
+                                       Foreground="{DynamicResource AccentPrimary}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <Border Style="{StaticResource CompactStatusPillStyle}"
+                            VerticalAlignment="Center" Margin="14,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Laptop24" FontSize="12" Margin="0,0,6,0"
+                                           Foreground="{DynamicResource AccentPrimary}"
+                                           VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding ModelName}" Style="{StaticResource PillTextStyle}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <TextBlock Text="{loc:Loc SetupWelcomeToArsenal}" Style="{StaticResource StepTitleStyle}" Margin="0,20,0,0"/>
+
+                <TextBlock Style="{StaticResource StepCaptionStyle}"
+                           Text="{loc:Loc SetupFourShortStepsSetUp}"/>
+
+                <StackPanel Margin="0,26,0,0">
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource HighlightIconStyle}">
+                            <ui:SymbolIcon Symbol="Gauge24" FontSize="19" Foreground="{DynamicResource AccentPrimary}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc SetupPerformanceWithoutArmouryCrate}" Style="{StaticResource SettingLabelStyle}"/>
+                            <TextBlock Text="{loc:Loc SetupTurboBalancedAndSilentCustom}"
+                                       Style="{StaticResource SettingDescriptionStyle}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource HighlightIconStyle}">
+                            <ui:SymbolIcon Symbol="Lightbulb24" FontSize="19" Foreground="{DynamicResource AccentPrimary}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc SetupDisplayGraphicsAndLighting}" Style="{StaticResource SettingLabelStyle}"/>
+                            <TextBlock Text="{loc:Loc SetupRefreshRateMUXAndGPU}"
+                                       Style="{StaticResource SettingDescriptionStyle}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource HighlightIconStyle}">
+                            <ui:SymbolIcon Symbol="PhoneLaptop24" FontSize="19" Foreground="{DynamicResource AccentPrimary}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc SetupYourPhoneAsASecond}" Style="{StaticResource SettingLabelStyle}"/>
+                            <TextBlock Text="{loc:Loc SetupPairTheCompanionAppAt}"
+                                       Style="{StaticResource SettingDescriptionStyle}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- ===============================================================
+             Panel 1 - Startup.
+             =============================================================== -->
+
+        <DataTemplate x:Key="SetupStep1">
+            <Grid Style="{StaticResource StepFrameStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="{loc:Loc SetupStartWithWindows}" Style="{StaticResource StepTitleStyle}"/>
+                    <TextBlock Style="{StaticResource StepCaptionStyle}"
+                               Text="{loc:Loc SetupChooseWhetherArsenalShouldRun}"/>
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1" Style="{StaticResource StepScrollStyle}">
+                    <StackPanel Style="{StaticResource StepBodyStyle}">
+                        <controls:SettingsGroup>
+                            <controls:SettingsRow Header="{loc:Loc SetupRunAsAdministrator}"
+                                                  Icon="ShieldTask24"
+                                                  Description="{loc:Loc SetupWindowsAsksForPermissionAs}">
+                                <ui:ToggleSwitch IsChecked="{Binding RunAsAdministrator}"/>
+                            </controls:SettingsRow>
+
+                            <controls:SettingsRow Header="{loc:Loc SetupStartWithWindows}"
+                                                  Icon="Power24"
+                                                  Description="{Binding StartupDescription}">
+                                <ui:ToggleSwitch IsChecked="{Binding RunOnStartup}"/>
+                            </controls:SettingsRow>
+
+                            <controls:SettingsRow Header="{loc:Loc SetupKeepTheBatteryChargeLimit}"
+                                                  Icon="BatteryCharge24"
+                                                  Description="{loc:Loc SetupRegistersASmallTaskThat}">
+                                <ui:ToggleSwitch IsChecked="{Binding KeepChargeLimitAfterReboot}" IsEnabled="{Binding IsElevated}"/>
+                            </controls:SettingsRow>
+                        </controls:SettingsGroup>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </DataTemplate>
+
+        <!-- ===============================================================
+             Panel 2 - Notifications and updates.
+             =============================================================== -->
+
+        <DataTemplate x:Key="SetupStep2">
+            <Grid Style="{StaticResource StepFrameStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="{loc:Loc SetupNotificationsAndUpdates}" Style="{StaticResource StepTitleStyle}"/>
+                    <TextBlock Style="{StaticResource StepCaptionStyle}"
+                               Text="{loc:Loc SetupHowMuchArsenalSaysWhen}"/>
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1" Style="{StaticResource StepScrollStyle}">
+                    <StackPanel Style="{StaticResource StepBodyStyle}">
+                        <controls:SettingsGroup>
+                            <controls:SettingsRow Header="{loc:Loc SetupShowNotifications}"
+                                                  Icon="Alert24"
+                                                  Description="{loc:Loc SetupASmallToastWhenThe}">
+                                <ui:ToggleSwitch IsChecked="{Binding ShowNotifications}"/>
+                            </controls:SettingsRow>
+
+                            <controls:SettingsRow Header="{loc:Loc SetupCheckForUpdates}"
+                                                  Icon="ArrowDownload24"
+                                                  Description="{loc:Loc SetupLooksForANewerArsenal}"
+                                                  Visibility="{Binding CanSelfUpdate, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <ui:ToggleSwitch IsChecked="{Binding CheckUpdates}"/>
+                            </controls:SettingsRow>
+                        </controls:SettingsGroup>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </DataTemplate>
+
+        <!-- ===============================================================
+             Panel 3 - ASUS software.
+             =============================================================== -->
+
+        <DataTemplate x:Key="SetupStep3">
+            <Grid Style="{StaticResource StepFrameStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="{loc:Loc SetupASUSSoftware}" Style="{StaticResource StepTitleStyle}"/>
+                    <TextBlock Style="{StaticResource StepCaptionStyle}"
+                               Text="{loc:Loc SetupArsenalTalksToTheSame}"/>
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1" Style="{StaticResource StepScrollStyle}">
+                    <StackPanel Style="{StaticResource StepBodyStyle}">
+                        <controls:SettingsGroup>
+                            <controls:SettingsRow Header="{loc:Loc SetupStopArmouryCrateBackground}"
+                                                  Icon="Wrench24"
+                                                  Description="{loc:Loc SetupFreesMemoryAndEndsThe}">
+                                <ui:ToggleSwitch IsChecked="{Binding StopArmouryCrateServices}" IsEnabled="{Binding IsElevated}"/>
+                            </controls:SettingsRow>
+                        </controls:SettingsGroup>
+
+                        <ui:InfoBar Title="{loc:Loc SetupNothingIsUninstalled}"
+                                    Message="Only the background services are stopped. Armoury Crate stays installed and starts them again if you open it."
+                                    Severity="Informational" IsOpen="True" IsClosable="False"
+                                    Margin="0,16,0,0"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </DataTemplate>
+
+        <!-- ===============================================================
+             Panel 4 - Connect your phone.
+
+             The pairing code is only ever shown here and on the Mobile Companion
+             page. It rotates on use and after five minutes, so the panel keeps it
+             live for as long as it is on screen.
+             =============================================================== -->
+
+        <DataTemplate x:Key="SetupStep4">
+            <Grid Style="{StaticResource StepFrameStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="{loc:Loc SetupConnectYourPhone}" Style="{StaticResource StepTitleStyle}"/>
+                    <TextBlock Style="{StaticResource StepCaptionStyle}"
+                               Text="{loc:Loc SetupOptionalPairingStaysOnYour}"/>
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1" Style="{StaticResource StepScrollStyle}">
+                    <StackPanel Style="{StaticResource StepBodyStyle}">
+                        <controls:SettingsGroup>
+                            <controls:SettingsRow Header="{loc:Loc SetupAllowCompanionNetworkAccess}"
+                                                  Icon="PhoneLaptop24"
+                                                  Description="{loc:Loc SetupAddsPrivateNetworkOnlyWindows}">
+                                <ui:Button Content="{Binding NetworkAccessButtonLabel}"
+                                           Command="{Binding AllowCompanionNetworkCommand}"
+                                           Icon="{ui:SymbolIcon ShieldTask24}"
+                                           Appearance="Primary"/>
+                            </controls:SettingsRow>
+                        </controls:SettingsGroup>
+
+                        <ui:InfoBar Title="{loc:Loc SetupTheCompanionBridgeIsNot}"
+                                    Message="Another program may hold the port, or a firewall rule is blocking it. You can pair later from Mobile Companion."
+                                    Severity="Warning" IsOpen="True" IsClosable="False"
+                                    Margin="0,20,0,0"
+                                    Visibility="{Binding IsCompanionUnavailable, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                        <Grid Margin="0,20,0,0"
+                              Visibility="{Binding IsCompanionRunning, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- White plate, not a themed surface: a QR needs light quiet
+                                 zones to scan reliably in either theme. -->
+                            <Border Background="White" CornerRadius="14" Padding="10"
+                                    VerticalAlignment="Top"
+                                    BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1">
+                                <Image Source="{Binding PairingQrCode}" Width="158" Height="158" Stretch="Uniform"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Margin="22,0,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="1" Style="{StaticResource PillTextStyle}"
+                                               Foreground="{DynamicResource AccentPrimary}" Width="14"/>
+                                    <TextBlock Text="{loc:Loc SetupInstallArsenalCompanionOnYour}" FontSize="13"
+                                               Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                                    <TextBlock Text="2" Style="{StaticResource PillTextStyle}"
+                                               Foreground="{DynamicResource AccentPrimary}" Width="14"/>
+                                    <TextBlock Text="{loc:Loc SetupOpenItAndTapPair}" FontSize="13"
+                                               Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                                    <TextBlock Text="3" Style="{StaticResource PillTextStyle}"
+                                               Foreground="{DynamicResource AccentPrimary}" Width="14"/>
+                                    <TextBlock Text="{loc:Loc SetupScanThisCodeOrType}" FontSize="13"
+                                               Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <TextBlock Text="{loc:Loc SetupPAIRINGCODE}" Margin="0,18,0,0"
+                                           Foreground="{DynamicResource AccentPrimary}"
+                                           FontSize="11" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding CompanionPairingCode}" Style="{StaticResource PairingCodeStyle}"/>
+
+                                <TextBlock Text="{loc:Loc SetupExpiresAfterFiveMinutesOr}"
+                                           Style="{StaticResource SettingDescriptionStyle}" Margin="0,2,0,0"/>
+
+                                <TextBlock Text="{Binding CompanionAddress}" Style="{StaticResource MonoDetailStyle}" Margin="0,10,0,0"/>
+                                <TextBlock Text="{Binding CompanionFingerprint}" Style="{StaticResource MonoDetailStyle}"
+                                           Foreground="{DynamicResource TextTertiary}"
+                                           Visibility="{Binding CompanionFingerprint, Converter={StaticResource HideWhenEmptyText}}"/>
+
+                                <ui:Button Content="{loc:Loc SetupNewCode}" Appearance="Secondary" Margin="0,12,0,0"
+                                           Icon="{ui:SymbolIcon ArrowClockwise24}"
+                                           HorizontalAlignment="Left"
+                                           Command="{Binding RegeneratePairingCodeCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Live pairing state. The dot breathes while nothing has connected
+                             and settles to a solid green once a phone has. -->
+                        <Border Margin="0,20,0,0" CornerRadius="{StaticResource RadiusCard}"
+                                Background="{DynamicResource SurfaceCard}"
+                                BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1"
+                                Padding="16,12"
+                                Visibility="{Binding IsCompanionRunning, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Waiting is a spinner rather than a pulsing dot: its clock
+                                     is owned by IsIndeterminate, so it stops the moment a
+                                     phone pairs instead of running for the panel's lifetime. -->
+                                <Grid Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <ui:ProgressRing Width="16" Height="16"
+                                                     IsIndeterminate="{Binding IsWaitingForPhone}"
+                                                     Foreground="{DynamicResource TextTertiary}"
+                                                     Visibility="{Binding IsWaitingForPhone, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                                    <Border x:Name="PairedDot" Width="10" Height="10" CornerRadius="5"
+                                            Background="{DynamicResource StatusSuccess}"
+                                            Visibility="{Binding IsPhonePaired, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            RenderTransformOrigin="0.5,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform x:Name="PairedScale" ScaleX="1" ScaleY="1"/>
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{Binding PhoneHeadline}"
+                                               Style="{StaticResource SettingLabelStyle}"
+                                               HorizontalAlignment="Left"/>
+                                    <TextBlock Text="{Binding PhoneStatus}" Style="{StaticResource SettingDescriptionStyle}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <DataTemplate.Triggers>
+                <!-- The green dot pops in when a phone appears, so the change is
+                     noticed even if the user is looking at their phone rather than
+                     the screen. FillBehavior=Stop releases the clock afterwards; the
+                     resting value is the same 1 the animation ends on. -->
+                <DataTrigger Binding="{Binding IsPhonePaired}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard FillBehavior="Stop">
+                                <DoubleAnimation Storyboard.TargetName="PairedScale"
+                                                 Storyboard.TargetProperty="ScaleX"
+                                                 From="0.3" To="1" Duration="0:0:0.45">
+                                    <DoubleAnimation.EasingFunction>
+                                        <BackEase EasingMode="EaseOut" Amplitude="0.8"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetName="PairedScale"
+                                                 Storyboard.TargetProperty="ScaleY"
+                                                 From="0.3" To="1" Duration="0:0:0.45">
+                                    <DoubleAnimation.EasingFunction>
+                                        <BackEase EasingMode="EaseOut" Amplitude="0.8"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- ===============================================================
+             Panel 5 - Finish.
+             =============================================================== -->
+
+        <DataTemplate x:Key="SetupStep5">
+            <!-- Centred rather than top-aligned: this panel is short and its own
+                 heading, so hanging it from the top leaves a hole under the checklist.
+                 The list is bounded at five entries, which fits without scrolling. -->
+            <Grid Margin="36,24,36,24">
+                <StackPanel VerticalAlignment="Center">
+                    <Grid Width="64" Height="64" HorizontalAlignment="Left">
+                        <!-- Applying: a ring in the same place the tick will land, so
+                             the two states do not shift the heading under them. -->
+                        <ui:ProgressRing Width="46" Height="46" IsIndeterminate="{Binding IsApplying}"
+                                         Foreground="{DynamicResource AccentPrimary}"
+                                         Visibility="{Binding IsApplying, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                        <Grid x:Name="SuccessMark"
+                              Visibility="{Binding IsComplete, Converter={StaticResource BooleanToVisibilityConverter}}"
+                              RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="SuccessScale" ScaleX="0.6" ScaleY="0.6"/>
+                            </Grid.RenderTransform>
+
+                            <!-- The halo is a ring that swells and goes, not a disc that
+                                 grows: a filled circle behind a filled circle only ever
+                                 reads as the badge changing colour. -->
+                            <Ellipse x:Name="SuccessHalo" Width="52" Height="52" Opacity="0"
+                                     StrokeThickness="2"
+                                     Stroke="{DynamicResource StatusSuccess}"
+                                     RenderTransformOrigin="0.5,0.5">
+                                <Ellipse.RenderTransform>
+                                    <ScaleTransform x:Name="SuccessHaloScale" ScaleX="1" ScaleY="1"/>
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+
+                            <!-- Tinted rather than the flat card surface, so the badge
+                                 carries its own colour instead of looking like a sticker
+                                 laid on the panel. -->
+                            <Ellipse Width="52" Height="52" StrokeThickness="1.5"
+                                     Stroke="{DynamicResource StatusSuccess}">
+                                <Ellipse.Fill>
+                                    <RadialGradientBrush>
+                                        <GradientStop Offset="0" Color="#2E6CCB5F"/>
+                                        <GradientStop Offset="1" Color="#0F6CCB5F"/>
+                                    </RadialGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+
+                            <!-- Drawn on, not faded in: StrokeDashOffset runs the dash
+                                 across the path so the tick writes itself. -->
+                            <Viewbox Width="26" Height="26">
+                                <Canvas Width="32" Height="32">
+                                    <Path x:Name="TickPath"
+                                          Data="M 5,16 L 13,24 L 27,8"
+                                          Stroke="{DynamicResource StatusSuccess}"
+                                          StrokeThickness="3"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          StrokeLineJoin="Round"
+                                          StrokeDashArray="14 14"
+                                          StrokeDashOffset="14"/>
+                                </Canvas>
+                            </Viewbox>
+                        </Grid>
+                    </Grid>
+
+                    <TextBlock Text="{Binding FinishHeadline}" Style="{StaticResource StepTitleStyle}" Margin="0,16,0,0"/>
+                    <TextBlock Text="{Binding FinishCaption}" Style="{StaticResource StepCaptionStyle}"/>
+
+                    <ItemsControl Margin="0,24,0,0"
+                                  ItemsSource="{Binding Tasks}"
+                                  ItemTemplate="{StaticResource SetupTaskTemplate}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsComplete}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="SuccessScale" Storyboard.TargetProperty="ScaleX"
+                                                 To="1" Duration="0:0:0.42">
+                                    <DoubleAnimation.EasingFunction>
+                                        <BackEase EasingMode="EaseOut" Amplitude="0.7"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetName="SuccessScale" Storyboard.TargetProperty="ScaleY"
+                                                 To="1" Duration="0:0:0.42">
+                                    <DoubleAnimation.EasingFunction>
+                                        <BackEase EasingMode="EaseOut" Amplitude="0.7"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+
+                                <!-- One pulse outward, then gone: a halo that stayed would
+                                     read as a status colour rather than a moment. -->
+                                <DoubleAnimation Storyboard.TargetName="SuccessHalo" Storyboard.TargetProperty="Opacity"
+                                                 From="0.5" To="0" BeginTime="0:0:0.1" Duration="0:0:0.6"/>
+                                <DoubleAnimation Storyboard.TargetName="SuccessHaloScale" Storyboard.TargetProperty="ScaleX"
+                                                 From="1" To="1.5" BeginTime="0:0:0.1" Duration="0:0:0.6">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetName="SuccessHaloScale" Storyboard.TargetProperty="ScaleY"
+                                                 From="1" To="1.5" BeginTime="0:0:0.1" Duration="0:0:0.6">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+
+                                <DoubleAnimation Storyboard.TargetName="TickPath"
+                                                 Storyboard.TargetProperty="StrokeDashOffset"
+                                                 From="14" To="0" BeginTime="0:0:0.16" Duration="0:0:0.38">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="212"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ===================================================================
+             Rail. Its corner radii match the overlay card's, because the card's
+             own rounding is behind this fill rather than clipping it.
+             =================================================================== -->
+        <Grid Grid.Column="0">
+            <Border CornerRadius="16,0,0,16" Background="{DynamicResource SurfaceSunken}"/>
+
+            <!-- Accent wash. Painted as a masked solid rather than a gradient of theme
+                 colours: gradient stops cannot take a DynamicResource colour, and a
+                 literal hex here would not follow the theme. -->
+            <Border CornerRadius="16,0,0,16" Background="{DynamicResource AccentPrimary}" Opacity="0.13">
+                <Border.OpacityMask>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0.7,1">
+                        <GradientStop Offset="0" Color="#FFFFFFFF"/>
+                        <GradientStop Offset="0.5" Color="#38FFFFFF"/>
+                        <GradientStop Offset="1" Color="#00FFFFFF"/>
+                    </LinearGradientBrush>
+                </Border.OpacityMask>
+            </Border>
+
+            <Border Width="1" HorizontalAlignment="Right" Background="{DynamicResource StrokeSubtle}"/>
+
+            <Grid Margin="24,28,20,22">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <Border Width="34" Height="34" CornerRadius="10" HorizontalAlignment="Left"
+                            Background="{DynamicResource AccentPrimary}">
+                        <TextBlock Text="A" FontSize="18" FontWeight="Bold"
+                                   FontFamily="Segoe UI Variable Display, Segoe UI"
+                                   Foreground="{DynamicResource AccentForeground}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="Arsenal" FontSize="15" FontWeight="SemiBold" Margin="0,12,0,0"
+                               Foreground="{DynamicResource TextPrimary}"/>
+                    <TextBlock Text="{Binding StepCounter}" Style="{StaticResource CaptionStyle}"
+                               Foreground="{DynamicResource TextTertiary}" Margin="0,2,0,0"/>
+                </StackPanel>
+
+                <ItemsControl Grid.Row="1" Margin="0,28,0,0"
+                              ItemsSource="{Binding Steps}"
+                              ItemTemplate="{StaticResource SetupRailItemTemplate}"/>
+
+                <TextBlock Grid.Row="2" Style="{StaticResource CaptionStyle}"
+                           Foreground="{DynamicResource TextTertiary}"
+                           Text="{loc:Loc SetupEveryChoiceHereIsAlso}"/>
+            </Grid>
+        </Grid>
+
+        <!-- ===================================================================
+             Panels and footer.
+             =================================================================== -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <controls:StepPresenter Grid.Row="0"
+                                    TemplateKeyPrefix="SetupStep"
+                                    Step="{Binding CurrentIndex}"
+                                    Direction="{Binding Direction}"
+                                    Content="{Binding}"/>
+
+            <Border Grid.Row="1" Background="{DynamicResource SurfaceSunken}" CornerRadius="0,0,16,0">
+                <StackPanel>
+                    <!-- Progress reads as the lit part of the edge the footer hangs from,
+                         so the divider under it is the track and the control carries no
+                         second one of its own. With a visible track of its own it looked
+                         like a rule that had been drawn half way and abandoned. -->
+                    <Grid Height="2">
+                        <Border Height="1" VerticalAlignment="Top"
+                                Background="{DynamicResource StrokeDivider}"/>
+                        <controls:ProgressLine Value="{Binding Progress}" Height="2"
+                                               Background="Transparent"/>
+                    </Grid>
+
+                    <Grid Margin="30,16,30,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Skip is the quietest thing in the footer and has to look it.
+                             The library's Transparent appearance still draws a resting
+                             border, which put a box around the one control here that is
+                             asking not to be pressed - next to a filled primary button it
+                             read as the second of two offers. -->
+                        <ui:Button Grid.Column="0" Style="{StaticResource ActionButtonStyle}"
+                                   Content="{loc:Loc SetupSkipSetup}" Appearance="Transparent" Margin="-8,0,0,0"
+                                   Background="Transparent" BorderThickness="0"
+                                   Foreground="{DynamicResource TextTertiary}"
+                                   Visibility="{Binding IsSkippable, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   Command="{Binding SkipCommand}"/>
+
+                        <TextBlock Grid.Column="1" Text="{Binding StatusMessage}"
+                                   Style="{StaticResource CaptionStyle}"
+                                   VerticalAlignment="Center" Margin="14,0,14,0"
+                                   TextTrimming="CharacterEllipsis"/>
+
+                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                            <ui:Button Style="{StaticResource ActionButtonStyle}" Content="{loc:Loc SetupBack}"
+                                       Appearance="Secondary" MinWidth="88"
+                                       Icon="{ui:SymbolIcon ArrowLeft24}"
+                                       Visibility="{Binding CanGoBack, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                       IsEnabled="{Binding CanAdvance}"
+                                       Command="{Binding BackCommand}"/>
+
+                            <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0"
+                                       Content="{Binding NextLabel}"
+                                       Appearance="Primary" MinWidth="132"
+                                       IsEnabled="{Binding CanAdvance}"
+                                       Command="{Binding NextCommand}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+
+</UserControl>

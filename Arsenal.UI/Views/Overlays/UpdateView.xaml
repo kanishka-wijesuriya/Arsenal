@@ -1,0 +1,185 @@
+<UserControl x:Class="Arsenal.UI.Views.Overlays.UpdateView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Arsenal.UI.Controls"
+             xmlns:loc="clr-namespace:Arsenal.UI.Markup"
+             Width="560">
+
+    <!--
+        The application update card, shown inside the same OverlayHost the setup
+        wizard uses, with the same scrim, radius and open animation. It replaced a
+        system message box, which could not show release notes as a list and had no
+        way to show a download at all.
+
+        Light dismiss is off on the host: closing this card by clicking past it
+        during a download would leave the transfer running with nothing on screen.
+    -->
+
+    <UserControl.Resources>
+        <Style x:Key="UpdateNoteStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBaseStyle}">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="LineHeight" Value="19"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="28,26,28,22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header: the icon chip, the release title, and which version replaces which. -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Width="44" Height="44" CornerRadius="13" VerticalAlignment="Top"
+                    Background="{DynamicResource AccentSubtle}" Margin="0,0,16,0">
+                <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="22"
+                               Foreground="{DynamicResource TextPrimary}"/>
+            </Border>
+
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="{loc:Loc UpdateReady}"
+                           Style="{StaticResource CaptionStyle}"
+                           HorizontalAlignment="Left"/>
+                <TextBlock Text="{Binding Headline}"
+                           Style="{StaticResource PageTitleStyle}"
+                           FontSize="22" LineHeight="28" Margin="0,2,0,0"
+                           TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding VersionLine}"
+                           Style="{StaticResource PageSubtitleStyle}"
+                           FontSize="12.5" Margin="0,6,0,0"
+                           HorizontalAlignment="Left" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Release notes. Bounded and scrollable: a long release must not push the
+             buttons off the bottom of a fixed-height card. -->
+        <Border Grid.Row="1" Margin="0,22,0,0" CornerRadius="10"
+                Background="{DynamicResource SurfaceSunken}"
+                BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1">
+            <StackPanel Margin="18,15,18,16">
+                <TextBlock Text="{loc:Loc UpdateWhatsNew}"
+                           Style="{StaticResource CaptionStyle}"
+                           HorizontalAlignment="Left" Margin="0,0,0,9"/>
+                <ScrollViewer MaxHeight="168" VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Notes}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,7">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Ellipse Width="4" Height="4" VerticalAlignment="Top"
+                                             Margin="2,8,11,0"
+                                             Fill="{DynamicResource AccentPrimary}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding}"
+                                               Style="{StaticResource UpdateNoteStyle}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+        </Border>
+
+        <!-- The three states share this row, so the card never changes height as it
+             moves between them. -->
+        <Grid Grid.Row="2" Margin="0,18,0,0" MinHeight="52">
+
+            <!-- Available: what the install is going to do, and how large it is. -->
+            <Grid Visibility="{Binding IsAvailable, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{loc:Loc UpdateExplanation}"
+                           Style="{StaticResource UpdateNoteStyle}"
+                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <Border Grid.Column="1" CornerRadius="7" Padding="10,5" VerticalAlignment="Center"
+                        Background="{DynamicResource SurfaceCard}"
+                        BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1">
+                    <TextBlock Text="{Binding SizeText}"
+                               FontFamily="Consolas, Cascadia Mono, Segoe UI" FontSize="12"
+                               Foreground="{DynamicResource TextSecondary}"/>
+                </Border>
+            </Grid>
+
+            <!-- Downloading: percentage, bytes, and the bar itself. -->
+            <StackPanel Visibility="{Binding IsDownloading, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        VerticalAlignment="Center">
+                <Grid Margin="0,0,0,9">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding StatusText}"
+                               Style="{StaticResource UpdateNoteStyle}"
+                               VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ProgressText}"
+                                   FontFamily="Consolas, Cascadia Mono, Segoe UI" FontSize="12"
+                                   Foreground="{DynamicResource TextSecondary}"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding PercentText}"
+                                   FontFamily="Consolas, Cascadia Mono, Segoe UI" FontSize="13"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+                <controls:ProgressLine Value="{Binding Progress}" Height="4"/>
+            </StackPanel>
+
+            <!-- Failed: what went wrong, in the same row rather than a second dialog. -->
+            <Grid Visibility="{Binding HasFailed, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <ui:SymbolIcon Symbol="Warning24" FontSize="18" VerticalAlignment="Top" Margin="0,1,11,0"
+                               Foreground="{DynamicResource StatusCritical}"/>
+                <TextBlock Grid.Column="1" Text="{Binding ErrorText}"
+                           Style="{StaticResource UpdateNoteStyle}"
+                           Foreground="{DynamicResource TextPrimary}"/>
+            </Grid>
+        </Grid>
+
+        <!-- Buttons. Each state supplies its own pair; they occupy the same row. -->
+        <Grid Grid.Row="3" Margin="0,20,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                        Visibility="{Binding IsAvailable, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ui:Button Content="{loc:Loc UpdateLater}" Appearance="Secondary"
+                           MinWidth="104" Command="{Binding LaterCommand}"/>
+                <ui:Button Content="{loc:Loc UpdateInstallNow}" Appearance="Primary"
+                           Icon="{ui:SymbolIcon ArrowDownload24}"
+                           MinWidth="140" Margin="10,0,0,0" Command="{Binding InstallCommand}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                        Visibility="{Binding IsDownloading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ui:Button Content="{loc:Loc UpdateCancel}" Appearance="Secondary"
+                           MinWidth="104" Command="{Binding CancelCommand}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                        Visibility="{Binding HasFailed, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ui:Button Content="{loc:Loc UpdateLater}" Appearance="Secondary"
+                           MinWidth="104" Command="{Binding LaterCommand}"/>
+                <ui:Button Content="{loc:Loc UpdateRetry}" Appearance="Primary"
+                           Icon="{ui:SymbolIcon ArrowSync24}"
+                           MinWidth="140" Margin="10,0,0,0" Command="{Binding RetryCommand}"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

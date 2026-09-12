@@ -1,0 +1,70 @@
+// Source thanks to https://github.com/vddCore/Starlight :)
+
+using Arsenal.AnimeMatrix.Communication.Platform;
+
+namespace Arsenal.AnimeMatrix.Communication
+{
+    public abstract class Device : IDisposable
+    {
+        protected UsbProvider? _usbProvider;
+
+        protected ushort _vendorId;
+        protected ushort _productId;
+        protected int _maxFeatureReportLength;
+
+        protected Device(ushort vendorId, ushort productId)
+        {
+            _vendorId = vendorId;
+            _productId = productId;
+        }
+
+        protected Device(ushort vendorId, ushort productId, int maxFeatureReportLength)
+        {
+            _vendorId = vendorId;
+            _productId = productId;
+            _maxFeatureReportLength = maxFeatureReportLength;
+            SetProvider();
+        }
+
+        public ushort VendorID()
+        {
+            return _vendorId;
+        }
+
+        public ushort ProductID()
+        {
+            return _productId;
+        }
+
+        protected virtual string LogName => "Device";
+
+        public virtual void SetProvider()
+        {
+            if (_usbProvider is not null) return;
+            _usbProvider = new WindowsUsbProvider(_vendorId, _productId, _maxFeatureReportLength, LogName);
+        }
+
+        protected T Packet<T>(params byte[] command) where T : Packet
+        {
+            return (T)Activator.CreateInstance(typeof(T), command)!;
+        }
+
+        public void Set(Packet packet)
+            => _usbProvider?.Set(packet.Data);
+
+        public byte[] Get(Packet packet)
+            => _usbProvider?.Get(packet.Data);
+
+        public void Read(byte[] data)
+            => _usbProvider?.Read(data);
+        public void Write(byte[] data)
+            => _usbProvider?.Write(data);
+        public void Drain(int packetSize)
+            => _usbProvider?.Drain(packetSize);
+
+        public virtual void Dispose()
+        {
+            _usbProvider?.Dispose();
+        }
+    }
+}

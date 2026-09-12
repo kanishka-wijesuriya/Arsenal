@@ -1,0 +1,309 @@
+<UserControl x:Class="Arsenal.UI.Views.Pages.HomePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Arsenal.UI.Controls"
+             xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
+             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+    <UserControl.Resources>
+        <DataTemplate x:Key="HomeEditButtons">
+            <StackPanel Orientation="Horizontal" Margin="10,0,0,0"
+                        Visibility="{Binding DataContext.IsEditingControls, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ui:Button Icon="{ui:SymbolIcon ArrowUp24}" Width="30" Height="30" Padding="0"
+                           Appearance="Secondary" ToolTip="{loc:Loc HomeMoveUp}"
+                           Command="{Binding DataContext.MoveHomeControlUpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           CommandParameter="{Binding}"/>
+                <ui:Button Icon="{ui:SymbolIcon ArrowDown24}" Width="30" Height="30" Padding="0" Margin="5,0,0,0"
+                           Appearance="Secondary" ToolTip="{loc:Loc HomeMoveDown}"
+                           Command="{Binding DataContext.MoveHomeControlDownCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           CommandParameter="{Binding}"/>
+                <ui:Button Icon="{ui:SymbolIcon Delete24}" Width="30" Height="30" Padding="0" Margin="5,0,0,0"
+                           Appearance="Secondary" ToolTip="{loc:Loc HomeRemove}"
+                           IsEnabled="{Binding DataContext.CanRemoveHomeControl, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           Command="{Binding DataContext.RemoveHomeControlCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           CommandParameter="{Binding}"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="HomePerformanceTemplate">
+            <controls:SettingsRow Icon="Gauge24" Header="{loc:Loc HomePerformanceMode}"
+                                  Description="{loc:Loc HomeAppliedToTheBIOSAnd}">
+                <StackPanel Orientation="Horizontal">
+                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomePerformance" Content="{loc:Loc Silent}"
+                                     IsChecked="{Binding DataContext.CurrentPerformanceMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
+                                     Command="{Binding DataContext.SelectPerformanceModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="2"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomePerformance" Content="{loc:Loc Balanced}"
+                                     IsChecked="{Binding DataContext.CurrentPerformanceMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
+                                     Command="{Binding DataContext.SelectPerformanceModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="0"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomePerformance" Content="{loc:Loc Turbo}"
+                                     IsChecked="{Binding DataContext.CurrentPerformanceMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
+                                     Command="{Binding DataContext.SelectPerformanceModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="1"/>
+                    </WrapPanel>
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HomeEditButtons}"/>
+                </StackPanel>
+            </controls:SettingsRow>
+        </DataTemplate>
+
+        <DataTemplate x:Key="HomeGpuTemplate">
+            <controls:SettingsRow Icon="DeveloperBoard24" Header="{loc:Loc DisplayGPUMode}"
+                                  Description="{Binding DataContext.GpuModeDescription, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                <StackPanel Orientation="Horizontal">
+                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeGpu" Content="{loc:Loc EcoMode}"
+                                     IsChecked="{Binding DataContext.CurrentGpuMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
+                                     Command="{Binding DataContext.SelectGpuModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="0"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeGpu" Content="{loc:Loc StandardMode}"
+                                     IsChecked="{Binding DataContext.CurrentGpuMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
+                                     Command="{Binding DataContext.SelectGpuModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="1"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeGpu" Content="{loc:Loc UltimateMode}"
+                                     IsChecked="{Binding DataContext.CurrentGpuMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
+                                     Command="{Binding DataContext.SelectGpuModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="2"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeGpu" Content="{loc:Loc Optimized}"
+                                     IsChecked="{Binding DataContext.CurrentGpuMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
+                                     Command="{Binding DataContext.SelectGpuModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="3"/>
+                    </WrapPanel>
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HomeEditButtons}"/>
+                </StackPanel>
+            </controls:SettingsRow>
+        </DataTemplate>
+
+        <DataTemplate x:Key="HomeChargeTemplate">
+            <controls:SettingsRow Icon="BatteryCharge24" Header="{loc:Loc BatteryChargeLimit2}"
+                                  Description="{Binding DataContext.ChargeLimitNote, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                <StackPanel Orientation="Horizontal">
+                    <controls:ValueSlider Minimum="{Binding DataContext.ChargeLimitMinimum, RelativeSource={RelativeSource AncestorType=UserControl}}" Maximum="100"
+                                          Ticks="{Binding DataContext.ChargeLimitTicks, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          IsSnapToTickEnabled="{Binding DataContext.HasSteppedChargeLimit, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          Marks="{Binding DataContext.ChargeLimitMarks, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          Value="{Binding DataContext.ChargeLimit, RelativeSource={RelativeSource AncestorType=UserControl}}" Format="{}{0}%"
+                                          PreviewMouseLeftButtonUp="ChargeLimitSlider_Commit" KeyUp="ChargeLimitSlider_KeyUp"/>
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HomeEditButtons}"/>
+                </StackPanel>
+            </controls:SettingsRow>
+        </DataTemplate>
+
+        <DataTemplate x:Key="HomeRefreshTemplate">
+            <controls:SettingsRow Icon="Desktop24" Header="{loc:Loc DisplayRefreshRate}" Description="{loc:Loc HomeChooseThePanelRateWithout}">
+                <StackPanel Orientation="Horizontal">
+                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MinimumRefreshRate, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat={}{0} Hz}"
+                                     IsChecked="{Binding DataContext.IsAtMinimumRefreshRate, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
+                                     Command="{Binding DataContext.SelectRefreshRateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="60"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MaximumRefreshRate, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat={}{0} Hz}"
+                                     IsChecked="{Binding DataContext.IsAtMaximumRefreshRate, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
+                                     Command="{Binding DataContext.SelectRefreshRateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="999"/>
+                    </WrapPanel>
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HomeEditButtons}"/>
+                </StackPanel>
+            </controls:SettingsRow>
+        </DataTemplate>
+
+        <DataTemplate x:Key="HomeAutoRefreshTemplate">
+            <controls:SettingsRow Icon="Sparkle24" Header="{loc:Loc HomeAutomaticRefresh}" Description="{loc:Loc HomeFollowThePowerSource}">
+                <StackPanel Orientation="Horizontal">
+                    <ui:ToggleSwitch IsChecked="{Binding DataContext.IsAutoRefresh, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"/>
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HomeEditButtons}"/>
+                </StackPanel>
+            </controls:SettingsRow>
+        </DataTemplate>
+
+        <DataTemplate x:Key="HomeKeyboardTemplate">
+            <controls:SettingsRow Icon="Keyboard24" Header="{loc:Loc HomeKeyboardLight}" Description="{loc:Loc HomeSetTheBuiltInKeyboard}">
+                <StackPanel Orientation="Horizontal">
+                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeKeyboard" Content="{loc:Loc BacklightOff}" CommandParameter="0"
+                                     Command="{Binding DataContext.SelectKeyboardBrightnessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                     IsChecked="{Binding DataContext.KeyboardBrightness, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeKeyboard" Content="1" CommandParameter="1"
+                                     Command="{Binding DataContext.SelectKeyboardBrightnessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                     IsChecked="{Binding DataContext.KeyboardBrightness, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeKeyboard" Content="2" CommandParameter="2"
+                                     Command="{Binding DataContext.SelectKeyboardBrightnessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                     IsChecked="{Binding DataContext.KeyboardBrightness, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeKeyboard" Content="3" CommandParameter="3"
+                                     Command="{Binding DataContext.SelectKeyboardBrightnessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                     IsChecked="{Binding DataContext.KeyboardBrightness, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"/>
+                    </WrapPanel>
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HomeEditButtons}"/>
+                </StackPanel>
+            </controls:SettingsRow>
+        </DataTemplate>
+
+        <DataTemplate x:Key="HomeTouchpadTemplate">
+            <controls:SettingsRow Icon="CursorClick24" Header="{loc:Loc HomeTouchpad}" Description="{loc:Loc HomeEnableOrDisableTheBuilt}">
+                <StackPanel Orientation="Horizontal">
+                    <ui:ToggleSwitch IsChecked="{Binding DataContext.IsTouchpadEnabled, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
+                                     Command="{Binding DataContext.ToggleTouchpadCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HomeEditButtons}"/>
+                </StackPanel>
+            </controls:SettingsRow>
+        </DataTemplate>
+
+        <DataTemplate x:Key="HomeFullChargeTemplate">
+            <controls:SettingsRow Icon="BatteryCharge24" Header="{loc:Loc HomeFullCharge}" Description="{loc:Loc HomeTemporarilyChargeTo100Beyond}">
+                <StackPanel Orientation="Horizontal">
+                    <ui:ToggleSwitch IsChecked="{Binding DataContext.IsFullChargeOverride, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
+                                     Command="{Binding DataContext.ToggleFullChargeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HomeEditButtons}"/>
+                </StackPanel>
+            </controls:SettingsRow>
+        </DataTemplate>
+
+        <controls:HomeControlTemplateSelector x:Key="HomeControlSelector"
+                                              Performance="{StaticResource HomePerformanceTemplate}"
+                                              Gpu="{StaticResource HomeGpuTemplate}"
+                                              ChargeLimit="{StaticResource HomeChargeTemplate}"
+                                              Refresh="{StaticResource HomeRefreshTemplate}"
+                                              AutoRefresh="{StaticResource HomeAutoRefreshTemplate}"
+                                              Keyboard="{StaticResource HomeKeyboardTemplate}"
+                                              Touchpad="{StaticResource HomeTouchpadTemplate}"
+                                              FullCharge="{StaticResource HomeFullChargeTemplate}"/>
+    </UserControl.Resources>
+    <ScrollViewer Style="{StaticResource PageScrollStyle}">
+        <StackPanel Style="{StaticResource PageBodyStyle}">
+
+            <Grid Style="{StaticResource PageHeaderStyle}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding DeviceName}" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="{Binding ModelNumber, StringFormat='Model {0}'}"
+                               Style="{StaticResource CaptionStyle}"
+                               FontWeight="Medium"
+                               Margin="0,3,0,0"/>
+                    <TextBlock Text="{loc:Loc HomeLiveTelemetryAndTheControls}"
+                               Style="{StaticResource PageSubtitleStyle}"
+                               Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- The product render for this exact machine, taken from the content ASUS
+                     ships with it - the same picture Armoury Crate shows. It arrives after
+                     first paint and fades in; on a model with no shipped render it never
+                     arrives, and the header reads as it did before. -->
+                <Grid Grid.Column="1" Margin="24,0,2,0" VerticalAlignment="Center">
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasDeviceImage}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <!-- Fades from nothing rather than resting at nothing: an
+                                         animation that never runs then leaves the render fully
+                                         drawn instead of permanently invisible. -->
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                 From="0" To="1" Duration="0:0:0.25"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+
+                    <!-- The renders are a near-black machine on transparency, and the page
+                         behind them is nearly as dark. A soft pool of light lifts the
+                         silhouette off it without drawing a box around the picture. -->
+                    <Ellipse Margin="-34,-22,-34,-22" IsHitTestVisible="False">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Offset="0" Color="#1FFFFFFF"/>
+                                <GradientStop Offset="0.55" Color="#12FFFFFF"/>
+                                <GradientStop Offset="1" Color="#00FFFFFF"/>
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+
+                    <Image Source="{Binding DeviceImage}"
+                           Height="140" MaxWidth="300"
+                           Stretch="Uniform" StretchDirection="DownOnly"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           AutomationProperties.Name="{Binding DeviceName}"/>
+                </Grid>
+            </Grid>
+
+            <!-- Tiles reflow from four across to two or one as the window narrows. -->
+            <controls:ResponsiveGrid MinItemWidth="228" MaxColumns="4" Margin="-5,0,-5,15">
+                <controls:MetricTile Icon="DeveloperBoard24"
+                                     Label="CPU"
+                                     Value="{Binding Telemetry.CpuTemp, StringFormat='{}{0:F0}°C'}"
+                                     SecondaryValue="{Binding Telemetry.CpuPower, StringFormat='{}{0:F0} W'}"
+                                     Progress="{Binding Telemetry.CpuUsage}"
+                                     ShowProgress="True"
+                                     Detail="{Binding Telemetry.CpuUsage, StringFormat='{}Usage {0:F0}%'}"/>
+
+                <controls:MetricTile Icon="Glance24"
+                                     Label="Graphics"
+                                     Value="{Binding Telemetry.GpuTemp, StringFormat='{}{0:F0}°C'}"
+                                     SecondaryValue="{Binding Telemetry.GpuPower, StringFormat='{}{0:F0} W'}"
+                                     Progress="{Binding Telemetry.GpuUsage}"
+                                     ShowProgress="True"
+                                     Detail="{Binding Telemetry.GpuStatus}"/>
+
+                <controls:MetricTile Icon="WeatherDuststorm24"
+                                     Label="Cooling"
+                                     Value="{Binding Telemetry.FanCpuRpm, StringFormat='{}{0} rpm'}"
+                                     Detail="{Binding Telemetry.FanGpuRpm, StringFormat='{}GPU fan {0} rpm'}"/>
+
+                <controls:MetricTile Icon="BatteryCharge24"
+                                     Label="Battery"
+                                     Value="{Binding BatteryPercent, StringFormat='{}{0}%'}"
+                                     Progress="{Binding BatteryPercent}"
+                                     ShowProgress="True"
+                                     Detail="{Binding BatteryDischarge, StringFormat='{}Discharge {0:F1} W'}"/>
+            </controls:ResponsiveGrid>
+
+            <controls:SettingsGroup x:Name="HomeControlsGroup" Header="{loc:Loc HomeControls}" Icon="Flash24"
+                                    Description="{loc:Loc HomeYourSelectedControlsInThe}"
+                                    ItemsSource="{Binding HomeControls}"
+                                    ItemTemplateSelector="{StaticResource HomeControlSelector}">
+                <controls:SettingsGroup.HeaderContent>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button Content="{loc:Loc Reset}" Icon="{ui:SymbolIcon ArrowReset24}" Appearance="Secondary" Margin="0,0,8,0"
+                                   Command="{Binding ResetHomeControlsCommand}"
+                                   Visibility="{Binding IsEditingControls, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        <ui:Button x:Name="HomeControlsEditButton"
+                                   Content="{Binding IsEditingControls, Converter={StaticResource BoolToTextConverter}, ConverterParameter='Done|Edit controls'}"
+                                   Icon="{ui:SymbolIcon Edit24}" Appearance="Secondary"
+                                   Command="{Binding ToggleControlEditingCommand}"/>
+                    </StackPanel>
+                </controls:SettingsGroup.HeaderContent>
+            </controls:SettingsGroup>
+
+            <Border Style="{StaticResource CardSurfaceStyle}" Padding="16" Margin="0,0,0,16"
+                    Visibility="{Binding IsEditingControls, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock Text="{loc:Loc HomeAddControls}" Style="{StaticResource SettingLabelStyle}"/>
+                    <TextBlock Text="{loc:Loc HomeHomeHasItsOwnLayout}"
+                               Style="{StaticResource SettingDescriptionStyle}" Margin="0,3,0,12"/>
+                    <ItemsControl ItemsSource="{Binding HomeControlChoices}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,5">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <ui:SymbolIcon Symbol="{Binding Icon}" FontSize="18" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                                        <TextBlock Text="{Binding Label}" Style="{StaticResource SettingLabelStyle}"/>
+                                        <TextBlock Text="{Binding Summary}" Style="{StaticResource SettingDescriptionStyle}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                    <ui:Button Grid.Column="2" Content="{Binding IsAdded, Converter={StaticResource BoolToTextConverter}, ConverterParameter='Added|Add'}"
+                                               Appearance="Secondary" MinWidth="72"
+                                               IsEnabled="{Binding IsAdded, Converter={StaticResource InverseBoolConverter}}"
+                                               Command="{Binding DataContext.AddHomeControlCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               CommandParameter="{Binding Key}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

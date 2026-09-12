@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <AssemblyName>Arsenal</AssemblyName>
+    <RootNamespace>Arsenal.UI</RootNamespace>
+    <Product>Arsenal</Product>
+    <Description>Arsenal: Lightweight control tool for ASUS ROG and TUF laptops</Description>
+    <Company>Arsenal</Company>
+    <Copyright>Copyright © 2026</Copyright>
+    <Nullable>annotations</Nullable>
+    <!-- Workstation GC: the heap is small and a server-GC heap per core would cost far
+         more than it saves here. Background collection stays on, though - without it
+         every gen2 collection is a blocking pause taken on the UI thread, which is
+         exactly where a dropped frame is visible. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <UseWPF>True</UseWPF>
+    <UseWindowsForms>True</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>arsenal.ico</ApplicationIcon>
+    <Platforms>x64</Platforms>
+    <Platform>x64</Platform>
+    <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <!-- CS8602/CS8604 stay visible here too. This project has none of them today,
+         and the point of leaving them on is that it stays that way. -->
+    <NoWarn>$(NoWarn);NU1701;WFO1000;CA1416;CS8632;CS8600;CS8601;CS8603;CS8618;CS8625</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Arsenal.Core\Arsenal.Core.csproj" />
+    <ProjectReference Include="..\Arsenal.Application\Arsenal.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\arsenal-app-icon.png" />
+    <Content Include="arsenal.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

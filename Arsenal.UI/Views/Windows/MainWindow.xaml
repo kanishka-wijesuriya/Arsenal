@@ -1,0 +1,239 @@
+<ui:FluentWindow x:Class="Arsenal.UI.Views.Windows.MainWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                  xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
+                  xmlns:controls="clr-namespace:Arsenal.UI.Controls"
+                  xmlns:overlays="clr-namespace:Arsenal.UI.Views.Overlays"
+                  xmlns:loc="clr-namespace:Arsenal.UI.Markup"
+                  Title="Arsenal"
+                  Width="1180"
+                  Height="780"
+                  MinWidth="900"
+                  MinHeight="620"
+                  WindowStartupLocation="CenterScreen"
+                  WindowBackdropType="Mica"
+                  ExtendsContentIntoTitleBar="True">
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Match the native WPF UI caption-button strip exactly. Keeping this
+                 fixed prevents custom header content from adding space beneath it. -->
+            <RowDefinition Height="48"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- The window's two grounds, drawn under everything else and spanning both
+             rows: the navigation column runs the full height of the window, and the
+             content ground reaches the top edge so it sits behind the status pills and
+             the caption buttons rather than stopping below them.
+
+             Both are transparent while the Mica backdrop is on, so this layer is only
+             visible as the divider until the user turns the app's transparency off.
+             The column width tracks the navigation pane's real animated width - see
+             TrackNavigationPaneWidth in the code-behind. -->
+        <Grid Grid.Row="0" Grid.RowSpan="2" x:Name="WindowSurfaceLayer">
+            <!-- The navigation ground is the whole window. The content ground is laid on
+                 top of it, inset from the left by the pane seam, so what is left showing
+                 is the navigation column - and, once the pane collapses, the title bar
+                 strip above the content as well. -->
+            <Border Background="{DynamicResource AppSidebarBackground}"/>
+
+            <!-- Its inset, corner and divider are all driven from how far the pane has
+                 collapsed; see UpdateWindowSurfaces. Fully open it is a plain rectangle
+                 filling the right of the window from the very top, exactly as before. -->
+            <!-- Layout rounding off on purpose: the top edge's thickness is animated from
+                 0 to 1 as the pane collapses, and rounding would make it snap in rather
+                 than arrive with the rest of the motion. -->
+            <Border x:Name="ContentSurface"
+                    Background="{DynamicResource AppContentBackground}"
+                    BorderBrush="{DynamicResource StrokeSubtle}"
+                    BorderThickness="1,0,0,0"
+                    UseLayoutRounding="False"
+                    Margin="229,0,0,0"/>
+        </Grid>
+
+        <!-- No icon or title: the header starts flush with the window's left edge so the
+             pane toggle can line up with the navigation column underneath it. -->
+        <!-- Above the navigation view, which now reaches into this row underneath it.
+             ZIndex rather than document order so the bar keeps input priority too - the
+             toggle, the search icon and the caption buttons all sit over the pane and
+             the content area. -->
+        <ui:TitleBar Grid.Row="0"
+                     Panel.ZIndex="1"
+                     Title=""
+                     Height="48"
+                     MinHeight="48"
+                     VerticalAlignment="Top"
+                     VerticalContentAlignment="Center">
+            <ui:TitleBar.Resources>
+                <!-- The library's caption buttons otherwise retain their shorter
+                     internal metric even when the TitleBar itself is 48px tall. -->
+                <Style TargetType="{x:Type ui:TitleBarButton}"
+                       BasedOn="{StaticResource {x:Type ui:TitleBarButton}}">
+                    <Setter Property="Height" Value="48"/>
+                    <Setter Property="MinHeight" Value="48"/>
+                    <Setter Property="MaxHeight" Value="48"/>
+                    <Setter Property="VerticalAlignment" Value="Stretch"/>
+                    <Setter Property="VerticalContentAlignment" Value="Center"/>
+                </Style>
+            </ui:TitleBar.Resources>
+            <ui:TitleBar.Header>
+                <!-- The pane toggle owns the same 48px gutter the navigation icons sit
+                     in below it, so the collapse control lines up with the column it
+                     collapses. -->
+                <!-- TitleBar reserves a 32px leading icon slot even with no icon. Pull
+                     the header back over it so the button centre lands at x=24, exactly
+                     above the NavigationView icon gutter. -->
+                <!-- The navigation items below are 40x40 on a 40px pitch, inset 4px from
+                     the pane edge, which puts the first icon's centre at x=24. These
+                     match that exactly: same size, same pitch, same leading inset, so the
+                     title-bar row and the navigation column share one rhythm. -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Margin="-28,0,0,0">
+                    <!-- A panel glyph rather than a hamburger: it shows the thing being
+                         toggled, which is the column beside it, not a generic menu. -->
+                    <ui:Button x:Name="PaneToggleButton"
+                               Style="{StaticResource TitleBarIconButtonStyle}"
+                               Click="PaneToggleButton_Click"
+                               Icon="{ui:SymbolIcon PanelLeft24}"
+                               ToolTip="{loc:Loc MainCollapseOrExpandTheNavigation}"/>
+
+                    <ui:Button x:Name="NavigateBackButton"
+                               Style="{StaticResource TitleBarIconButtonStyle}"
+                               Click="NavigateBackButton_Click"
+                               Icon="{ui:SymbolIcon ArrowLeft24}"
+                               ToolTip="{loc:Loc MainBack}"/>
+
+                    <ui:Button x:Name="NavigateForwardButton"
+                               Style="{StaticResource TitleBarIconButtonStyle}"
+                               Click="NavigateForwardButton_Click"
+                               Icon="{ui:SymbolIcon ArrowRight24}"
+                               ToolTip="{loc:Loc MainForward}"/>
+
+                    <ui:Button x:Name="SearchButton"
+                               Style="{StaticResource TitleBarIconButtonStyle}"
+                               Click="SearchButton_Click"
+                               Icon="{ui:SymbolIcon Search24}"
+                               ToolTip="{loc:Loc MainSearchEverySettingAndCommand}"/>
+                </StackPanel>
+            </ui:TitleBar.Header>
+
+            <!-- Live status sits in the trailing slot, immediately left of the window
+                 buttons, so it stays pinned to the right edge at any window size. -->
+            <ui:TitleBar.TrailingContent>
+                <StackPanel Orientation="Horizontal"
+                            Height="48"
+                            VerticalAlignment="Center"
+                            Margin="0,0,8,0">
+                    <Border Style="{StaticResource CompactStatusPillStyle}"
+                            Background="{DynamicResource AccentSubtle}"
+                            BorderBrush="{DynamicResource AccentPrimary}"
+                            Margin="0"
+                            ToolTip="{loc:Loc MainActivePerformanceProfile}">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="6" Height="6" Margin="0,0,7,0" VerticalAlignment="Center" Fill="{DynamicResource AccentPrimary}"/>
+                            <TextBlock Text="{Binding CurrentModeName}" Style="{StaticResource PillTextStyle}"
+                                       FontWeight="SemiBold" Foreground="{DynamicResource AccentPrimary}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource CompactStatusPillStyle}" ToolTip="{loc:Loc MainCPUPackageTemperature}">
+                        <TextBlock Text="{Binding Telemetry.CpuTemp, StringFormat='{}CPU {0:F0}°'}" Style="{StaticResource PillTextStyle}"/>
+                    </Border>
+
+                    <Border Style="{StaticResource CompactStatusPillStyle}" ToolTip="{loc:Loc MainDedicatedGPUTemperature}">
+                        <TextBlock Text="{Binding Telemetry.GpuTemp, StringFormat='{}GPU {0:F0}°'}" Style="{StaticResource PillTextStyle}"/>
+                    </Border>
+
+                    <Border Style="{StaticResource CompactStatusPillStyle}" ToolTip="{loc:Loc MainBatteryCharge}">
+                        <TextBlock Text="{Binding Telemetry.BatteryPercentage, StringFormat='{}BAT {0}%'}" Style="{StaticResource PillTextStyle}"/>
+                    </Border>
+                </StackPanel>
+            </ui:TitleBar.TrailingContent>
+        </ui:TitleBar>
+
+        <!-- Spans both rows so the navigation column is the full height of the window
+             and its content area reaches up behind the title bar. The bar itself is
+             declared after this and draws over the top 48px of both. -->
+        <ui:NavigationView Grid.Row="0" Grid.RowSpan="2"
+                           x:Name="RootNavigationView"
+                           Background="Transparent"
+                           PaneDisplayMode="Left"
+                           IsBackButtonVisible="Collapsed"
+                           IsPaneToggleVisible="False"
+                           IsTopSeparatorVisible="False"
+                           IsFooterSeparatorVisible="False"
+                           CompactPaneLength="48"
+                           OpenPaneLength="220"
+                           PreviewMouseLeftButtonUp="RootNavigationView_PreviewMouseLeftButtonUp"
+                           PreviewKeyDown="RootNavigationView_PreviewKeyDown"
+                           SelectionChanged="NavigationView_SelectionChanged">
+
+            <!-- An empty gutter the height of the title bar. The pane starts at the top
+                 of the window now, so the first destination has to clear the bar drawn
+                 over it - and the pane toggle sits in that bar, directly above this. -->
+            <ui:NavigationView.PaneHeader>
+                <Border Height="48"/>
+            </ui:NavigationView.PaneHeader>
+
+            <ui:NavigationView.MenuItems>
+                <ui:NavigationViewItem Content="{loc:Loc MainHome}" TargetPageTag="Home" Icon="{ui:SymbolIcon Home24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="{loc:Loc MousePerformance}" TargetPageTag="Performance" Icon="{ui:SymbolIcon Gauge24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="{loc:Loc DisplayDisplayGraphics}" TargetPageTag="Display" Icon="{ui:SymbolIcon Desktop24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="{loc:Loc Battery}" TargetPageTag="Battery" Icon="{ui:SymbolIcon BatteryCharge24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="{loc:Loc DevicesDevices}" TargetPageTag="Devices" Icon="{ui:SymbolIcon Keyboard24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="{loc:Loc Lighting}" TargetPageTag="Lighting" Icon="{ui:SymbolIcon Lightbulb24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="{loc:Loc AutomationAutomation}" TargetPageTag="Automation" Icon="{ui:SymbolIcon Flash24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="{loc:Loc UpdatesDrivers}" TargetPageTag="Drivers" Icon="{ui:SymbolIcon Box24}" Click="NavigationItem_Click"/>
+            </ui:NavigationView.MenuItems>
+
+            <ui:NavigationView.FooterMenuItems>
+                <ui:NavigationViewItem Content="{loc:Loc MobileCompanionMobileCompanion}" TargetPageTag="MobileCompanion" Icon="{ui:SymbolIcon PhoneLaptop24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="{loc:Loc AdvancedAdvanced}" TargetPageTag="Advanced" Icon="{ui:SymbolIcon DeveloperBoard24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="{loc:Loc SettingsSettings}" TargetPageTag="Settings" Icon="{ui:SymbolIcon Settings24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="{loc:Loc AboutAbout}" TargetPageTag="About" Icon="{ui:SymbolIcon Info24}" Click="NavigationItem_Click"/>
+            </ui:NavigationView.FooterMenuItems>
+
+            <ui:NavigationView.ContentOverlay>
+                <!-- The ground behind this reaches the top of the window; the pages
+                     themselves still start below the title bar. -->
+                <Grid x:Name="PageContentHost" Background="Transparent" Margin="0,48,0,0"/>
+            </ui:NavigationView.ContentOverlay>
+        </ui:NavigationView>
+
+        <!-- Panels that used to be separate windows. Hosted here so they cannot be
+             dragged away from the app, and so the window's own wheel handling applies
+             to them. Both span the title bar row as well. -->
+        <controls:OverlayHost x:Name="SearchOverlay" Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="2"
+                              IsOpen="{Binding IsCommandPaletteOpen, Mode=TwoWay}"/>
+
+        <!-- Setup is a wizard, not a palette: a stray click on the scrim or a reflex
+             Escape must not throw away half-answered steps, and it needs a wider canvas
+             than the search panel. It closes through its own Skip and Done buttons. -->
+        <controls:OverlayHost x:Name="SetupOverlay" Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="2"
+                              PanelMaxWidth="880" PanelMaxHeight="620"
+                              IsLightDismissEnabled="False"
+                              IsOpen="{Binding IsSetupOpen, Mode=TwoWay}"/>
+
+        <!-- The application update card. Not light-dismissable: clicking past it
+             during a download would leave the transfer running with nothing on screen.
+             It closes through Later, or by installing. -->
+        <controls:OverlayHost x:Name="UpdateOverlay" Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="2"
+                              PanelMaxWidth="560" PanelMaxHeight="620"
+                              IsLightDismissEnabled="False"
+                              IsOpen="{Binding IsUpdateOpen, Mode=TwoWay}"/>
+
+        <!-- Spans both rows so the title bar is covered too: a GPU switch must not be
+             interruptible half way through. Visibility is owned by the control, which
+             holds it visible through the fade-out. -->
+        <controls:BusyOverlay Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="2"
+                              IsActive="{Binding IsGpuSwitching}"
+                              Message="{Binding GpuSwitchingMessage}"/>
+        <controls:BusyOverlay Grid.Row="0" Grid.RowSpan="2" Panel.ZIndex="2"
+                              IsActive="{Binding IsAsusServicesChanging}"
+                              Message="{Binding AsusServicesMessage}"
+                              Detail="{Binding AsusServicesDetail}"/>
+    </Grid>
+</ui:FluentWindow>

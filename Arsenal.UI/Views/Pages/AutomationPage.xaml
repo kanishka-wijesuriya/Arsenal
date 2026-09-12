@@ -1,0 +1,65 @@
+<UserControl x:Class="Arsenal.UI.Views.Pages.AutomationPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Arsenal.UI.Controls"
+             xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
+             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+    <ScrollViewer Style="{StaticResource PageScrollStyle}">
+        <StackPanel Style="{StaticResource PageBodyStyle}">
+
+            <Grid Style="{StaticResource PageHeaderStyle}">
+                <StackPanel>
+                    <TextBlock Text="{loc:Loc AutomationAutomation}" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="{loc:Loc AutomationWhatShouldHappenOnIts}" Style="{StaticResource PageSubtitleStyle}"/>
+                </StackPanel>
+            </Grid>
+
+            <controls:SettingsGroup Header="{loc:Loc AutomationPowerSource}" Icon="Flash24"
+                                    Description="{loc:Loc AutomationApplyAPerformanceProfile}">
+                <controls:SettingsRow Header="{loc:Loc AutomationSwitchProfileWithThePower}">
+                    <ui:ToggleSwitch IsChecked="{Binding IsAutoSwitchEnabled, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc AutomationOnACPower}" IsEnabled="{Binding IsAutoSwitchEnabled}">
+                    <controls:SettingsRow.ContentBelow>
+                        <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="AcMode" Content="{loc:Loc Silent}"
+                                         IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"/>
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="AcMode" Content="{loc:Loc Balanced}"
+                                         IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"/>
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="AcMode" Content="{loc:Loc Turbo}"
+                                         IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"/>
+                        </WrapPanel>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc AutomationOnBattery}" IsEnabled="{Binding IsAutoSwitchEnabled}">
+                    <controls:SettingsRow.ContentBelow>
+                        <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="BatteryMode" Content="{loc:Loc Silent}"
+                                         IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"/>
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="BatteryMode" Content="{loc:Loc Balanced}"
+                                         IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"/>
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="BatteryMode" Content="{loc:Loc Turbo}"
+                                         IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"/>
+                        </WrapPanel>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
+            </controls:SettingsGroup>
+
+            <controls:SettingsGroup Header="{loc:Loc AutomationGraphicsAndLid}" Icon="Laptop24">
+                <controls:SettingsRow Header="{loc:Loc AutomationEcoGPUModeOnBattery}"
+                                      Description="{loc:Loc AutomationSwitchTheDedicatedGPUOff}">
+                    <ui:ToggleSwitch IsChecked="{Binding IsAutoEcoOnBattery, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="{loc:Loc AutomationClamshellMode}"
+                                      Description="{loc:Loc AutomationStayAwakeWithTheLid}">
+                    <ui:ToggleSwitch IsChecked="{Binding IsClamshellMode, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+            </controls:SettingsGroup>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

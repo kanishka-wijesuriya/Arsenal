@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/kanishka-wijesuriya/Arsenal/security/advisories/new
+    about: Report privately. Please do not open a public issue for a security problem.
+  - name: Download, requirements and licence
+    url: https://get-arsenal.com
+    about: Release downloads, supported hardware and the licence and attribution page.
+  - name: G-Helper
+    url: https://github.com/seerge/g-helper
+    about: Arsenal's hardware layer is derived from G-Helper. Hardware support questions are often answered there first.

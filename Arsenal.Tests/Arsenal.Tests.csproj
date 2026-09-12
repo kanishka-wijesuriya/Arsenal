@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The first automated tests in the project.
+
+    Deliberately narrow. This does not try to cover 62,000 lines of hardware interop -
+    most of that cannot run without an ASUS laptop attached, and the smoke tools in
+    tools/ already cover what renders. What it covers is the logic where a silently
+    wrong answer is expensive and a machine is not needed to find it: version
+    comparison, which decides whether an update is offered; the signed update envelope,
+    which decides whether a downloaded executable is trusted; and range clamping, which
+    decides what a slider is allowed to write to the hardware.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>annotations</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);CA1416;CS8632;CS8600;CS8601;CS8603;CS8618;CS8625</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- A copy of the published signed feed, laid beside the test binary. The feed test
+         used to walk up the tree looking for it in the website checkout, which only
+         worked because both lived under one folder; this repository holds the Windows
+         application alone, so the fixture travels with the test. -->
+    <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Arsenal.Core\Arsenal.Core.csproj" />
+    <ProjectReference Include="..\Arsenal.Application\Arsenal.Application.csproj" />
+  </ItemGroup>
+
+</Project>

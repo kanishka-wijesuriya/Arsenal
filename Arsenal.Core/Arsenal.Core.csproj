@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Arsenal</RootNamespace>
+    <Nullable>annotations</Nullable>
+    <UseWindowsForms>True</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Platforms>x64</Platforms>
+    <Platform>x64</Platform>
+    <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <!--
+         CS8602 and CS8604 - the two that mean "this can throw a NullReferenceException"
+         - are deliberately NOT suppressed. They were, and hiding them behind a build
+         that reported "0 Warnings" is how thirty of them accumulated. The rest of the
+         nullability family stays suppressed for now: this project is inherited code
+         written before nullable reference types, and CS8618/CS8600 there are noise
+         rather than bugs.
+
+         Treat a new CS8602 as a real finding. It is the compiler saying it can see a
+         path where this dereferences null.
+    -->
+    <NoWarn>$(NoWarn);WFO1000;CA1416;CS8632;CS8600;CS8601;CS8603;CS8618;CS8625</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FftSharp" Version="2.2.0" />
+    <PackageReference Include="HidSharpCore" Version="1.3.0" />
+    <PackageReference Include="NAudio.Wasapi" Version="2.3.0" />
+    <PackageReference Include="NvAPIWrapper.Net" Version="0.8.1.101" />
+    <PackageReference Include="System.Management" Version="10.0.10" />
+    <PackageReference Include="TaskScheduler" Version="2.12.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Pawn\RyzenSMU.bin">
+      <LogicalName>Arsenal.RyzenSMU.bin</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pawn\IntelMSR.bin">
+      <LogicalName>Arsenal.IntelMSR.bin</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

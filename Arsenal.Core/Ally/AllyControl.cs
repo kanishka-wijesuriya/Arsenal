@@ -1,0 +1,804 @@
+using Arsenal.Gpu.AMD;
+using Arsenal.Helpers;
+using Arsenal.Input;
+using Arsenal.Mode;
+using Arsenal.USB;
+using HidSharp;
+
+namespace Arsenal.Ally
+{
+    public enum ControllerMode : int
+    {
+        Auto = 0,
+        Gamepad = 1,
+        WASD = 2,
+        Mouse = 3,
+        Skip = -1,
+    }
+
+    public enum BindingZone : byte
+    {
+        DPadUpDown = 1,
+        DPadLeftRight = 2,
+        StickClick = 3,
+        Bumper = 4,
+        AB = 5,
+        XY = 6,
+        ViewMenu = 7,
+        M1M2 = 8,
+        Trigger = 9
+    }
+
+    public class AllyControl : IDisposable
+    {
+        static System.Timers.Timer timer = default!;
+        private static AmdGpuControl? _amdControl;
+        private static AmdGpuControl AmdControl => _amdControl ??= new AmdGpuControl();
+
+        public static event Action<bool>? OnAutoTDPChanged;
+        public static event Action<int>? OnFPSLimitChanged;
+        public static event Action<ControllerMode>? OnControllerModeChanged;
+        public static event Action<bool>? OnAllyVisualise;
+
+        static ControllerMode _mode = ControllerMode.Auto;
+        static ControllerMode _applyMode = ControllerMode.Mouse;
+
+        static int _autoCount = 0;
+
+        static int _upCount = 0;
+        static int _downCount = 0;
+
+        static int tdpMin = 6;
+        static int tdpStable = tdpMin;
+        static int tdpCurrent = -1;
+
+        static bool autoTDP = false;
+
+        static int fpsLimit = -1;
+
+        public static bool IsAutoTdpEnabled => autoTDP;
+        public static int CurrentFpsLimit => fpsLimit;
+
+        public const string BindA = "01-01";
+        public const string BindB = "01-02";
+        public const string BindX = "01-03";
+        public const string BindY = "01-04";
+        public const string BindLB = "01-05";
+        public const string BindRB = "01-06";
+        public const string BindLS = "01-07";
+        public const string BindRS = "01-08";
+        public const string BindDU = "01-09";
+        public const string BindDD = "01-0A";
+        public const string BindDL = "01-0B";
+        public const string BindDR = "01-0C";
+        public const string BindVB = "01-11";
+        public const string BindMB = "01-12";
+        public const string BindM1 = "02-8F";
+        public const string BindM2 = "02-8E";
+        public const string BindLT = "01-0D";
+        public const string BindRT = "01-0E";
+        public const string BindXB = "01-13";
+
+        public const string BindMouseL = "03-01";
+        public const string BindMouseR = "03-02";
+
+        public const string BindKBU = "02-98";
+        public const string BindKBD = "02-99";
+        public const string BindKBL = "02-9A";
+        public const string BindKBR = "02-9B";
+
+        public const string BindTab = "02-0D";
+        public const string BindEnter = "02-5A";
+        public const string BindBack = "02-66";
+        public const string BindEsc = "02-76";
+
+        public const string BindPgU = "02-96";
+        public const string BindPgD = "02-97";
+
+        public const string BindShift = "02-88";
+        public const string BindCtrl = "02-8C";
+        public const string BindAlt = "02-8A";
+        public const string BindWin = "02-82";
+
+        public const string BindTaskManager = "04-03-8C-88-76";
+        public const string BindCloseWindow = "04-02-8A-0C";
+
+        public const string BindBrightnessDown = "04-04-8C-88-8A-05";
+        public const string BindBrightnessUp = "04-04-8C-88-8A-06";
+        public const string BindXGM = "04-04-8C-88-8A-04";
+        public const string BindToggleMode = "04-04-8C-88-8A-0C";
+        public const string BindToggleFPSLimit = "04-04-8C-88-8A-01";
+        public const string BindToggleTouchScreen = "04-04-8C-88-8A-0B";
+
+        public const string BindAmdOverlay = "04-03-8C-88-44";
+        public const string BindOverlay = "04-04-8C-88-8A-44";
+
+        public const string BindShiftTab = "04-02-88-0D";
+        public const string BindAltTab = "04-02-8A-0D";
+        public const string BindWinTab = "04-02-82-0D";
+
+        public const string BindVolUp = "05-03";
+        public const string BindVolDown = "05-02";
+
+        public const string BindPrintScrn = "02-C3";
+        public const string BindPause = "02-91";
+        public const string BindWinP = "04-02-82-4D";
+        public const string BindWinH = "04-02-82-33";
+
+        public const string BindScreenshot = "04-03-82-88-1B";
+        public const string BindShowDesktop = "04-02-82-23";
+
+        public const string BindShowKeyboard = "05-19";
+
+        static byte[] CommandReady = new byte[] { AsusHid.INPUT_ID, 0xD1, 0x0A, 0x01 };
+
+        public static IReadOnlyList<(string GroupLabel, IReadOnlyList<(string Code, string Name)> Items)> BindingGroups { get; } =
+        [
+            ("", new (string, string)[]
+            {
+                ("", "----------"),
+                ("00-00", "[ Disabled ]"),
+            }),
+            ("Controller", new (string, string)[]
+            {
+                (BindA, "A"),
+                (BindB, "B"),
+                (BindX, "X"),
+                (BindY, "Y"),
+                (BindLT, "L-Trigger"),
+                (BindRT, "R-Trigger"),
+                (BindLB, "L-Bumper"),
+                (BindRB, "R-Bumper"),
+                (BindLS, "L-Stick Click"),
+                (BindRS, "R-Stick Click"),
+                (BindDU, "D-Pad Up"),
+                (BindDD, "D-Pad Down"),
+                (BindDL, "D-Pad Left"),
+                (BindDR, "D-Pad Right"),
+                (BindVB, "View Button"),
+                (BindMB, "Menu Button"),
+                (BindXB, "XBox/Steam"),
+                (BindM1, "M1"),
+                (BindM2, "M2"),
+            }),
+            ("Mouse", new (string, string)[]
+            {
+                (BindMouseL, "Left Click"),
+                (BindMouseR, "Right Click"),
+                ("03-03", "Middle Click"),
+                ("03-04", "Scroll Up"),
+                ("03-05", "Scroll Down"),
+            }),
+            ("System", new (string, string)[]
+            {
+                (BindToggleMode, "ControllerMode"),
+                (BindToggleFPSLimit, "FPS Limit"),
+                (BindToggleTouchScreen, "TouchScr.Toggle"),
+                (BindVolUp, "Vol Up"),
+                (BindVolDown, "Vol Down"),
+                (BindBrightnessUp, "Bright Up"),
+                (BindBrightnessDown, "Bright Down"),
+                (BindShowKeyboard, "Show Keyboard"),
+                (BindShowDesktop, "Show Desktop"),
+                (BindScreenshot, "Screenshot"),
+                (BindOverlay, "Overlay"),
+                (BindAmdOverlay, "AMD Overlay"),
+                (BindTaskManager, "Task Manager"),
+                (BindCloseWindow, "Close Window"),
+                (BindShiftTab, "Shift-Tab"),
+                (BindAltTab, "Alt-Tab"),
+                (BindWinTab, "Win-Tab"),
+                (BindXGM, "XGM Toggle"),
+                (BindWinP, "Project Mode"),
+                ("05-1E", "Start Recording"),
+                ("05-01", "Mic off"),
+            }),
+            ("Modifiers", new (string, string)[]
+            {
+                (BindEsc, "Esc"),
+                (BindBack, "Backspace"),
+                (BindTab, "Tab"),
+                (BindEnter, "Enter"),
+                (BindShift, "L-Shift"),
+                (BindAlt, "L-Alt"),
+                (BindCtrl, "L-Ctl"),
+                (BindWin, "Win"),
+                ("02-89", "R-Shift"),
+                ("02-8B", "R-Alt"),
+                ("02-8D", "R-Ctl"),
+                ("02-84", "App menu"),
+                ("02-58", "Caps"),
+                ("02-29", "Space"),
+                (BindPrintScrn, "PrntScn"),
+                (BindPause, "Pause"),
+                ("02-7E", "ScrLk"),
+            }),
+            ("Navigation", new (string, string)[]
+            {
+                (BindPgU, "Pg-Up"),
+                (BindPgD, "Pg-Dwn"),
+                (BindKBU, "Up-Arrow"),
+                (BindKBD, "Down-Arrow"),
+                (BindKBL, "Left-Arrow"),
+                (BindKBR, "Right-Arrow"),
+                ("02-80", "Insert"),
+                ("02-85", "Delete"),
+                ("02-82", "Home"),
+                ("02-87", "End"),
+            }),
+            ("Function Keys", new (string, string)[]
+            {
+                ("02-01", "F1"),
+                ("02-02", "F2"),
+                ("02-03", "F3"),
+                ("02-04", "F4"),
+                ("02-05", "F5"),
+                ("02-06", "F6"),
+                ("02-07", "F7"),
+                ("02-08", "F8"),
+                ("02-09", "F9"),
+                ("02-0A", "F10"),
+                ("02-0B", "F11"),
+                ("02-0C", "F12"),
+            }),
+            ("Letters", new (string, string)[]
+            {
+                ("02-14", "Q"),
+                ("02-1A", "W"),
+                ("02-08", "E"),
+                ("02-15", "R"),
+                ("02-17", "T"),
+                ("02-1C", "Y"),
+                ("02-18", "U"),
+                ("02-0C", "I"),
+                ("02-12", "O"),
+                ("02-13", "P"),
+                ("02-04", "A"),
+                ("02-16", "S"),
+                ("02-07", "D"),
+                ("02-09", "F"),
+                ("02-0A", "G"),
+                ("02-0B", "H"),
+                ("02-0D", "J"),
+                ("02-0E", "K"),
+                ("02-0F", "L"),
+                ("02-1D", "Z"),
+                ("02-1B", "X"),
+                ("02-06", "C"),
+                ("02-19", "V"),
+                ("02-05", "B"),
+                ("02-11", "N"),
+                ("02-10", "M"),
+            }),
+            ("Numbers", new (string, string)[]
+            {
+                ("02-27", "0"),
+                ("02-1E", "1"),
+                ("02-1F", "2"),
+                ("02-20", "3"),
+                ("02-21", "4"),
+                ("02-22", "5"),
+                ("02-23", "6"),
+                ("02-24", "7"),
+                ("02-25", "8"),
+                ("02-26", "9"),
+            }),
+            ("Numpad", new (string, string)[]
+            {
+                ("02-77", "NumLock"),
+                ("02-84", "Num/"),
+                ("02-85", "Num*"),
+                ("02-86", "Num-"),
+                ("02-87", "Num+"),
+                ("02-81", "NumEnter"),
+                ("02-71", "NumPeriod"),
+                ("02-70", "Num0"),
+                ("02-69", "Num1"),
+                ("02-72", "Num2"),
+                ("02-7A", "Num3"),
+                ("02-6B", "Num4"),
+                ("02-73", "Num5"),
+                ("02-74", "Num6"),
+                ("02-6C", "Num7"),
+                ("02-75", "Num8"),
+                ("02-7D", "Num9"),
+            }),
+        ];
+
+        public AllyControl()
+        {
+            if (!AppConfig.IsAlly()) return;
+
+            if (timer is null)
+            {
+                timer = new System.Timers.Timer(300);
+                timer.Elapsed += Timer_Elapsed;
+                Logger.WriteLine("Ally timer");
+            }
+        }
+
+        private int GetMaxTDP()
+        {
+            int tdp = AppConfig.GetMode("limit_total");
+            if (tdp > 0) return tdp;
+            switch (Modes.GetCurrentBase())
+            {
+                case 1:
+                    return 25;
+                case 2:
+                    return 10;
+                default:
+                    return 15;
+            }
+        }
+
+        private int GetTDP()
+        {
+            if (tdpCurrent < 0) tdpCurrent = GetMaxTDP();
+            return tdpCurrent;
+        }
+
+        private void SetTDP(int tdp, string log)
+        {
+            if (tdp < tdpStable) tdp = tdpStable;
+
+            int max = GetMaxTDP();
+            if (tdp > max) tdp = max;
+
+            if (tdp == tdpCurrent) return;
+            if (!autoTDP) return;
+
+            Program.acpi.DeviceSet(AsusACPI.PPT_APUA0, tdp, log);
+            Program.acpi.DeviceSet(AsusACPI.PPT_APUA3, tdp, null);
+            Program.acpi.DeviceSet(AsusACPI.PPT_APUC1, tdp, null);
+
+            tdpCurrent = tdp;
+        }
+
+        private void Timer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (!autoTDP && _mode != ControllerMode.Auto) return;
+
+            float fps = AmdControl.GetFPS();
+            int? usage = 0;
+
+            if (autoTDP && fpsLimit > 0 && fpsLimit <= 120)
+            {
+                int power = AmdControl.GetiGpuPower();
+
+                if (fps <= Math.Min(fpsLimit * 0.9, fpsLimit - 4)) _upCount++;
+                else _upCount = 0;
+
+                if (fps >= Math.Min(fpsLimit * 0.95, fpsLimit - 2)) _downCount++;
+                else _downCount = 0;
+
+                var tdp = GetTDP();
+                if (_upCount >= 1)
+                {
+                    _downCount = 0;
+                    _upCount = 0;
+                    SetTDP(tdp + 1, $"AutoTDP+ [{power}]{fps}");
+                }
+
+                if (_downCount >= 8 && power < tdp)
+                {
+                    _upCount = 0;
+                    _downCount--;
+                    SetTDP(tdp - 1, $"AutoTDP- [{power}]{fps}");
+                }
+            }
+
+            if (_mode == ControllerMode.Auto)
+            {
+                if (fps > 0) usage = AmdControl.GetiGpuUse();
+                ControllerMode newMode = (fps > 0 && usage > 15) ? ControllerMode.Gamepad : ControllerMode.Mouse;
+
+                if (_applyMode != newMode) _autoCount++;
+                else _autoCount = 0;
+
+                if (_autoCount == 3)
+                {
+                    _autoCount = 0;
+                    ApplyMode(newMode);
+                    Logger.WriteLine($"Controller Mode (FPS={fps}, USAGE={usage}%): {newMode}");
+                }
+            }
+        }
+
+        public void ToggleAutoTDP()
+        {
+            autoTDP = !autoTDP;
+            tdpCurrent = -1;
+
+            if (!autoTDP)
+            {
+                Program.modeControl?.SetPerformanceMode();
+            }
+
+            OnAutoTDPChanged?.Invoke(autoTDP);
+        }
+
+        public void Init()
+        {
+            if (AppConfig.IsAlly()) OnAllyVisualise?.Invoke(true);
+            else return;
+
+            SetMode((ControllerMode)AppConfig.Get("controller_mode", (int)ControllerMode.Auto), true);
+
+            fpsLimit = AmdControl.GetFPSLimit();
+            OnFPSLimitChanged?.Invoke(fpsLimit);
+        }
+
+        public void ToggleFPSLimit(bool toast = false)
+        {
+            switch (fpsLimit)
+            {
+                case 30:
+                    fpsLimit = 40;
+                    break;
+                case 40:
+                    fpsLimit = 45;
+                    break;
+                case 45:
+                    fpsLimit = 50;
+                    break;
+                case 50:
+                    fpsLimit = 60;
+                    break;
+                case 60:
+                    fpsLimit = 75;
+                    break;
+                case 75:
+                    fpsLimit = 90;
+                    break;
+                case 90:
+                    fpsLimit = 120;
+                    break;
+                case 120:
+                    fpsLimit = 240;
+                    break;
+                default:
+                    fpsLimit = 30;
+                    break;
+            }
+
+            int result = AmdControl.SetFPSLimit(fpsLimit);
+            Logger.WriteLine($"FPS Limit {fpsLimit}: {result}");
+
+            OnFPSLimitChanged?.Invoke(fpsLimit);
+            if (toast) Program.toast.RunToast("FPS Limit " + ((fpsLimit > 0 && fpsLimit <= 120) ? fpsLimit : "OFF"));
+        }
+
+        public void ToggleBacklight()
+        {
+            InputDispatcher.SetBacklight(4, true);
+        }
+
+        static private byte[] DecodeBinding(string binding = "")
+        {
+            byte[] bytes;
+
+            if (binding == "" || binding is null) return new byte[2];
+
+            try
+            {
+                bytes = AppConfig.StringToBytes(binding);
+            }
+            catch
+            {
+                return new byte[2];
+            }
+
+            byte[] code = new byte[10];
+            code[0] = bytes[0];
+
+            switch (bytes[0])
+            {
+                case 0x02:
+                    code[2] = bytes[1];
+                    break;
+                case 0x03:
+                    code[4] = bytes[1];
+                    break;
+                case 0x04:
+                    bytes.Skip(1).ToArray().CopyTo(code, 5);
+                    break;
+                case 0x05:
+                    code[3] = bytes[1];
+                    break;
+                default:
+                    code[1] = bytes[1];
+                    break;
+            }
+
+            return code;
+        }
+
+        static private void BindZone(BindingZone zone)
+        {
+            string KeyL1, KeyR1;
+            string KeyL2, KeyR2;
+
+            bool desktop = (_applyMode == ControllerMode.Mouse);
+
+            switch (zone)
+            {
+                case BindingZone.DPadUpDown:
+                    KeyL1 = AppConfig.GetString("bind_du", desktop ? BindKBU : BindDU);
+                    KeyR1 = AppConfig.GetString("bind_dd", desktop ? BindKBD : BindDD);
+                    KeyL2 = AppConfig.GetString("bind2_du", BindShowKeyboard);
+                    KeyR2 = AppConfig.GetString("bind2_dd", BindShowDesktop);
+                    break;
+                case BindingZone.DPadLeftRight:
+                    KeyL1 = AppConfig.GetString("bind_dl", desktop ? BindKBL : BindDL);
+                    KeyR1 = AppConfig.GetString("bind_dr", desktop ? BindKBR : BindDR);
+                    KeyL2 = AppConfig.GetString("bind2_dl", BindBrightnessDown);
+                    KeyR2 = AppConfig.GetString("bind2_dr", BindBrightnessUp);
+                    break;
+                case BindingZone.StickClick:
+                    KeyL1 = AppConfig.GetString("bind_ls", desktop ? BindShift : BindLS);
+                    KeyR1 = AppConfig.GetString("bind_rs", desktop ? BindMouseL : BindRS);
+                    KeyL2 = AppConfig.GetString("bind2_ls");
+                    KeyR2 = AppConfig.GetString("bind2_rs", BindToggleMode);
+                    break;
+                case BindingZone.Bumper:
+                    KeyL1 = AppConfig.GetString("bind_lb", desktop ? BindTab : BindLB);
+                    KeyR1 = AppConfig.GetString("bind_rb", desktop ? BindMouseL : BindRB);
+                    KeyL2 = AppConfig.GetString("bind2_lb");
+                    KeyR2 = AppConfig.GetString("bind2_rb");
+                    break;
+                case BindingZone.AB:
+                    KeyL1 = AppConfig.GetString("bind_a", desktop ? BindEnter : BindA);
+                    KeyR1 = AppConfig.GetString("bind_b", desktop ? BindEsc : BindB);
+                    KeyL2 = AppConfig.GetString("bind2_a");
+                    KeyR2 = AppConfig.GetString("bind2_b");
+                    break;
+                case BindingZone.XY:
+                    KeyL1 = AppConfig.GetString("bind_x", desktop ? BindPgD : BindX);
+                    KeyR1 = AppConfig.GetString("bind_y", desktop ? BindPgU : BindY);
+                    KeyL2 = AppConfig.GetString("bind2_x", BindScreenshot);
+                    KeyR2 = AppConfig.GetString("bind2_y", BindOverlay);
+                    break;
+                case BindingZone.ViewMenu:
+                    KeyL1 = AppConfig.GetString("bind_vb", BindVB);
+                    KeyR1 = AppConfig.GetString("bind_mb", BindMB);
+                    KeyL2 = AppConfig.GetString("bind2_vb");
+                    KeyR2 = AppConfig.GetString("bind2_mb");
+                    break;
+                case BindingZone.M1M2:
+                    KeyL1 = AppConfig.GetString("bind_m2", BindM2);
+                    KeyR1 = AppConfig.GetString("bind_m1", BindM1);
+                    KeyL2 = AppConfig.GetString("bind2_m2", BindM2);
+                    KeyR2 = AppConfig.GetString("bind2_m1", BindM1);
+                    break;
+                default:
+                    KeyL1 = AppConfig.GetString("bind_lt", desktop ? BindShiftTab : BindLT);
+                    KeyR1 = AppConfig.GetString("bind_rt", desktop ? BindMouseR : BindRT);
+                    KeyL2 = AppConfig.GetString("bind2_lt");
+                    KeyR2 = AppConfig.GetString("bind2_rt");
+                    break;
+            }
+
+            if (KeyL1 == "" && KeyR1 == "") return;
+
+            byte[] bindings = new byte[50];
+            byte[] init = new byte[] { AsusHid.INPUT_ID, 0xd1, 0x02, (byte)zone, 0x2c };
+
+            init.CopyTo(bindings, 0);
+
+            DecodeBinding(KeyL1).CopyTo(bindings, 5);
+            DecodeBinding(KeyL2).CopyTo(bindings, 16);
+
+            DecodeBinding(KeyR1).CopyTo(bindings, 27);
+            DecodeBinding(KeyR2).CopyTo(bindings, 38);
+
+            AsusHid.WriteInput(bindings, null);
+        }
+
+        static private void SetTurbo()
+        {
+            byte[] turbo = new byte[64];
+            turbo[0] = AsusHid.INPUT_ID;
+            turbo[1] = 0xD1;
+            turbo[2] = 0x0F;
+            turbo[3] = 0x20;
+
+            void Z(int zone, string l1, string l2, string r1, string r2)
+            {
+                int o = 4 + (zone - 1) * 4;
+                turbo[o] = (byte)(AppConfig.Get(l1, 0) / 50);
+                turbo[o + 1] = (byte)(AppConfig.Get(l2, 0) / 50);
+                turbo[o + 2] = (byte)(AppConfig.Get(r1, 0) / 50);
+                turbo[o + 3] = (byte)(AppConfig.Get(r2, 0) / 50);
+            }
+
+            Z(1, "turbo_du", "turbo2_du", "turbo_dd", "turbo2_dd");
+            Z(2, "turbo_dl", "turbo2_dl", "turbo_dr", "turbo2_dr");
+            Z(3, "turbo_ls", "turbo2_ls", "turbo_rs", "turbo2_rs");
+            Z(4, "turbo_lb", "turbo2_lb", "turbo_rb", "turbo2_rb");
+            Z(5, "turbo_a", "turbo2_a", "turbo_b", "turbo2_b");
+            Z(6, "turbo_x", "turbo2_x", "turbo_y", "turbo2_y");
+            Z(7, "turbo_vb", "turbo2_vb", "turbo_mb", "turbo2_mb");
+            Z(8, "turbo_m2", "turbo2_m2", "turbo_m1", "turbo2_m1");
+            Z(9, "turbo_lt", "turbo2_lt", "turbo_rt", "turbo2_rt");
+
+            AsusHid.WriteInput(turbo, null);
+        }
+
+        static void WakeUp()
+        {
+            AsusHid.InitInput();
+        }
+
+        static public void SetDeadzones()
+        {
+            AsusHid.WriteInput(new byte[] { AsusHid.INPUT_ID, 0xd1, 4, 4,
+                (byte)AppConfig.Get("ls_min", 0),
+                (byte)AppConfig.Get("ls_max", 100),
+                (byte)AppConfig.Get("rs_min", 0),
+                (byte)AppConfig.Get("rs_max", 100)
+            }, null);
+
+            AsusHid.WriteInput(new byte[] { AsusHid.INPUT_ID, 0xd1, 5, 4,
+                (byte)AppConfig.Get("lt_min", 0),
+                (byte)AppConfig.Get("lt_max", 100),
+                (byte)AppConfig.Get("rt_min", 0),
+                (byte)AppConfig.Get("rt_max", 100)
+            }, null);
+
+            AsusHid.WriteInput(new byte[] { AsusHid.INPUT_ID, 0xd1, 6, 2,
+                (byte)AppConfig.Get("vibra", 100),
+                (byte)AppConfig.Get("vibra", 100)
+            }, null);
+        }
+
+        public static void DisableXBoxController(bool disabled)
+        {
+            AsusHid.WriteInput([AsusHid.INPUT_ID, 0xD1, 0x0B, 0x01, disabled ? (byte)0x02 : (byte)0x01], $"ControllerDisabled: {disabled}");
+        }
+
+        public static void ApplyMode(ControllerMode applyMode = ControllerMode.Auto, bool init = false)
+        {
+            Task.Run(() =>
+            {
+                if (applyMode == ControllerMode.Skip) return;
+
+                HidStream? input = AsusHid.FindHidStream(AsusHid.INPUT_ID);
+                int count = 0;
+
+                while (input == null && count++ < 10)
+                {
+                    input = AsusHid.FindHidStream(AsusHid.INPUT_ID);
+                    Thread.Sleep(500);
+                }
+
+                if (input == null)
+                {
+                    Logger.WriteLine($"Controller not found");
+                    return;
+                }
+
+                input.Dispose();
+
+                if (applyMode != ControllerMode.Auto) _applyMode = applyMode;
+
+                if (init)
+                {
+                    WakeUp();
+                    DisableXBoxController(false);
+                    InputDispatcher.SetBacklightAuto();
+                }
+
+                AsusHid.WriteInput([AsusHid.INPUT_ID, 0xD1, 0x01, 0x01, (byte)_applyMode], "Controller");
+
+                BindZone(BindingZone.M1M2);
+                BindZone(BindingZone.DPadUpDown);
+                BindZone(BindingZone.DPadLeftRight);
+                BindZone(BindingZone.StickClick);
+                BindZone(BindingZone.Bumper);
+                BindZone(BindingZone.AB);
+                BindZone(BindingZone.XY);
+                BindZone(BindingZone.ViewMenu);
+                BindZone(BindingZone.Trigger);
+
+                SetTurbo();
+                SetDeadzones();
+
+                if (init && AppConfig.Is("controller_disabled"))
+                {
+                    Thread.Sleep(500);
+                    DisableXBoxController(true);
+                }
+            });
+        }
+
+        public static void EmitStick(int stick, float x, float y)
+        {
+            byte[] r = new byte[64];
+            r[0] = AsusHid.INPUT_ID;
+            r[1] = 0xD1;
+            r[2] = 0x15;
+            r[3] = (byte)stick;
+            r[4] = 0x04;
+            r[5] = 0x00;
+
+            short sx = ToInt16(x);
+            short sy = ToInt16(y);
+
+            r[6] = (byte)((sx >> 8) & 0xFF);
+            r[7] = (byte)(sx & 0xFF);
+            r[8] = (byte)((sy >> 8) & 0xFF);
+            r[9] = (byte)(sy & 0xFF);
+
+            AsusHid.WriteInput(r, null);
+        }
+
+        static short ToInt16(float v)
+        {
+            if (v > 1f) v = 1f;
+            if (v < -1f) v = -1f;
+            return v <= -1f ? short.MinValue : (short)(v * 32767f);
+        }
+
+        private void SetMode(ControllerMode mode, bool init = false)
+        {
+            _mode = mode;
+            AppConfig.Set("controller_mode", (int)mode);
+
+            AmdControl.StopFPS();
+            ApplyMode(mode, init);
+
+            AmdControl.StartFPS();
+            timer.Start();
+
+            OnControllerModeChanged?.Invoke(mode);
+        }
+
+        public void Dispose()
+        {
+            if (timer is not null)
+            {
+                timer.Stop();
+                timer.Elapsed -= Timer_Elapsed;
+                timer.Dispose();
+                timer = null!;
+            }
+
+            _amdControl?.Dispose();
+            _amdControl = null;
+        }
+
+        public void ToggleModeHotkey()
+        {
+            if (_applyMode == ControllerMode.Gamepad)
+            {
+                SetMode(ControllerMode.Mouse);
+                Program.toast.RunToast("Mouse", ToastIcon.Controller);
+            }
+            else
+            {
+                SetMode(ControllerMode.Gamepad);
+                Program.toast.RunToast("Gamepad", ToastIcon.Controller);
+            }
+        }
+
+        public void ToggleMode()
+        {
+            switch (_mode)
+            {
+                case ControllerMode.Auto:
+                    SetMode(ControllerMode.Gamepad);
+                    break;
+                case ControllerMode.Gamepad:
+                    SetMode(ControllerMode.Mouse);
+                    break;
+                case ControllerMode.Mouse:
+                    SetMode(ControllerMode.Skip);
+                    break;
+                case ControllerMode.Skip:
+                    SetMode(ControllerMode.Auto);
+                    break;
+            }
+        }
+    }
+}
