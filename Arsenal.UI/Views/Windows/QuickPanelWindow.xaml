@@ -277,7 +277,7 @@
                                  than the words beside it. Assembly-qualified, so it also
                                  resolves when the window is hosted by something other than
                                  Arsenal.exe - which is how the smoke tools render it. -->
-                            <Image Height="20" Margin="0,0,8,0" VerticalAlignment="Center"
+                            <Image Height="16" Margin="0,0,8,0" VerticalAlignment="Center"
                                    Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality">
                                 <Image.Source>
                                     <CroppedBitmap Source="pack://application:,,,/Arsenal;component/Assets/arsenal-mark.png"
