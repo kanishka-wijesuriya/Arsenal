@@ -16,25 +16,29 @@
 
             <controls:SettingsGroup Header="{loc:Loc DisplayGPUMode}" Icon="Glance24"
                                     Description="{loc:Loc DisplayChooseHowTheIntegratedAnd}">
-                <controls:SettingsRow Header="{loc:Loc PerformanceMode}">
-                    <controls:SettingsRow.ContentBelow>
-                        <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="DisplayGpu" Content="{loc:Loc DisplayEcoIGPUOnly}" MinWidth="150"
-                                         Visibility="{Binding IsEcoSupported, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                         IsChecked="{Binding CurrentGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
-                                         Command="{Binding SetGpuModeCommand}" CommandParameter="0"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="DisplayGpu" Content="{loc:Loc DisplayStandardHybrid}" MinWidth="150"
-                                         IsChecked="{Binding CurrentGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
-                                         Command="{Binding SetGpuModeCommand}" CommandParameter="1"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="DisplayGpu" Content="{loc:Loc DisplayUltimateMUX}" MinWidth="150"
-                                         Visibility="{Binding IsMuxSupported, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                         IsChecked="{Binding CurrentGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
-                                         Command="{Binding SetGpuModeCommand}" CommandParameter="2"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="DisplayGpu" Content="{loc:Loc DisplayOptimizedAutomatic}" MinWidth="150"
-                                         IsChecked="{Binding CurrentGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
-                                         Command="{Binding SetGpuModeCommand}" CommandParameter="3"/>
-                        </WrapPanel>
-                    </controls:SettingsRow.ContentBelow>
+                <!-- The chips carry the bare mode names and the description under the
+                     label says what the selected one does, which is the arrangement the
+                     Home page uses. Four qualified labels - "Eco · iGPU only" and the
+                     rest - will not fit in a row's control column beside a label, and
+                     they said the same thing twice once the description was there. -->
+                <controls:SettingsRow Header="{loc:Loc PerformanceMode}"
+                                      Description="{Binding GpuModeDescription}">
+                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="DisplayGpu" Content="{loc:Loc EcoMode}"
+                                     Visibility="{Binding IsEcoSupported, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                     IsChecked="{Binding CurrentGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
+                                     Command="{Binding SetGpuModeCommand}" CommandParameter="0"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="DisplayGpu" Content="{loc:Loc StandardMode}"
+                                     IsChecked="{Binding CurrentGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
+                                     Command="{Binding SetGpuModeCommand}" CommandParameter="1"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="DisplayGpu" Content="{loc:Loc UltimateMode}"
+                                     Visibility="{Binding IsMuxSupported, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                     IsChecked="{Binding CurrentGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
+                                     Command="{Binding SetGpuModeCommand}" CommandParameter="2"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="DisplayGpu" Content="{loc:Loc Optimized}"
+                                     IsChecked="{Binding CurrentGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
+                                     Command="{Binding SetGpuModeCommand}" CommandParameter="3"/>
+                    </WrapPanel>
                 </controls:SettingsRow>
 
                 <controls:SettingsRow Header="{loc:Loc DisplayApplicationsHoldingTheDGPU}"

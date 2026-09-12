@@ -22,29 +22,25 @@
                 </controls:SettingsRow>
 
                 <controls:SettingsRow Header="{loc:Loc AutomationOnACPower}" IsEnabled="{Binding IsAutoSwitchEnabled}">
-                    <controls:SettingsRow.ContentBelow>
-                        <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="AcMode" Content="{loc:Loc Silent}"
-                                         IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="AcMode" Content="{loc:Loc Balanced}"
-                                         IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="AcMode" Content="{loc:Loc Turbo}"
-                                         IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"/>
-                        </WrapPanel>
-                    </controls:SettingsRow.ContentBelow>
+                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AcMode" Content="{loc:Loc Silent}"
+                                     IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AcMode" Content="{loc:Loc Balanced}"
+                                     IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AcMode" Content="{loc:Loc Turbo}"
+                                     IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"/>
+                    </WrapPanel>
                 </controls:SettingsRow>
 
                 <controls:SettingsRow Header="{loc:Loc AutomationOnBattery}" IsEnabled="{Binding IsAutoSwitchEnabled}">
-                    <controls:SettingsRow.ContentBelow>
-                        <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="BatteryMode" Content="{loc:Loc Silent}"
-                                         IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="BatteryMode" Content="{loc:Loc Balanced}"
-                                         IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="BatteryMode" Content="{loc:Loc Turbo}"
-                                         IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"/>
-                        </WrapPanel>
-                    </controls:SettingsRow.ContentBelow>
+                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="BatteryMode" Content="{loc:Loc Silent}"
+                                     IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="BatteryMode" Content="{loc:Loc Balanced}"
+                                     IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="BatteryMode" Content="{loc:Loc Turbo}"
+                                     IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"/>
+                    </WrapPanel>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 

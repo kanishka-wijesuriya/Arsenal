@@ -26,20 +26,19 @@
             <controls:SettingsGroup Header="{loc:Loc PerformanceActiveProfile}"
                                     Icon="Gauge24"
                                     Description="{loc:Loc PerformanceTheTuningBelowBelongsTo}">
-                <controls:SettingsRow Header="{loc:Loc Profile}">
-                    <controls:SettingsRow.ContentBelow>
-                        <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="PerformanceProfile" Content="{loc:Loc Silent}"
-                                         IsChecked="{Binding CurrentMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
-                                         Command="{Binding SelectProfileModeCommand}" CommandParameter="2"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="PerformanceProfile" Content="{loc:Loc Balanced}"
-                                         IsChecked="{Binding CurrentMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
-                                         Command="{Binding SelectProfileModeCommand}" CommandParameter="0"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="PerformanceProfile" Content="{loc:Loc Turbo}"
-                                         IsChecked="{Binding CurrentMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
-                                         Command="{Binding SelectProfileModeCommand}" CommandParameter="1"/>
-                        </WrapPanel>
-                    </controls:SettingsRow.ContentBelow>
+                <controls:SettingsRow Header="{loc:Loc Profile}"
+                                      Description="{loc:Loc HomeAppliedToTheBIOSAnd}">
+                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="PerformanceProfile" Content="{loc:Loc Silent}"
+                                     IsChecked="{Binding CurrentMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
+                                     Command="{Binding SelectProfileModeCommand}" CommandParameter="2"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="PerformanceProfile" Content="{loc:Loc Balanced}"
+                                     IsChecked="{Binding CurrentMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
+                                     Command="{Binding SelectProfileModeCommand}" CommandParameter="0"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="PerformanceProfile" Content="{loc:Loc Turbo}"
+                                     IsChecked="{Binding CurrentMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
+                                     Command="{Binding SelectProfileModeCommand}" CommandParameter="1"/>
+                    </WrapPanel>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 

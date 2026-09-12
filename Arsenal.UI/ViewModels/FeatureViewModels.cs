@@ -841,6 +841,22 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty]
         private int _currentGpuMode = 0;
 
+        /// <summary>
+        /// What the selected GPU mode means, under the row's own label. Deliberately the
+        /// same four sentences <see cref="HomeViewModel.GpuModeDescription"/> uses: it is
+        /// one control in two places, and a second wording would be a second thing to
+        /// translate and keep true.
+        /// </summary>
+        public string GpuModeDescription => CurrentGpuMode switch
+        {
+            0 => AppStrings.Get("FeatureEcoTheDedicatedGPUIs"),
+            1 => AppStrings.Get("FeatureStandardHybridApplicationsChoose"),
+            2 => AppStrings.Get("FeatureUltimateTheDedicatedGPUDrives"),
+            _ => AppStrings.Get("FeatureOptimizedFollowsThePowerSource")
+        };
+
+        partial void OnCurrentGpuModeChanged(int value) => OnPropertyChanged(nameof(GpuModeDescription));
+
         [ObservableProperty]
         private bool _isInstallingProfiles;
 
