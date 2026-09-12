@@ -9,6 +9,7 @@ namespace Arsenal.Application.Services.Contracts
         string CurrentModeName { get; }
         event Action<int> ModeChanged;
         event Action<string> ModeLabelChanged;
+        event Action ProfilesChanged;
 
         /// <summary>
         /// Applies a user-selected performance profile. Manual selections notify by
@@ -17,6 +18,10 @@ namespace Arsenal.Application.Services.Contracts
         void SetMode(int modeIndex, bool notify = true);
         void CycleMode(bool backward = false);
         PerformanceProfile GetCurrentProfile();
+        IReadOnlyList<PerformancePlanInfo> GetProfiles();
+        int CreateProfile(string? name = null);
+        bool RenameProfile(int modeIndex, string name);
+        bool DeleteProfile(int modeIndex);
         void SaveProfile(PerformanceProfile profile);
         void ResetProfile(int modeIndex);
         bool IsCpuBoostSupported { get; }

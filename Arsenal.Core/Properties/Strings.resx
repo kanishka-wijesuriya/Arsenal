@@ -3091,4 +3091,35 @@ and restarts them automatically when the GPU is enabled</value>
   <data name="Zoom" xml:space="preserve">
     <value>Zoom</value>
   </data>
+  <data name="PerformanceNewPlan" xml:space="preserve"><value>New plan</value></data>
+  <data name="PerformanceManagePlans" xml:space="preserve"><value>Manage plans</value></data>
+  <data name="PerformancePlanLibrary" xml:space="preserve"><value>Performance plan library</value></data>
+  <data name="PerformancePlanLibraryDescription" xml:space="preserve"><value>Choose, name, and organize every built-in and custom plan in one place.</value></data>
+  <data name="PerformanceCreatePlan" xml:space="preserve"><value>Create plan</value></data>
+  <data name="PerformancePlanName" xml:space="preserve"><value>Plan name</value></data>
+  <data name="PerformanceCreateFromCurrent" xml:space="preserve"><value>Start from the current plan</value></data>
+  <data name="PerformanceCreateFromCurrentDescription" xml:space="preserve"><value>Power, GPU, and fan settings are copied so you can refine them without rebuilding the profile.</value></data>
+  <data name="PerformanceCustomPlan" xml:space="preserve"><value>Custom Plan</value></data>
+  <data name="PerformancePlanLimitReached" xml:space="preserve"><value>The plan library is full. Remove a custom plan before creating another.</value></data>
+  <data name="PerformancePlanCreated" xml:space="preserve"><value>Custom plan created and selected.</value></data>
+  <data name="PerformancePlanRenamed" xml:space="preserve"><value>Plan name saved.</value></data>
+  <data name="PerformancePlanDeleted" xml:space="preserve"><value>Custom plan deleted.</value></data>
+  <data name="PerformanceSelectPlan" xml:space="preserve"><value>Select plan</value></data>
+  <data name="PerformanceRename" xml:space="preserve"><value>Save name</value></data>
+  <data name="PerformanceDelete" xml:space="preserve"><value>Delete plan</value></data>
+  <data name="PerformanceDeleteConfirm" xml:space="preserve"><value>Delete this plan and its saved tuning?</value></data>
+  <data name="PerformanceKeepPlan" xml:space="preserve"><value>Keep plan</value></data>
+  <data name="PerformanceAllPlans" xml:space="preserve"><value>View all</value></data>
+  <data name="PerformanceCustomModes" xml:space="preserve"><value>Custom performance modes</value></data>
+  <data name="PerformanceTunePlan" xml:space="preserve"><value>Tune plan</value></data>
+  <data name="PerformanceTunePlanDescription" xml:space="preserve"><value>Adjust power limits, clocks, thermals, and fan curves for the selected plan.</value></data>
+  <data name="QuickPanelPerformanceModes" xml:space="preserve"><value>Performance modes</value></data>
+  <data name="QuickPanelGpuModes" xml:space="preserve"><value>GPU modes</value></data>
+  <data name="QuickPanelChooseShortcuts" xml:space="preserve"><value>Choose performance shortcuts</value></data>
+  <data name="QuickPanelChooseShortcutsDescription" xml:space="preserve"><value>Pick three different plans for the quick panel. Custom plans appear here as soon as you create them.</value></data>
+  <data name="QuickPanelShortcut1" xml:space="preserve"><value>First shortcut</value></data>
+  <data name="QuickPanelShortcut2" xml:space="preserve"><value>Second shortcut</value></data>
+  <data name="QuickPanelShortcut3" xml:space="preserve"><value>Third shortcut</value></data>
+  <data name="QuickPanelRestoreDefaultShortcuts" xml:space="preserve"><value>Restore Silent, Balanced, and Turbo</value></data>
+  <data name="QuickPanelCustomizePerformanceShortcuts" xml:space="preserve"><value>Choose which three plans appear here</value></data>
 </root>

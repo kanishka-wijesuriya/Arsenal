@@ -15,6 +15,7 @@ namespace Arsenal.Application.Services.Implementations
 
         public event Action<int>? ModeChanged;
         public event Action<string>? ModeLabelChanged;
+        public event Action? ProfilesChanged;
 
         public bool IsCpuBoostSupported => true;
         public bool IsRyzenSmuSupported => CpuInfo.IsAMD;
@@ -82,6 +83,40 @@ namespace Arsenal.Application.Services.Implementations
                 ApplyFans = AppConfig.IsApplyFans(),
                 ApplyPower = AppConfig.IsApplyPower()
             };
+        }
+
+        public IReadOnlyList<PerformancePlanInfo> GetProfiles() => Modes.GetList()
+            .Select(mode => new PerformancePlanInfo(mode, Modes.GetName(mode), Modes.GetBase(mode), mode > 2))
+            .ToList();
+
+        public int CreateProfile(string? name = null)
+        {
+            int mode = Modes.Add(name);
+            if (mode < 0) return mode;
+
+            ProfilesChanged?.Invoke();
+            SetMode(mode);
+            return mode;
+        }
+
+        public bool RenameProfile(int modeIndex, string name)
+        {
+            if (!Modes.Rename(modeIndex, name)) return false;
+
+            ProfilesChanged?.Invoke();
+            if (modeIndex == CurrentMode) ModeLabelChanged?.Invoke(Modes.GetName(modeIndex));
+            return true;
+        }
+
+        public bool DeleteProfile(int modeIndex)
+        {
+            if (modeIndex <= 2 || !Modes.Exists(modeIndex)) return false;
+
+            bool wasCurrent = modeIndex == CurrentMode;
+            Modes.Remove(modeIndex);
+            ProfilesChanged?.Invoke();
+            if (wasCurrent) SetMode(AsusACPI.PerformanceBalanced);
+            return true;
         }
 
         public void SaveProfile(PerformanceProfile profile)

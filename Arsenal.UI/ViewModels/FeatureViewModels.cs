@@ -11,6 +11,41 @@ using MediaColor = System.Windows.Media.Color;
 
 namespace Arsenal.UI.ViewModels
 {
+    public partial class PerformancePlanItem : ObservableObject
+    {
+        public PerformancePlanItem(PerformancePlanInfo plan)
+        {
+            ModeIndex = plan.ModeIndex;
+            Name = plan.Name;
+            BaseMode = plan.BaseMode;
+            IsCustom = plan.IsCustom;
+        }
+
+        public int ModeIndex { get; }
+        public int BaseMode { get; }
+        public bool IsCustom { get; }
+        public SymbolRegular Icon => IsCustom
+            ? SymbolRegular.Settings24
+            : BaseMode switch
+            {
+                2 => SymbolRegular.Sleep24,
+                1 => SymbolRegular.Flash24,
+                _ => SymbolRegular.Gauge24
+            };
+
+        [ObservableProperty]
+        private string _name;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsDeleteIdle))]
+        private bool _isDeletePending;
+
+        public bool IsDeleteIdle => IsCustom && !IsDeletePending;
+
+        [ObservableProperty]
+        private bool _isSelected;
+    }
+
     public sealed record HomeControlDefinition(string Key, string Label, string Summary, SymbolRegular Icon);
 
     public sealed class HomeControlSlot
@@ -433,6 +468,28 @@ namespace Arsenal.UI.ViewModels
         private int _currentMode = 1;
 
         [ObservableProperty]
+        private PerformancePlanItem? _selectedProfile;
+
+        [ObservableProperty]
+        private bool _isProfileManagerOpen;
+
+        [ObservableProperty]
+        private bool _isCreateComposerOpen;
+
+        [ObservableProperty]
+        private string _newProfileName = string.Empty;
+
+        [ObservableProperty]
+        private string _profileManagerMessage = string.Empty;
+
+        private bool _isRefreshingProfiles;
+
+        public ObservableCollection<PerformancePlanItem> Profiles { get; } = new();
+        public ObservableCollection<PerformancePlanItem> VisibleProfiles { get; } = new();
+        public bool HasMoreProfiles => Profiles.Count > 5;
+        public bool CanCreateProfile => Profiles.Count < Arsenal.Mode.Modes.MaxModes;
+
+        [ObservableProperty]
         private int _spl = 45;
 
         [ObservableProperty]
@@ -640,10 +697,12 @@ namespace Arsenal.UI.ViewModels
             };
 
             _performanceService.ModeChanged += _ => System.Windows.Application.Current?.Dispatcher.BeginInvoke(LoadCurrentProfile);
+            _performanceService.ProfilesChanged += () => System.Windows.Application.Current?.Dispatcher.BeginInvoke(RefreshProfiles);
         }
 
         public void LoadCurrentProfile()
         {
+            RefreshProfiles();
             var profile = _performanceService.GetCurrentProfile();
             CurrentMode = profile.ModeIndex;
 
@@ -692,6 +751,44 @@ namespace Arsenal.UI.ViewModels
             OnPropertyChanged(nameof(SelectedFanCurve));
         }
 
+        private void RefreshProfiles()
+        {
+            _isRefreshingProfiles = true;
+            try
+            {
+                Profiles.Clear();
+                foreach (PerformancePlanInfo plan in _performanceService.GetProfiles())
+                    Profiles.Add(new PerformancePlanItem(plan));
+
+                SelectedProfile = Profiles.FirstOrDefault(plan => plan.ModeIndex == _performanceService.CurrentMode)
+                    ?? Profiles.FirstOrDefault();
+                foreach (PerformancePlanItem plan in Profiles)
+                    plan.IsSelected = plan.ModeIndex == _performanceService.CurrentMode;
+
+                VisibleProfiles.Clear();
+                List<PerformancePlanItem> visible = Profiles.Take(5).ToList();
+                if (SelectedProfile is not null && !visible.Contains(SelectedProfile) && visible.Count == 5)
+                {
+                    visible.RemoveAt(visible.Count - 1);
+                    visible.Add(SelectedProfile);
+                }
+                foreach (PerformancePlanItem plan in visible) VisibleProfiles.Add(plan);
+
+                OnPropertyChanged(nameof(HasMoreProfiles));
+                OnPropertyChanged(nameof(CanCreateProfile));
+            }
+            finally
+            {
+                _isRefreshingProfiles = false;
+            }
+        }
+
+        partial void OnSelectedProfileChanged(PerformancePlanItem? value)
+        {
+            if (_isRefreshingProfiles || value is null || value.ModeIndex == _performanceService.CurrentMode) return;
+            SelectProfileMode(value.ModeIndex);
+        }
+
         partial void OnGpuClockLimitChanged(int value) => OnPropertyChanged(nameof(GpuClockLimitText));
 
         partial void OnGpuPowerTargetChanged(int value) => OnPropertyChanged(nameof(GpuPowerTotal));
@@ -702,6 +799,109 @@ namespace Arsenal.UI.ViewModels
             int mode = modeParam is int value ? value : int.TryParse(modeParam?.ToString(), out int parsed) ? parsed : 1;
             _performanceService.SetMode(mode);
             LoadCurrentProfile();
+        }
+
+        [RelayCommand]
+        public void OpenCreateProfile()
+        {
+            ProfileManagerMessage = string.Empty;
+            NewProfileName = NextProfileName();
+            IsCreateComposerOpen = true;
+            IsProfileManagerOpen = true;
+        }
+
+        [RelayCommand]
+        public void OpenProfileManager()
+        {
+            ProfileManagerMessage = string.Empty;
+            IsCreateComposerOpen = false;
+            IsProfileManagerOpen = true;
+        }
+
+        [RelayCommand]
+        public void CloseProfileManager()
+        {
+            foreach (PerformancePlanItem plan in Profiles) plan.IsDeletePending = false;
+            IsCreateComposerOpen = false;
+            IsProfileManagerOpen = false;
+        }
+
+        [RelayCommand]
+        public void ShowCreateComposer()
+        {
+            if (!CanCreateProfile) return;
+            ProfileManagerMessage = string.Empty;
+            NewProfileName = NextProfileName();
+            IsCreateComposerOpen = true;
+        }
+
+        [RelayCommand]
+        public void CreateProfile()
+        {
+            if (!CanCreateProfile) return;
+            string name = NewProfileName.Trim();
+            int mode = _performanceService.CreateProfile(string.IsNullOrWhiteSpace(name) ? null : name);
+            if (mode < 0)
+            {
+                ProfileManagerMessage = AppStrings.Get("PerformancePlanLimitReached");
+                return;
+            }
+
+            IsCreateComposerOpen = false;
+            ProfileManagerMessage = AppStrings.Get("PerformancePlanCreated");
+            LoadCurrentProfile();
+        }
+
+        [RelayCommand]
+        public void SelectManagedProfile(object? planParam)
+        {
+            if (planParam is not PerformancePlanItem plan) return;
+            SelectProfileMode(plan.ModeIndex);
+            CloseProfileManager();
+        }
+
+        [RelayCommand]
+        public void RenameProfile(object? planParam)
+        {
+            if (planParam is not PerformancePlanItem plan || !plan.IsCustom) return;
+            if (!_performanceService.RenameProfile(plan.ModeIndex, plan.Name))
+                RefreshProfiles();
+            else
+                ProfileManagerMessage = AppStrings.Get("PerformancePlanRenamed");
+        }
+
+        [RelayCommand]
+        public void RequestDeleteProfile(object? planParam)
+        {
+            if (planParam is not PerformancePlanItem plan || !plan.IsCustom) return;
+            foreach (PerformancePlanItem item in Profiles) item.IsDeletePending = ReferenceEquals(item, plan);
+        }
+
+        [RelayCommand]
+        public void CancelDeleteProfile()
+        {
+            foreach (PerformancePlanItem item in Profiles) item.IsDeletePending = false;
+        }
+
+        [RelayCommand]
+        public void ConfirmDeleteProfile(object? planParam)
+        {
+            if (planParam is not PerformancePlanItem plan || !plan.IsCustom) return;
+            _performanceService.DeleteProfile(plan.ModeIndex);
+            ProfileManagerMessage = AppStrings.Get("PerformancePlanDeleted");
+            RefreshProfiles();
+            LoadCurrentProfile();
+        }
+
+        private string NextProfileName()
+        {
+            HashSet<string> names = Profiles.Select(plan => plan.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            for (int number = 1; number <= Arsenal.Mode.Modes.MaxModes; number++)
+            {
+                string candidate = $"{AppStrings.Get("PerformanceCustomPlan")} {number}";
+                if (!names.Contains(candidate)) return candidate;
+            }
+            return AppStrings.Get("PerformanceCustomPlan");
         }
 
         [RelayCommand]

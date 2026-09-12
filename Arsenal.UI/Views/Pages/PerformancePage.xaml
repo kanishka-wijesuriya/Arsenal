@@ -5,10 +5,11 @@
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
              xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
              xmlns:loc="clr-namespace:Arsenal.UI.Markup">
-    <ScrollViewer Style="{StaticResource PageScrollStyle}">
+    <Grid>
+    <ScrollViewer x:Name="PageScroller" Style="{StaticResource PageScrollStyle}">
         <StackPanel Style="{StaticResource PageBodyStyle}">
 
-            <Grid Style="{StaticResource PageHeaderStyle}">
+            <Grid x:Name="PageHeader" Style="{StaticResource PageHeaderStyle}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -18,27 +19,40 @@
                     <TextBlock Text="{loc:Loc PerformanceProfilesPowerLimitsUndervolting}" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Style="{StaticResource ActionBarStyle}">
+                    <ui:Button Style="{StaticResource ActionButtonStyle}" Content="{loc:Loc PerformanceNewPlan}" Command="{Binding OpenCreateProfileCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Add24}"/>
                     <ui:Button Style="{StaticResource ActionButtonStyle}" Content="{loc:Loc PerformanceResetProfile}" Command="{Binding ResetSettingsCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowReset24}"/>
                     <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="{loc:Loc PerformanceApplyChanges}" Command="{Binding ApplySettingsCommand}" Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}"/>
                 </StackPanel>
             </Grid>
 
-            <controls:SettingsGroup Header="{loc:Loc PerformanceActiveProfile}"
+            <controls:SettingsGroup x:Name="ProfileGroup" Header="{loc:Loc PerformanceActiveProfile}"
                                     Icon="Gauge24"
                                     Description="{loc:Loc PerformanceTheTuningBelowBelongsTo}">
                 <controls:SettingsRow Header="{loc:Loc Profile}"
                                       Description="{loc:Loc HomeAppliedToTheBIOSAnd}">
-                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="PerformanceProfile" Content="{loc:Loc Silent}"
-                                     IsChecked="{Binding CurrentMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
-                                     Command="{Binding SelectProfileModeCommand}" CommandParameter="2"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="PerformanceProfile" Content="{loc:Loc Balanced}"
-                                     IsChecked="{Binding CurrentMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
-                                     Command="{Binding SelectProfileModeCommand}" CommandParameter="0"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="PerformanceProfile" Content="{loc:Loc Turbo}"
-                                     IsChecked="{Binding CurrentMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
-                                     Command="{Binding SelectProfileModeCommand}" CommandParameter="1"/>
-                    </WrapPanel>
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding VisibleProfiles}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <RadioButton Style="{StaticResource RowSegmentStyle}"
+                                                 GroupName="PerformanceProfile"
+                                                 Content="{Binding Name}"
+                                                 IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                 Command="{Binding DataContext.SelectProfileModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                 CommandParameter="{Binding ModeIndex}"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <ui:Button Content="{loc:Loc PerformanceAllPlans}" Command="{Binding OpenProfileManagerCommand}"
+                                   Appearance="Transparent" HorizontalAlignment="Left" Margin="-8,6,0,-4"
+                                   Icon="{ui:SymbolIcon AppsListDetail24}"
+                                   Visibility="{Binding HasMoreProfiles, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    </StackPanel>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
@@ -206,4 +220,120 @@
 
         </StackPanel>
     </ScrollViewer>
+
+        <!-- The library uses the same in-window overlay language as Setup: a focused
+             surface, proper scrim, and no detached system dialog. -->
+        <controls:OverlayHost x:Name="ProfileManagerOverlay" Panel.ZIndex="8" PanelMaxWidth="760" PanelMaxHeight="620"
+                              IsLightDismissEnabled="True"
+                              IsOpen="{Binding IsProfileManagerOpen, Mode=TwoWay}">
+            <Grid Width="700" MaxHeight="560" Margin="26">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,24,0">
+                        <TextBlock Text="{loc:Loc PerformancePlanLibrary}" FontSize="22" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}"/>
+                        <TextBlock Text="{loc:Loc PerformancePlanLibraryDescription}" Margin="0,5,0,0"
+                                   FontSize="12.5" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}"/>
+                    </StackPanel>
+                    <ui:Button Grid.Column="1" Icon="{ui:SymbolIcon Dismiss24}" Appearance="Secondary"
+                               Width="34" Height="34" Padding="0" Command="{Binding CloseProfileManagerCommand}"/>
+                </Grid>
+
+                <Border Grid.Row="1" Style="{StaticResource InsetSurfaceStyle}" Margin="0,20,0,14" Padding="16"
+                        Visibility="{Binding IsCreateComposerOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,14,0">
+                            <TextBlock Text="{loc:Loc PerformanceCreateFromCurrent}" Style="{StaticResource SettingLabelStyle}"/>
+                            <TextBlock Text="{loc:Loc PerformanceCreateFromCurrentDescription}" Margin="0,3,0,10"
+                                       FontSize="11.5" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}"/>
+                            <TextBox Text="{Binding NewProfileName, UpdateSourceTrigger=PropertyChanged}" MaxLength="48"
+                                     MinWidth="300" AutomationProperties.Name="{loc:Loc PerformancePlanName}"/>
+                        </StackPanel>
+                        <ui:Button Grid.Column="1" Content="{loc:Loc PerformanceCreatePlan}" Command="{Binding CreateProfileCommand}"
+                                   Appearance="Primary" Icon="{ui:SymbolIcon Add24}" VerticalAlignment="Bottom"/>
+                    </Grid>
+                </Border>
+
+                <ScrollViewer Grid.Row="2" Style="{StaticResource PageScrollStyle}" MaxHeight="360">
+                    <ItemsControl ItemsSource="{Binding Profiles}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource SurfaceCard}" BorderBrush="{DynamicResource StrokeSubtle}"
+                                        BorderThickness="1" CornerRadius="{StaticResource RadiusCard}" Padding="14" Margin="0,0,0,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="36"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="28" Height="28" CornerRadius="8" Background="{DynamicResource AccentSubtle}"
+                                                VerticalAlignment="Center">
+                                            <ui:SymbolIcon Symbol="Gauge24" FontSize="15" Foreground="{DynamicResource AccentPrimary}"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Margin="10,0,16,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimary}"
+                                                       Visibility="{Binding IsCustom, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" MaxLength="48" MinWidth="230"
+                                                     Visibility="{Binding IsCustom, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            <TextBlock FontSize="10.5" Margin="0,3,0,0" Foreground="{DynamicResource TextSecondary}">
+                                                <Run Text="{loc:Loc Profile}"/><Run Text="  ·  "/><Run Text="{Binding ModeIndex, Mode=OneWay}"/>
+                                            </TextBlock>
+                                            <TextBlock Text="{loc:Loc PerformanceDeleteConfirm}" Margin="0,7,0,0"
+                                                       Foreground="{DynamicResource TextSecondary}"
+                                                       Visibility="{Binding IsDeletePending, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <ui:Button Content="{loc:Loc PerformanceSelectPlan}" Appearance="Secondary"
+                                                       Command="{Binding DataContext.SelectManagedProfileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                       CommandParameter="{Binding}" Margin="0,0,6,0"/>
+                                            <ui:Button Icon="{ui:SymbolIcon Checkmark24}" Appearance="Secondary" Width="34" Padding="0"
+                                                       ToolTip="{loc:Loc PerformanceRename}"
+                                                       Command="{Binding DataContext.RenameProfileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                       CommandParameter="{Binding}"
+                                                       Visibility="{Binding IsDeleteIdle, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Secondary" Width="34" Padding="0" Margin="6,0,0,0"
+                                                       ToolTip="{loc:Loc PerformanceDelete}"
+                                                       Command="{Binding DataContext.RequestDeleteProfileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                       CommandParameter="{Binding}"
+                                                       Visibility="{Binding IsDeleteIdle, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            <ui:Button Content="{loc:Loc PerformanceKeepPlan}" Appearance="Secondary" Margin="6,0,0,0"
+                                                       Command="{Binding DataContext.CancelDeleteProfileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                       Visibility="{Binding IsDeletePending, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            <ui:Button Content="{loc:Loc PerformanceDelete}" Appearance="Primary" Margin="6,0,0,0"
+                                                       Command="{Binding DataContext.ConfirmDeleteProfileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                       CommandParameter="{Binding}"
+                                                       Visibility="{Binding IsDeletePending, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <Grid Grid.Row="3" Margin="0,14,0,0">
+                    <TextBlock Text="{Binding ProfileManagerMessage}" VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextSecondary}"/>
+                    <ui:Button Content="{loc:Loc PerformanceNewPlan}" Command="{Binding ShowCreateComposerCommand}"
+                               Appearance="Secondary" Icon="{ui:SymbolIcon Add24}" HorizontalAlignment="Right"
+                               IsEnabled="{Binding CanCreateProfile}"/>
+                </Grid>
+            </Grid>
+        </controls:OverlayHost>
+    </Grid>
 </UserControl>

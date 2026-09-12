@@ -35,7 +35,7 @@ namespace Arsenal.Mode
             { "hysteresis_down", "int" }
         };
 
-        const int maxModes = 20;
+        public const int MaxModes = 20;
 
         public static Dictionary<int, string> GetDictonary()
         {
@@ -46,7 +46,7 @@ namespace Arsenal.Mode
               {1, GetName(1)}
             };
 
-            for (int i = 3; i < maxModes; i++)
+            for (int i = 3; i < MaxModes; i++)
             {
                 if (Exists(i)) modes.Add(i, GetName(i));
             }
@@ -57,7 +57,7 @@ namespace Arsenal.Mode
         public static List<int> GetList()
         {
             List<int> modes = new() { 2, 0, 1 };
-            for (int i = 3; i < maxModes; i++)
+            for (int i = 3; i < MaxModes; i++)
             {
                 if (Exists(i)) modes.Add(i);
             }
@@ -73,16 +73,16 @@ namespace Arsenal.Mode
             }
         }
 
-        public static int Add()
+        public static int Add(string? requestedName = null)
         {
             int currentMode = GetCurrent();
 
-            for (int i = 3; i < maxModes; i++)
+            for (int i = 3; i < MaxModes; i++)
             {
                 if (Exists(i)) continue;
 
                 AppConfig.Set("mode_base_" + i, GetCurrentBase());
-                AppConfig.Set("mode_name_" + i, "Custom " + (i - 2));
+                AppConfig.Set("mode_name_" + i, NormaliseName(requestedName, NextDefaultName()));
 
                 if (Exists(currentMode))
                 {
@@ -107,6 +107,32 @@ namespace Arsenal.Mode
             return -1;
         }
 
+        public static bool Rename(int mode, string name)
+        {
+            if (mode <= 2 || !Exists(mode)) return false;
+            string trimmed = (name ?? string.Empty).Trim();
+            if (trimmed.Length == 0) return false;
+            AppConfig.Set("mode_name_" + mode, trimmed.Length > 48 ? trimmed[..48] : trimmed);
+            return true;
+        }
+
+        private static string NextDefaultName()
+        {
+            HashSet<string> names = GetList().Select(GetName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            for (int number = 1; number <= MaxModes; number++)
+            {
+                string candidate = $"Custom Plan {number}";
+                if (!names.Contains(candidate)) return candidate;
+            }
+            return "Custom Plan";
+        }
+
+        private static string NormaliseName(string? name, string fallback)
+        {
+            string value = string.IsNullOrWhiteSpace(name) ? fallback : name.Trim();
+            return value.Length > 48 ? value[..48] : value;
+        }
+
         public static void InitFullSpeed()
         {
             int vivoMode = Program.acpi.DeviceGet(AsusACPI.VivoBookMode);
@@ -114,10 +140,10 @@ namespace Arsenal.Mode
             Logger.WriteLine($"VivoBookMode: {vivoMode} (0x{vivoMode:X})");
             if ((vivoMode & 0x40000) == 0) return;
 
-            for (int i = 3; i < maxModes; i++)
+            for (int i = 3; i < MaxModes; i++)
                 if (GetBase(i) == AsusACPI.PerformanceFullSpeed) return;
 
-            for (int i = 3; i < maxModes; i++)
+            for (int i = 3; i < MaxModes; i++)
             {
                 if (Exists(i)) continue;
                 AppConfig.Set("mode_base_" + i, AsusACPI.PerformanceFullSpeed);
