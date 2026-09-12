@@ -343,6 +343,7 @@ namespace Arsenal.UI
                     Current.Resources["StatusCritical"] = Brush(light ? "#C42B1C" : "#FF6B6B");
 
                     Current.Resources["DividerBrush"] = FadedLine(light ? "#24000000" : "#26FFFFFF");
+                    ApplyNavigationForeground();
                     ApplyAccentResources(light);
                     ApplyWindowSurfaces(light);
                 }
@@ -382,6 +383,47 @@ namespace Arsenal.UI
         /// The dark values are the ones asked for. Light mode gets the equivalents from
         /// the existing light palette rather than those same near-black colours.
         /// </remarks>
+        /// <summary>
+        /// The library's own foregrounds for a navigation destination, in the order the
+        /// template reaches for them. Every state resolves to the same ink.
+        /// </summary>
+        private static readonly string[] NavigationForegroundKeys =
+        {
+            "NavigationViewItemForeground",
+            "NavigationViewItemForegroundPointerOver",
+            "NavigationViewItemForegroundPressed",
+            "NavigationViewItemForegroundLeftFluent",
+            "NavigationViewItemForegroundPointerOverLeftFluent",
+        };
+
+        /// <summary>
+        /// Paints the navigation column's ink: the destinations in the pane, and the
+        /// title-bar icons that sit in the same gutter.
+        /// </summary>
+        /// <remarks>
+        /// Written straight onto the application dictionary, and after the library's
+        /// theme has been applied. ApplicationThemeManager.Apply appends its own
+        /// dictionary last, so the same key merged in from one of ours would be the
+        /// losing entry - the same reason NavigationViewContentBackground is set from
+        /// here rather than declared in DesignTokens.xaml.
+        ///
+        /// One colour in every state. A selected destination is already marked by its
+        /// pill and its indicator, so recolouring its text as well would say the same
+        /// thing twice; hover and press keep their wash behind the item.
+        ///
+        /// The same ink in both themes, which is what was asked for. It is a light
+        /// warm grey, so it is quiet against the light theme's pane.
+        /// </remarks>
+        private static void ApplyNavigationForeground()
+        {
+            if (Current is null) return;
+
+            SolidColorBrush ink = Brush("#B1B1A9");
+            Current.Resources["NavigationForeground"] = ink;
+            foreach (string key in NavigationForegroundKeys)
+                Current.Resources[key] = ink;
+        }
+
         private static void ApplyWindowSurfaces(bool light)
         {
             if (Current is null) return;

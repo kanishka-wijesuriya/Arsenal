@@ -587,7 +587,9 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <!-- The navigation ink, not the page ink: these icons sit in the
+             navigation column's gutter and belong to it. -->
+        <Setter Property="Foreground" Value="{DynamicResource NavigationForeground}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>

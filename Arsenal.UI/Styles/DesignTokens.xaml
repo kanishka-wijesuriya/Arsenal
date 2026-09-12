@@ -23,6 +23,11 @@
     <Color x:Key="TextPrimaryColor">#F4F4F4</Color>
     <Color x:Key="TextSecondaryColor">#B6B8BA</Color>
     <Color x:Key="TextTertiaryColor">#86898C</Color>
+    <!-- The navigation column's own ink, warmer and quieter than the page text
+         beside it: the destinations, and the title-bar icons that share their
+         gutter. App.ApplyConfiguredTheme also writes it over the library's own
+         NavigationViewItem foregrounds, which this alone cannot reach. -->
+    <Color x:Key="NavigationForegroundColor">#B1B1A9</Color>
     <!-- Neutral designer/cold-start fallbacks. At runtime App resolves these from
          Windows Personalisation or the user's explicit in-app override. -->
     <Color x:Key="AccentPrimaryColor">#8A8886</Color>
@@ -50,6 +55,7 @@
     <SolidColorBrush x:Key="TextPrimary" Color="{StaticResource TextPrimaryColor}"/>
     <SolidColorBrush x:Key="TextSecondary" Color="{StaticResource TextSecondaryColor}"/>
     <SolidColorBrush x:Key="TextTertiary" Color="{StaticResource TextTertiaryColor}"/>
+    <SolidColorBrush x:Key="NavigationForeground" Color="{StaticResource NavigationForegroundColor}"/>
     <SolidColorBrush x:Key="AccentPrimary" Color="{StaticResource AccentPrimaryColor}"/>
     <SolidColorBrush x:Key="AccentForeground" Color="{StaticResource AccentForegroundColor}"/>
     <SolidColorBrush x:Key="AccentSubtle" Color="{StaticResource AccentSubtleColor}"/>
