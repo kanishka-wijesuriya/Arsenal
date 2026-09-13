@@ -120,14 +120,14 @@ public partial class ToastWindow : Window
     /// </summary>
     private static string DescribeSource(ToastIcon icon) => icon switch
     {
-        ToastIcon.BrightnessUp or ToastIcon.BrightnessDown => AppStrings.Get("ToastDisplayBrightness"),
-        ToastIcon.BacklightUp or ToastIcon.BacklightDown => AppStrings.Get("LightingKeyboardBacklight"),
-        ToastIcon.Touchpad => AppStrings.Get("HomeTouchpad"),
-        ToastIcon.Microphone or ToastIcon.MicrophoneMute => AppStrings.Get("ToastMicrophone"),
-        ToastIcon.Battery => AppStrings.Get("AutomationOnBattery"),
-        ToastIcon.Charger => AppStrings.Get("ToastPluggedIn"),
-        ToastIcon.FnLock => AppStrings.Get("Keyboard"),
-        ToastIcon.Controller => AppStrings.Get("ToastControllerMode"),
+        ToastIcon.BrightnessUp or ToastIcon.BrightnessDown => "Display brightness",
+        ToastIcon.BacklightUp or ToastIcon.BacklightDown => "Keyboard backlight",
+        ToastIcon.Touchpad => "Touchpad",
+        ToastIcon.Microphone or ToastIcon.MicrophoneMute => "Microphone",
+        ToastIcon.Battery => "On battery",
+        ToastIcon.Charger => "Plugged in",
+        ToastIcon.FnLock => "Keyboard",
+        ToastIcon.Controller => "Controller mode",
         _ => "Arsenal"
     };
 

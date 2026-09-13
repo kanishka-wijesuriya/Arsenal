@@ -652,12 +652,12 @@ public sealed class RemoteCompanionService : IDisposable
     /// </summary>
     private static string[] AnimeMatrixModeNames => new[]
     {
-        AppStrings.Get("FeatureBanner"),
-        AppStrings.Get("AuraZoneLogo"),
-        AppStrings.Get("MatrixPicture"),
-        AppStrings.Get("MatrixClock"),
-        AppStrings.Get("MatrixAudio"),
-        AppStrings.Get("MatrixText"),
+        "Banner",
+        "Logo",
+        "Picture",
+        "Clock",
+        "Audio",
+        "Text",
     };
 
     /// <summary>One hardware bound, in the shape the companion reads it back as.</summary>
@@ -852,7 +852,7 @@ public sealed class RemoteCompanionService : IDisposable
                 slashLowBatteryAlert = slashSettings.LowBatteryAlert, slashBatteryIndicator = slashSettings.BatteryIndicator,
                 slashPowerSaving = slashSettings.PowerSaving, slashDimLevel = slashSettings.DimLevel,
                 runOnStartup = Startup.IsScheduled(), minimizeToTray = AppConfig.IsNotFalse("minimize_to_tray"),
-                checkUpdates = AppConfig.IsNotFalse("check_updates"), theme = AppConfig.Get("theme", 0), language = AppConfig.GetString("language") ?? string.Empty,
+                checkUpdates = AppConfig.IsNotFalse("check_updates"), theme = AppConfig.Get("theme", 0),
                 toastEnabled = AppConfig.IsNotFalse("toast_enabled"), toastStyle = AppConfig.Get("toast_style", 0),
                 toastPosition = AppConfig.Get("toast_position", 0), toastDuration = AppConfig.Get("toast_duration", 3500), toastProgress = AppConfig.IsNotFalse("toast_progress")
             },
@@ -1139,7 +1139,6 @@ public sealed class RemoteCompanionService : IDisposable
             case "app.checkUpdates": SetSettings(vm => vm.CheckUpdatesOnStartup = Bool(value)); break;
             case "app.runSetup": _services.GetRequiredService<SettingsViewModel>().RunSetup(); break;
             case "app.theme": _services.GetRequiredService<SettingsViewModel>().SetTheme(Int(value)); break;
-            case "app.language": SetSettings(vm => { vm.SelectedLanguageCode = value.GetString() ?? string.Empty; vm.SavePreferences(); }); break;
             case "app.toast": SetSettings(vm => vm.ToastEnabled = Bool(value)); break;
             case "app.toastStyle": SetSettings(vm => vm.ToastStyle = Int(value)); break;
             case "app.toastPosition": SetSettings(vm => vm.ToastPosition = Int(value)); break;

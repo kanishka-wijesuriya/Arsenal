@@ -72,7 +72,7 @@ namespace Arsenal.UI.ViewModels
         public ObservableCollection<PeripheralOptionModel> KeyboardOledOptions { get; } = new();
         public IReadOnlyList<PeripheralOptionModel> SleepTimeoutOptions { get; } = new[]
         {
-            new PeripheralOptionModel { Value = 0, Label = AppStrings.Get("Never") },
+            new PeripheralOptionModel { Value = 0, Label = "Never" },
             new PeripheralOptionModel { Value = 1, Label = "1 min" },
             new PeripheralOptionModel { Value = 2, Label = "2 min" },
             new PeripheralOptionModel { Value = 3, Label = "3 min" },
@@ -351,7 +351,7 @@ namespace Arsenal.UI.ViewModels
         private bool _isChecking = false;
 
         [ObservableProperty]
-        private string _statusMessage = AppStrings.Get("UpdatesReadyToScanThisLaptop");
+        private string _statusMessage = "Ready to scan this laptop";
 
         [ObservableProperty]
         private ObservableCollection<UpdateInfo> _asusUpdates = new();
@@ -367,10 +367,10 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty] private int _currentDriverCount;
         [ObservableProperty] private int _optionalDriverCount;
 
-        public string AllDriversFilterText => AppStrings.Format("UpdatesFilterAll", DriverCount);
-        public string OutdatedDriversFilterText => AppStrings.Format("UpdatesFilterUpdates", OutdatedDriverCount);
-        public string CurrentDriversFilterText => AppStrings.Format("UpdatesFilterCurrent", CurrentDriverCount);
-        public string OptionalDriversFilterText => AppStrings.Format("UpdatesFilterOptional", OptionalDriverCount);
+        public string AllDriversFilterText => string.Format("All  {0}", DriverCount);
+        public string OutdatedDriversFilterText => string.Format("Updates  {0}", OutdatedDriverCount);
+        public string CurrentDriversFilterText => string.Format("Current  {0}", CurrentDriverCount);
+        public string OptionalDriversFilterText => string.Format("Optional  {0}", OptionalDriverCount);
 
         public UpdatesViewModel(IUpdateService updateService)
         {
@@ -381,7 +381,7 @@ namespace Arsenal.UI.ViewModels
         public async Task CheckUpdates()
         {
             IsChecking = true;
-            StatusMessage = AppStrings.Get("UpdatesReadingAsusSupport");
+            StatusMessage = "Reading ASUS support and installed Windows drivers...";
             try
             {
                 List<UpdateInfo> drivers = await _updateService.CheckAsusUpdatesAsync();
@@ -396,18 +396,18 @@ namespace Arsenal.UI.ViewModels
                 ApplyDriverFilter();
 
                 StatusMessage = OutdatedDriverCount > 0
-                    ? AppStrings.Format(
-                        OutdatedDriverCount == 1 ? "UpdatesDriverUpdateAvailableOne" : "UpdatesDriverUpdatesAvailableMany",
+                    ? string.Format(
+                        OutdatedDriverCount == 1 ? "{0} driver update available" : "{0} driver updates available",
                         OutdatedDriverCount)
                     : OptionalDriverCount > 0
-                        ? AppStrings.Format(
-                            OptionalDriverCount == 1 ? "UpdatesVerifiedOptionalMissingOne" : "UpdatesVerifiedOptionalMissingMany",
+                        ? string.Format(
+                            OptionalDriverCount == 1 ? "Installed versions verified · {0} optional package not detected" : "Installed versions verified · {0} optional packages not detected",
                             OptionalDriverCount)
-                        : AppStrings.Get("UpdatesEveryDriverUpToDate");
+                        : "Every detected ASUS driver is up to date";
             }
             catch (Exception ex)
             {
-                StatusMessage = AppStrings.Get("UpdatesDriverScanFailed");
+                StatusMessage = "Driver scan could not be completed";
                 Logger.WriteLine("Driver page scan: " + ex.Message);
             }
             finally { IsChecking = false; }
@@ -487,13 +487,13 @@ namespace Arsenal.UI.ViewModels
                 else if (string.IsNullOrEmpty(path))
                 {
                     driver.DownloadState = DriverDownloadState.Failed;
-                    StatusMessage = AppStrings.Format("UpdatesDownloadFailed", driver.Title);
+                    StatusMessage = string.Format("{0} could not be downloaded.", driver.Title);
                 }
                 else
                 {
                     driver.DownloadedPath = path;
                     driver.DownloadState = DriverDownloadState.Ready;
-                    StatusMessage = AppStrings.Format("UpdatesDownloadReady", driver.Title);
+                    StatusMessage = string.Format("{0} downloaded and ready to install.", driver.Title);
                 }
             }
             finally
@@ -534,7 +534,7 @@ namespace Arsenal.UI.ViewModels
             catch (Exception ex)
             {
                 Logger.WriteLine("Driver install launch: " + ex.Message);
-                StatusMessage = AppStrings.Format("UpdatesDownloadFailed", driver.Title);
+                StatusMessage = string.Format("{0} could not be downloaded.", driver.Title);
             }
         }
 
@@ -804,7 +804,7 @@ namespace Arsenal.UI.ViewModels
             else ClamshellModeControl.DisableClamshellMode();
             Arsenal.Display.ScreenControl.AutoScreen(true);
             if (System.Windows.Application.Current?.MainWindow is System.Windows.Window window) window.Topmost = AlwaysOnTop;
-            ToastManager.Show(AppStrings.Get("SavedToastTitle"), ToastIcon.Charger, AppStrings.Get("AdvancedSettingsAppliedToast"));
+            ToastManager.Show("Saved", ToastIcon.Charger, "Advanced settings applied");
         }
 
         partial void OnAspmEnabledChanged(bool value) { if (!_isReady) return; AppConfig.Set("aspm", value ? 1 : 0); PowerNative.SetBalancedASPM(value ? 0 : 2); }
@@ -929,17 +929,17 @@ namespace Arsenal.UI.ViewModels
         public IReadOnlyList<string> ToastStyles { get; } = new[] { "Fluent", "Compact", "Accent" };
         public IReadOnlyList<string> ToastPositions { get; } = new[]
         {
-            AppStrings.Get("ToastPositionTopRight"),
-            AppStrings.Get("ToastPositionBottomRight"),
-            AppStrings.Get("ToastPositionTopCenter"),
-            AppStrings.Get("ToastPositionBottomCenter")
+            "Top right",
+            "Bottom right",
+            "Top center",
+            "Bottom center"
         };
 
         public bool IsCustomAccent => SelectedAccentSource == 1;
 
         public string AccentDescription => IsCustomAccent
-            ? AppStrings.Get("SettingsAccentCustomDescription")
-            : AppStrings.Get("SettingsAccentWindowsDescription");
+            ? "Overrides the Windows colour across Arsenal and applies immediately."
+            : "Follows the accent colour selected in Windows Personalisation.";
 
         public System.Windows.Media.SolidColorBrush CustomAccentBrush
         {
@@ -951,32 +951,6 @@ namespace Arsenal.UI.ViewModels
             }
         }
 
-        public IReadOnlyList<LanguageOption> AvailableLanguages { get; } = new[]
-        {
-            new LanguageOption("", AppStrings.Get("SettingsUseWindowsLanguage")),
-            new LanguageOption("en", "English"),
-            new LanguageOption("ar", "Arabic"),
-            new LanguageOption("cs-CZ", "Czech"),
-            new LanguageOption("da", "Danish"),
-            new LanguageOption("de", "German"),
-            new LanguageOption("es", "Spanish"),
-            new LanguageOption("fr", "French"),
-            new LanguageOption("hu", "Hungarian"),
-            new LanguageOption("id", "Indonesian"),
-            new LanguageOption("it", "Italian"),
-            new LanguageOption("ja", "Japanese"),
-            new LanguageOption("ko", "Korean"),
-            new LanguageOption("lt", "Lithuanian"),
-            new LanguageOption("pl", "Polish"),
-            new LanguageOption("pt-BR", "Portuguese (Brazil)"),
-            new LanguageOption("pt-PT", "Portuguese (Portugal)"),
-            new LanguageOption("ro", "Romanian"),
-            new LanguageOption("tr", "Turkish"),
-            new LanguageOption("uk", "Ukrainian"),
-            new LanguageOption("vi", "Vietnamese"),
-            new LanguageOption("zh-CN", "Chinese (Simplified)"),
-            new LanguageOption("zh-TW", "Chinese (Traditional)")
-        };
 
         public SettingsViewModel()
         {
@@ -988,7 +962,6 @@ namespace Arsenal.UI.ViewModels
             SelectedAccentSource = Math.Clamp(AppConfig.Get(AccentColorService.SourceSetting, 0), 0, 1);
             CustomAccentColor = AccentColorService.GetCustomAccent();
             CustomAccentHex = AccentColorService.ToHex(CustomAccentColor);
-            SelectedLanguageCode = AppConfig.GetString("language") ?? string.Empty;
             CheckUpdatesOnStartup = CanSelfUpdate && AppConfig.IsNotFalse("check_updates");
             ToastEnabled = AppConfig.IsNotFalse("toast_enabled");
             ToastStyle = Math.Clamp(AppConfig.Get("toast_style", 0), 0, 2);
@@ -1017,7 +990,6 @@ namespace Arsenal.UI.ViewModels
             AppConfig.Set("minimize_to_tray", MinimizeToTray ? 1 : 0);
             AppConfig.Set("theme", SelectedTheme);
             AppConfig.Set("check_updates", CanSelfUpdate && CheckUpdatesOnStartup ? 1 : 0);
-            AppConfig.Set("language", SelectedLanguageCode ?? string.Empty);
 
             Arsenal.UI.App.ApplyConfiguredTheme();
         }
@@ -1059,9 +1031,9 @@ namespace Arsenal.UI.ViewModels
 
         [RelayCommand]
         public void TestToast() => ToastManager.Show(
-            AppStrings.Get("SettingsToastPreviewTitle"),
+            "Notifications are ready",
             ToastIcon.Charger,
-            AppStrings.Get("SettingsToastPreviewBody"));
+            "This is how they will look");
 
         /// <summary>
         /// Several features write under HKLM and are silently skipped without
@@ -1147,7 +1119,6 @@ namespace Arsenal.UI.ViewModels
         }
     }
 
-    public sealed record LanguageOption(string Code, string DisplayName);
 
     public partial class AboutViewModel : ObservableObject
     {
@@ -1213,7 +1184,7 @@ namespace Arsenal.UI.ViewModels
         private bool _isInstallingUpdate;
 
         [ObservableProperty]
-        private string _updateStatus = AppStrings.Get("AboutReadyToCheckForUpdate");
+        private string _updateStatus = "Ready to check for an Arsenal update";
 
         public AboutViewModel(IUpdateService updateService)
         {
@@ -1229,8 +1200,8 @@ namespace Arsenal.UI.ViewModels
                 UpdateInfo = info;
                 IsCheckingForUpdate = false;
                 UpdateStatus = info.IsUpdateAvailable
-                    ? AppStrings.Format("AboutUpdateAvailable", info.LatestVersion)
-                    : AppStrings.Get("AboutUpToDate");
+                    ? string.Format("Arsenal v{0} is available", info.LatestVersion)
+                    : "Arsenal is up to date";
             });
 
             LoadSpecifications();
@@ -1256,18 +1227,18 @@ namespace Arsenal.UI.ViewModels
         {
             if (!CanSelfUpdate) return;
             IsCheckingForUpdate = true;
-            UpdateStatus = AppStrings.Get("AboutCheckingForUpdate");
+            UpdateStatus = "Checking for an Arsenal update...";
             try
             {
                 UpdateInfo info = await _updateService.CheckForUpdatesAsync(true);
                 UpdateInfo = info;
                 UpdateStatus = info.IsUpdateAvailable
-                    ? AppStrings.Format("AboutUpdateAvailable", info.LatestVersion)
-                    : AppStrings.Get("AboutUpToDate");
+                    ? string.Format("Arsenal v{0} is available", info.LatestVersion)
+                    : "Arsenal is up to date";
             }
             catch (Exception ex)
             {
-                UpdateStatus = AppStrings.Get("AboutUpdateCheckFailed");
+                UpdateStatus = "Could not check for an Arsenal update";
                 Logger.WriteLine("About update check: " + ex.Message);
             }
             finally { IsCheckingForUpdate = false; }
@@ -1290,15 +1261,15 @@ namespace Arsenal.UI.ViewModels
             // No window to draw the card in - the About page cannot be reached without
             // one, but the fallback keeps the button working rather than dead.
             IsInstallingUpdate = true;
-            UpdateStatus = AppStrings.Get("AboutInstallingUpdate");
+            UpdateStatus = "Verifying and installing the update";
             try
             {
                 if (!await _updateService.DownloadAndInstallUpdateAsync())
-                    UpdateStatus = AppStrings.Get("AboutUpdateInstallFailed");
+                    UpdateStatus = "Could not install the update. Arsenal was not changed";
             }
             catch (Exception ex)
             {
-                UpdateStatus = AppStrings.Get("AboutUpdateInstallFailed");
+                UpdateStatus = "Could not install the update. Arsenal was not changed";
                 Logger.WriteLine("About update install: " + ex.Message);
             }
             finally { IsInstallingUpdate = false; }

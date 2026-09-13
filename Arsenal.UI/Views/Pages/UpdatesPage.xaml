@@ -4,7 +4,7 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
              xmlns:models="clr-namespace:Arsenal.Application.Models;assembly=Arsenal.Application"
-             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+>
     <UserControl.Resources>
         <Style x:Key="DriverSummaryCardStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource SurfaceCard}"/>
@@ -72,7 +72,7 @@
                                            Foreground="{DynamicResource TextPrimary}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="CancelLabel" Grid.Row="0"
-                                           Text="{loc:Loc UpdatesCancel}"
+                                           Text="Cancel"
                                            FontSize="12" FontWeight="SemiBold" Opacity="0"
                                            Foreground="{DynamicResource TextSecondary}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -104,12 +104,12 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Margin="0,0,24,0">
-                    <TextBlock Text="{loc:Loc UpdatesDrivers}" Style="{StaticResource PageTitleStyle}"/>
-                    <TextBlock Text="{loc:Loc UpdatesOfficialASUSPackagesMatched}"
+                    <TextBlock Text="Drivers" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="Official ASUS packages matched against the drivers actually installed on this laptop"
                                Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Style="{StaticResource ActionBarStyle}">
-                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="{loc:Loc UpdatesScanAgain}"
+                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="Scan again"
                                Command="{Binding CheckUpdatesCommand}" Appearance="Primary" Icon="{ui:SymbolIcon ArrowSync24}"
                                IsEnabled="{Binding IsChecking, Converter={StaticResource InverseBoolConverter}}"/>
                 </StackPanel>
@@ -125,7 +125,7 @@
                         </Grid>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="{Binding OutdatedDriverCount}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
-                            <TextBlock Text="{loc:Loc UpdatesUpdatesAvailable}" Style="{StaticResource CaptionStyle}"/>
+                            <TextBlock Text="Updates available" Style="{StaticResource CaptionStyle}"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -139,7 +139,7 @@
                         </Grid>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="{Binding CurrentDriverCount}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
-                            <TextBlock Text="{loc:Loc UpdatesUpToDate}" Style="{StaticResource CaptionStyle}"/>
+                            <TextBlock Text="Up to date" Style="{StaticResource CaptionStyle}"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -153,7 +153,7 @@
                         </Grid>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="{Binding OptionalDriverCount}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
-                            <TextBlock Text="{loc:Loc UpdatesOptional}" Style="{StaticResource CaptionStyle}"/>
+                            <TextBlock Text="Optional" Style="{StaticResource CaptionStyle}"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -167,7 +167,7 @@
                         </Grid>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="{Binding DriverCount}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
-                            <TextBlock Text="{loc:Loc UpdatesASUSPackages}" Style="{StaticResource CaptionStyle}"/>
+                            <TextBlock Text="ASUS packages" Style="{StaticResource CaptionStyle}"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -176,7 +176,7 @@
             <Grid Margin="2,0,2,12">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <StackPanel>
-                    <TextBlock Text="{loc:Loc UpdatesDriverLibrary}" Style="{StaticResource SectionTitleStyle}"/>
+                    <TextBlock Text="Driver library" Style="{StaticResource SectionTitleStyle}"/>
                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                         <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource SettingDescriptionStyle}"/>
                         <ui:ProgressRing IsIndeterminate="True" Width="14" Height="14" Margin="8,0,0,0"
@@ -249,13 +249,13 @@
 
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{Binding ReleaseNotes}" Style="{StaticResource CaptionStyle}"/>
-                                            <TextBlock Text="{loc:Loc UpdatesReleased}" Style="{StaticResource CaptionStyle}"/>
+                                            <TextBlock Text="  ·  Released " Style="{StaticResource CaptionStyle}"/>
                                             <TextBlock Text="{Binding PublishedAt}" Style="{StaticResource CaptionStyle}"/>
 
                                             <!-- Download size, as ASUS words it. Collapsed
                                                  rather than left blank when a package has
                                                  none, so the separator does not dangle. -->
-                                            <TextBlock Text="{loc:Loc UpdatesSeparator}" Style="{StaticResource CaptionStyle}"
+                                            <TextBlock Text="  ·  " Style="{StaticResource CaptionStyle}"
                                                        Visibility="{Binding HasFileSize, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                             <TextBlock Text="{Binding FileSize}" Style="{StaticResource CaptionStyle}"
                                                        Visibility="{Binding HasFileSize, Converter={StaticResource BooleanToVisibilityConverter}}"/>
@@ -264,17 +264,17 @@
                                                  the action button. Down here they cost the
                                                  action cell nothing, and each appears only
                                                  in the state that has any use for it. -->
-                                            <TextBlock Text="{loc:Loc UpdatesSeparator}" Style="{StaticResource CaptionStyle}"
+                                            <TextBlock Text="  ·  " Style="{StaticResource CaptionStyle}"
                                                        Visibility="{Binding IsDownloaded, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                            <ui:HyperlinkButton Content="{loc:Loc UpdatesShowInFolder}" Padding="0" FontSize="12"
+                                            <ui:HyperlinkButton Content="Show in folder" Padding="0" FontSize="12"
                                                                 VerticalAlignment="Center"
                                                                 Command="{Binding DataContext.ShowDriverInFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                 CommandParameter="{Binding}"
                                                                 Visibility="{Binding IsDownloaded, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                                            <TextBlock Text="{loc:Loc UpdatesSeparator}" Style="{StaticResource CaptionStyle}"
+                                            <TextBlock Text="  ·  " Style="{StaticResource CaptionStyle}"
                                                        Visibility="{Binding HasFailed, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                            <ui:HyperlinkButton Content="{loc:Loc UpdatesOpenInBrowser}" NavigateUri="{Binding DownloadUrl}"
+                                            <ui:HyperlinkButton Content="Open in browser" NavigateUri="{Binding DownloadUrl}"
                                                                 Padding="0" FontSize="12" VerticalAlignment="Center"
                                                                 Visibility="{Binding HasFailed, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                         </StackPanel>
@@ -287,7 +287,7 @@
                                             <ColumnDefinition Width="106"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0">
-                                            <TextBlock Text="{loc:Loc UpdatesINSTALLED}" Style="{StaticResource DriverVersionCaptionStyle}" TextAlignment="Right"/>
+                                            <TextBlock Text="INSTALLED" Style="{StaticResource DriverVersionCaptionStyle}" TextAlignment="Right"/>
                                             <TextBlock Text="{Binding InstalledVersionText}" Foreground="{DynamicResource TextPrimary}"
                                                        FontSize="12" FontWeight="SemiBold" Margin="0,1,0,0"
                                                        TextAlignment="Right" TextTrimming="CharacterEllipsis"/>
@@ -295,7 +295,7 @@
                                         <ui:SymbolIcon Grid.Column="1" Symbol="ArrowRight24" Foreground="{DynamicResource TextTertiary}"
                                                        FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="8,0,0,0">
-                                            <TextBlock Text="{loc:Loc UpdatesASUS}" Style="{StaticResource DriverVersionCaptionStyle}"/>
+                                            <TextBlock Text="ASUS" Style="{StaticResource DriverVersionCaptionStyle}"/>
                                             <TextBlock Text="{Binding LatestVersion}" Foreground="{DynamicResource TextPrimary}"
                                                        FontSize="12" FontWeight="SemiBold" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
@@ -341,13 +341,13 @@
                                         <Button x:Name="DownloadProgressChip"
                                                 Style="{StaticResource DriverProgressChipStyle}"
                                                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                                                ToolTip="{loc:Loc UpdatesCancel}"
+                                                ToolTip="Cancel"
                                                 Command="{Binding DataContext.CancelDownloadCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"
                                                 Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVisibleOrHiddenConverter}}"/>
 
                                         <ui:Button x:Name="InstallButton"
-                                                   Content="{loc:Loc UpdatesInstall}" Icon="{ui:SymbolIcon Play24}" Appearance="Primary"
+                                                   Content="Install" Icon="{ui:SymbolIcon Play24}" Appearance="Primary"
                                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                                    HorizontalContentAlignment="Center" Padding="10,0"
                                                    Command="{Binding DataContext.InstallDriverCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -355,7 +355,7 @@
                                                    Visibility="{Binding IsDownloaded, Converter={StaticResource BoolToVisibleOrHiddenConverter}}"/>
 
                                         <ui:Button x:Name="RetryButton"
-                                                   Content="{loc:Loc UpdatesRetry}" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Secondary"
+                                                   Content="Retry" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Secondary"
                                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                                    HorizontalContentAlignment="Center" Padding="10,0"
                                                    Command="{Binding DataContext.DownloadDriverCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -417,8 +417,8 @@
                         <Border Background="{DynamicResource AccentPrimary}" Opacity="0.12" CornerRadius="10"/>
                         <ui:SymbolIcon Symbol="Search24" Foreground="{DynamicResource AccentPrimary}" FontSize="22"/>
                     </Grid>
-                    <TextBlock Text="{loc:Loc UpdatesNoDriversInThisView}" Style="{StaticResource SettingLabelStyle}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="{loc:Loc UpdatesRunAScanOrChoose}"
+                    <TextBlock Text="No drivers in this view" Style="{StaticResource SettingLabelStyle}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Run a scan, or choose another filter to see the matching ASUS packages."
                                Style="{StaticResource SettingDescriptionStyle}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
                 </StackPanel>
             </Border>

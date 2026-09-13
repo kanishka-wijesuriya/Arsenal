@@ -1,5 +1,4 @@
 using Arsenal.UI.ViewModels;
-using System.Windows.Controls;
 
 namespace Arsenal.UI.Views.Pages
 {
@@ -10,11 +9,5 @@ namespace Arsenal.UI.Views.Pages
             InitializeComponent();
             DataContext = viewModel;
         }
-
-        private void Language_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (DataContext is SettingsViewModel vm) vm.SavePreferences();
-        }
     }
 }
-

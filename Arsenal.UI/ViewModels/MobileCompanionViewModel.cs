@@ -27,8 +27,8 @@ public partial class MobileCompanionViewModel : ObservableObject, IDisposable
     public bool IsNetworkAccessAllowed => CompanionFirewall.IsAllowed;
     public bool IsCompanionRunning => _companion.IsRunning;
     public string NetworkAccessButtonLabel => CompanionFirewall.NeedsRuleUpgrade
-        ? AppStrings.Get("MobileCompanionUpdateNetworkAccess")
-        : IsNetworkAccessAllowed ? AppStrings.Get("MobileCompanionNetworkAccessAllowed") : AppStrings.Get("MobileCompanionAllowNetworkAccess");
+        ? "Update network access"
+        : IsNetworkAccessAllowed ? "Network access allowed" : "Allow network access";
 
     [ObservableProperty]
     private ObservableCollection<CompanionDeviceInfo> _devices = new();
@@ -82,7 +82,7 @@ public partial class MobileCompanionViewModel : ObservableObject, IDisposable
         if (string.IsNullOrWhiteSpace(deviceId)) return;
         _companion.RevokeDevice(deviceId);
         RefreshDevices();
-        ToastManager.Show(AppStrings.Get("MobileCompanionPhoneAccessRevoked"), ToastIcon.Charger, AppStrings.Get("MobileCompanionThatDeviceCanNoLonger"));
+        ToastManager.Show("Phone access revoked", ToastIcon.Charger, "That device can no longer control this laptop");
     }
 
     [RelayCommand]
@@ -90,7 +90,7 @@ public partial class MobileCompanionViewModel : ObservableObject, IDisposable
     {
         _companion.RevokeAllDevices();
         RefreshAll();
-        ToastManager.Show(AppStrings.Get("MobileCompanionCompanionAccessRevoked"), ToastIcon.Charger, AppStrings.Get("MobileCompanionPairYourPhonesAgainTo"));
+        ToastManager.Show("Companion access revoked", ToastIcon.Charger, "Pair your phones again to reconnect");
     }
 
     private void OnDevicesChanged(object? sender, EventArgs e)
@@ -140,11 +140,11 @@ public partial class MobileCompanionViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsCompanionRunning));
 
         ToastManager.Show(
-            started ? AppStrings.Get("MobileCompanionNetworkAccessAllowed") : AppStrings.Get("MobileCompanionNetworkPermissionUnchanged"),
+            started ? "Network access allowed" : "Network permission unchanged",
             ToastIcon.Charger,
             started
-                ? AppStrings.Get("MobileCompanionMobileCompanionCanNowAccept")
-                : AppStrings.Get("MobileCompanionWindowsDidNotApproveThe"));
+                ? "Mobile Companion can now accept connections from your private local network"
+                : "Windows did not approve the firewall change");
         OnPropertyChanged(nameof(IsNetworkAccessAllowed));
         OnPropertyChanged(nameof(NetworkAccessButtonLabel));
     }

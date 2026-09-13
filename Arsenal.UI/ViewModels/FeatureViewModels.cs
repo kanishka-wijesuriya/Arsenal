@@ -84,14 +84,14 @@ namespace Arsenal.UI.ViewModels
 
         private static readonly IReadOnlyList<HomeControlDefinition> ControlCatalog = new[]
         {
-            new HomeControlDefinition("performance", AppStrings.Get("HomePerformanceMode"), AppStrings.Get("FeatureSilentBalancedAndTurboBIOS"), SymbolRegular.Gauge24),
-            new HomeControlDefinition("gpu", AppStrings.Get("DisplayGPUMode"), AppStrings.Get("FeatureEcoStandardUltimateAndOptimized"), SymbolRegular.DeveloperBoard24),
-            new HomeControlDefinition("charge_limit", AppStrings.Get("BatteryChargeLimit2"), AppStrings.Get("FeatureProtectTheBatteryByChoosing"), SymbolRegular.BatteryCharge24),
-            new HomeControlDefinition("refresh", AppStrings.Get("DisplayRefreshRate"), AppStrings.Get("FeatureSwitchBetweenThePanelS"), SymbolRegular.Desktop24),
-            new HomeControlDefinition("auto_refresh", AppStrings.Get("HomeAutomaticRefresh"), AppStrings.Get("FeatureLetRefreshRateFollowThe"), SymbolRegular.Sparkle24),
-            new HomeControlDefinition("keyboard", AppStrings.Get("HomeKeyboardLight"), AppStrings.Get("FeatureChooseTheKeyboardBacklightLevel"), SymbolRegular.Keyboard24),
-            new HomeControlDefinition("touchpad", AppStrings.Get("HomeTouchpad"), AppStrings.Get("FeatureEnableOrDisableTheBuilt"), SymbolRegular.CursorClick24),
-            new HomeControlDefinition("full_charge", AppStrings.Get("HomeFullCharge"), AppStrings.Get("FeatureTemporarilyChargeTo100Beyond"), SymbolRegular.BatteryCharge24),
+            new HomeControlDefinition("performance", "Performance mode", "Silent, Balanced and Turbo BIOS and Windows power modes", SymbolRegular.Gauge24),
+            new HomeControlDefinition("gpu", "GPU mode", "Eco, Standard, Ultimate and Optimized graphics modes", SymbolRegular.DeveloperBoard24),
+            new HomeControlDefinition("charge_limit", "Charge limit", "Protect the battery by choosing where charging stops", SymbolRegular.BatteryCharge24),
+            new HomeControlDefinition("refresh", "Refresh rate", "Switch between the panel's minimum and maximum refresh rate", SymbolRegular.Desktop24),
+            new HomeControlDefinition("auto_refresh", "Automatic refresh", "Let refresh rate follow the current power source", SymbolRegular.Sparkle24),
+            new HomeControlDefinition("keyboard", "Keyboard light", "Choose the keyboard backlight level", SymbolRegular.Keyboard24),
+            new HomeControlDefinition("touchpad", "Touchpad", "Enable or disable the built-in touchpad", SymbolRegular.CursorClick24),
+            new HomeControlDefinition("full_charge", "Full charge", "Temporarily charge to 100% beyond the normal limit", SymbolRegular.BatteryCharge24),
         };
 
         public ObservableCollection<HomeControlSlot> HomeControls { get; } = new();
@@ -121,7 +121,7 @@ namespace Arsenal.UI.ViewModels
         private int _refreshRate = 60;
 
         [ObservableProperty]
-        private string _deviceName = AppStrings.Get("FeatureASUSDevice");
+        private string _deviceName = "ASUS device";
 
         [ObservableProperty]
         private string _modelNumber = string.Empty;
@@ -181,8 +181,8 @@ namespace Arsenal.UI.ViewModels
         public System.Windows.Media.DoubleCollection ChargeLimitMarks { get; }
 
         public string ChargeLimitNote => HasSteppedChargeLimit
-            ? AppStrings.Get("FeatureChargingStopsAtTheSet")
-            : AppStrings.Get("FeatureChargingStopsAtTheSet2");
+            ? "Charging stops at the set level. This model allows 60-80%, or 100%."
+            : "Charging stops at the set level, protecting the battery on mains power.";
 
         /// <summary>
         /// What the selected GPU mode means, under the row's own label - the same shape
@@ -190,10 +190,10 @@ namespace Arsenal.UI.ViewModels
         /// </summary>
         public string GpuModeDescription => CurrentGpuMode switch
         {
-            0 => AppStrings.Get("FeatureEcoTheDedicatedGPUIs"),
-            1 => AppStrings.Get("FeatureStandardHybridApplicationsChoose"),
-            2 => AppStrings.Get("FeatureUltimateTheDedicatedGPUDrives"),
-            _ => AppStrings.Get("FeatureOptimizedFollowsThePowerSource")
+            0 => "Eco · the dedicated GPU is powered down for the longest battery life",
+            1 => "Standard · hybrid, applications choose which GPU to run on",
+            2 => "Ultimate · the dedicated GPU drives the display, and switching restarts Windows",
+            _ => "Optimized · follows the power source, Eco on battery and Standard on mains"
         };
 
         partial void OnCurrentGpuModeChanged(int value) => OnPropertyChanged(nameof(GpuModeDescription));
@@ -534,7 +534,7 @@ namespace Arsenal.UI.ViewModels
         /// ceiling still labels its own top step.
         /// </summary>
         public string GpuClockLimitText => GpuClockLimit >= GpuClockLimitRange.Maximum
-            ? AppStrings.Get("Default")
+            ? "Default"
             : $"{GpuClockLimit} MHz";
 
         /// <summary>
@@ -843,12 +843,12 @@ namespace Arsenal.UI.ViewModels
             int mode = _performanceService.CreateProfile(string.IsNullOrWhiteSpace(name) ? null : name);
             if (mode < 0)
             {
-                ProfileManagerMessage = AppStrings.Get("PerformancePlanLimitReached");
+                ProfileManagerMessage = "The plan library is full. Remove a custom plan before creating another.";
                 return;
             }
 
             IsCreateComposerOpen = false;
-            ProfileManagerMessage = AppStrings.Get("PerformancePlanCreated");
+            ProfileManagerMessage = "Custom plan created and selected.";
             LoadCurrentProfile();
         }
 
@@ -867,7 +867,7 @@ namespace Arsenal.UI.ViewModels
             if (!_performanceService.RenameProfile(plan.ModeIndex, plan.Name))
                 RefreshProfiles();
             else
-                ProfileManagerMessage = AppStrings.Get("PerformancePlanRenamed");
+                ProfileManagerMessage = "Plan name saved.";
         }
 
         [RelayCommand]
@@ -888,7 +888,7 @@ namespace Arsenal.UI.ViewModels
         {
             if (planParam is not PerformancePlanItem plan || !plan.IsCustom) return;
             _performanceService.DeleteProfile(plan.ModeIndex);
-            ProfileManagerMessage = AppStrings.Get("PerformancePlanDeleted");
+            ProfileManagerMessage = "Custom plan deleted.";
             RefreshProfiles();
             LoadCurrentProfile();
         }
@@ -898,10 +898,10 @@ namespace Arsenal.UI.ViewModels
             HashSet<string> names = Profiles.Select(plan => plan.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             for (int number = 1; number <= Arsenal.Mode.Modes.MaxModes; number++)
             {
-                string candidate = $"{AppStrings.Get("PerformanceCustomPlan")} {number}";
+                string candidate = $"{"Custom Plan"} {number}";
                 if (!names.Contains(candidate)) return candidate;
             }
-            return AppStrings.Get("PerformanceCustomPlan");
+            return "Custom Plan";
         }
 
         [RelayCommand]
@@ -1049,10 +1049,10 @@ namespace Arsenal.UI.ViewModels
         /// </summary>
         public string GpuModeDescription => CurrentGpuMode switch
         {
-            0 => AppStrings.Get("FeatureEcoTheDedicatedGPUIs"),
-            1 => AppStrings.Get("FeatureStandardHybridApplicationsChoose"),
-            2 => AppStrings.Get("FeatureUltimateTheDedicatedGPUDrives"),
-            _ => AppStrings.Get("FeatureOptimizedFollowsThePowerSource")
+            0 => "Eco · the dedicated GPU is powered down for the longest battery life",
+            1 => "Standard · hybrid, applications choose which GPU to run on",
+            2 => "Ultimate · the dedicated GPU drives the display, and switching restarts Windows",
+            _ => "Optimized · follows the power source, Eco on battery and Standard on mains"
         };
 
         partial void OnCurrentGpuModeChanged(int value) => OnPropertyChanged(nameof(GpuModeDescription));
@@ -1067,7 +1067,7 @@ namespace Arsenal.UI.ViewModels
         private bool _canInstallColorProfiles;
 
         [ObservableProperty]
-        private string _colorProfileStatus = AppStrings.Get("FeatureCheckingInstalledProfiles");
+        private string _colorProfileStatus = "Checking installed profiles…";
 
         public bool IsMiniLedSupported { get; }
         public bool IsOverdriveSupported { get; }
@@ -1321,12 +1321,12 @@ namespace Arsenal.UI.ViewModels
         public async Task InstallColorProfiles()
         {
             IsInstallingProfiles = true;
-            ColorProfileStatus = AppStrings.Get("FeatureInstallingASUSColorProfiles");
+            ColorProfileStatus = "Installing ASUS color profiles…";
             try
             {
                 bool installed = await _displayService.InstallColorProfilesAsync();
                 RefreshColorProfileState();
-                if (!installed) ColorProfileStatus = AppStrings.Get("FeatureInstallationWasCancelledOrNo");
+                if (!installed) ColorProfileStatus = "Installation was cancelled or no matching profile was found.";
             }
             finally { IsInstallingProfiles = false; }
         }
@@ -1336,10 +1336,10 @@ namespace Arsenal.UI.ViewModels
             HasColorProfiles = _displayService.HasColorProfiles;
             CanInstallColorProfiles = _displayService.CanInstallColorProfiles;
             ColorProfileStatus = HasColorProfiles
-                ? AppStrings.Get("FeatureASUSColorProfilesAreInstalled")
+                ? "ASUS color profiles are installed and ready."
                 : CanInstallColorProfiles
-                    ? AppStrings.Get("FeatureAMatchingASUSProfilePackage")
-                    : AppStrings.Get("FeatureNoMatchingASUSProfilePackage");
+                    ? "A matching ASUS profile package is available for this display."
+                    : "No matching ASUS profile package is available for this device.";
         }
 
         private static int ToInt(object? param, int defaultValue = 0)
@@ -1369,7 +1369,7 @@ namespace Arsenal.UI.ViewModels
         private float _dischargeRate = 0;
 
         [ObservableProperty]
-        private string _batteryHealth = AppStrings.Get("FeatureReading");
+        private string _batteryHealth = "Reading…";
 
         /// <summary>Capacity figures behind the health percentage.</summary>
         [ObservableProperty]
@@ -1385,9 +1385,9 @@ namespace Arsenal.UI.ViewModels
 
         public string PowerFlowLabel => DischargeRate switch
         {
-            > 0 => AppStrings.Get("Charging"),
-            < 0 => AppStrings.Get("Discharging"),
-            _ => AppStrings.Get("FeatureBatteryPower")
+            > 0 => "Charging",
+            < 0 => "Discharging",
+            _ => "Battery power"
         };
 
         public string PowerFlowValue => $"{Math.Abs(DischargeRate):F1} W";
@@ -1440,14 +1440,14 @@ namespace Arsenal.UI.ViewModels
         {
             get
             {
-                if (StoredWh is not { } stored || CapacityWh is not { } capacity) return AppStrings.Get("FeatureChargeTimeUnavailable");
+                if (StoredWh is not { } stored || CapacityWh is not { } capacity) return "Charge time unavailable";
 
                 decimal target = capacity * EffectiveChargeLimit / 100;
                 decimal missing = target - stored;
-                if (missing <= 0) return AppStrings.Get("FeatureChargedToTheLimit");
+                if (missing <= 0) return "Charged to the limit";
                 if (DischargeRate <= 0) return $"{FormatWh(missing)} below the limit";
 
-                return AppStrings.Get("FeatureFullIn") + FormatHours((double)(missing / (decimal)DischargeRate));
+                return "Full in " + FormatHours((double)(missing / (decimal)DischargeRate));
             }
         }
 
@@ -1459,7 +1459,7 @@ namespace Arsenal.UI.ViewModels
                 if (StoredWh is not { } stored) return string.Empty;
 
                 float draw = DischargeRate < 0 ? -DischargeRate : _lastDrawWatts;
-                if (draw <= 0) return AppStrings.Get("FeatureRuntimeMeasuredOnceOnBattery");
+                if (draw <= 0) return "Runtime measured once on battery";
 
                 string estimate = FormatHours((double)(stored / (decimal)draw));
                 return DischargeRate < 0
@@ -1510,7 +1510,7 @@ namespace Arsenal.UI.ViewModels
         public int EffectiveChargeLimit => IsFullChargeOverride ? 100 : ChargeLimit;
 
         public string ChargeStopsAtText => EffectiveChargeLimit >= 100
-            ? AppStrings.Get("FeatureChargingToFull")
+            ? "Charging to full"
             : $"Charging stops at {EffectiveChargeLimit}%";
 
         partial void OnChargeLimitChanged(int value) => RaiseChargeLimitDependents();
@@ -1524,8 +1524,8 @@ namespace Arsenal.UI.ViewModels
         }
 
         public string ChargeLimitNote => HasSteppedChargeLimit
-            ? AppStrings.Get("FeatureThisModelChargesToAny")
-            : AppStrings.Get("FeatureAnyLevelBetween40And");
+            ? "This model charges to any level between 60% and 80%, or to 100%. There are no stops in between."
+            : "Any level between 40% and 100%.";
 
         public BatteryViewModel(IBatteryService batteryService, IDeviceStateService deviceStateService)
         {
@@ -1618,12 +1618,12 @@ namespace Arsenal.UI.ViewModels
                 BatteryHealth = $"{HardwareControl.batteryHealth:F0}%";
                 BatteryHealthDetail = HardwareControl.fullCapacity > 0 && HardwareControl.designCapacity > 0
                     ? $"{HardwareControl.fullCapacity / 1000:F1} of {HardwareControl.designCapacity / 1000:F1} Wh"
-                    : AppStrings.Get("FeatureFullChargeVsOriginalCapacity");
+                    : "Full charge vs original capacity";
             }
             else
             {
-                BatteryHealth = AppStrings.Get("FeatureUnavailable");
-                BatteryHealthDetail = AppStrings.Get("FeatureThisBatteryDoesNotReport");
+                BatteryHealth = "Unavailable";
+                BatteryHealthDetail = "This battery does not report its capacity";
             }
         }
 
@@ -1734,7 +1734,7 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty] private string _matrixDateFormat = "yy.MM.dd";
         [ObservableProperty] private bool _matrixClockBattery;
         [ObservableProperty] private int _matrixAudioMode;
-        [ObservableProperty] private string _lightingDeviceTitle = AppStrings.Get("AnimeMatrix");
+        [ObservableProperty] private string _lightingDeviceTitle = "Anime Matrix";
         [ObservableProperty] private int _slashInterval;
         [ObservableProperty] private bool _slashBootAnimation;
         [ObservableProperty] private bool _slashSleepAnimation;
@@ -1777,10 +1777,10 @@ namespace Arsenal.UI.ViewModels
         public string PreviewCaption => BacklightZoneType switch
         {
             (int)Arsenal.USB.AuraBacklightType.PerKey =>
-                AppStrings.Get("LightingPreviewPerKey"),
+                "Your keyboard lights every key on its own. The effect is reproduced here from its shape, colour and speed. The keyboard plays it in its own firmware and does not report where in the animation it is, so the two will not be in step.",
             (int)Arsenal.USB.AuraBacklightType.MultiZone =>
-                AppStrings.Get("LightingPreviewFourZone"),
-            _ => AppStrings.Get("LightingPreviewSingleZone"),
+                "Your keyboard lights in four zones, so the preview shows four bands rather than a colour per key. The effect is reproduced from its shape, colour and speed; the keyboard plays it in its own firmware and will not be in step.",
+            _ => "Your keyboard lights as one zone, so every key shows the same colour. The effect is reproduced from its shape, colour and speed; the keyboard plays it in its own firmware and will not be in step.",
         };
 
         /// <summary>
@@ -1789,8 +1789,8 @@ namespace Arsenal.UI.ViewModels
         /// silently implies a precision the table may not have for this model.
         /// </summary>
         public string PreviewShapeSource => PreviewChassis.Length > 0
-            ? AppStrings.Format("LightingPreviewMatched", PreviewChassis)
-            : AppStrings.Get("LightingPreviewUnmatched");
+            ? string.Format("Matched to {0}. Nothing on the machine reports whether it has a number pad, so correct it here if this is wrong. Your choice is remembered.", PreviewChassis)
+            : "This chassis is not in Arsenal's keyboard table, so the shape is a generic ROG laptop. Set it here and your choice is remembered.";
 
         partial void OnBacklightZoneTypeChanged(int value) => OnPropertyChanged(nameof(PreviewCaption));
 
@@ -1866,14 +1866,14 @@ namespace Arsenal.UI.ViewModels
 
             if (HasSlash)
             {
-                LightingDeviceTitle = AppStrings.Get("FeatureSlashLighting");
+                LightingDeviceTitle = "Slash lighting";
                 foreach (var pair in Arsenal.AnimeMatrix.SlashDevice.Modes)
                     MatrixModes.Add(new SelectableIntOption((int)pair.Key, pair.Value, (int)pair.Key == MatrixMode));
                 LoadSlashSettings();
             }
             else
             {
-                string[] matrixNames = { AppStrings.Get("FeatureBanner"), AppStrings.Get("AuraZoneLogo"), AppStrings.Get("MatrixPicture"), AppStrings.Get("MatrixClock"), AppStrings.Get("MatrixAudio"), AppStrings.Get("MatrixText") };
+                string[] matrixNames = { "Banner", "Logo", "Picture", "Clock", "Audio", "Text" };
                 for (int i = 0; i < matrixNames.Length; i++)
                     MatrixModes.Add(new SelectableIntOption(i, matrixNames[i], i == MatrixMode));
             }

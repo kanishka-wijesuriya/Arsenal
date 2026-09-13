@@ -87,8 +87,8 @@ see what is connected and cut it off from here.
 | **Automation** | Startup actions, clamshell behaviour, and scheduled battery and backlight rules |
 | **Advanced** | ASUS service control, firmware switches, power policy, and ROG Ally AutoTDP and FPS limiting |
 
-Plus a tray menu, a quick panel on a hotkey, a searchable command palette, a hardware
-overlay with live FPS, and **22 interface languages**.
+Plus a tray menu, a quick panel on a hotkey, a searchable command palette, and a
+hardware overlay with live FPS. The interface is English only.
 
 <details>
 <summary><b>More screenshots</b></summary>

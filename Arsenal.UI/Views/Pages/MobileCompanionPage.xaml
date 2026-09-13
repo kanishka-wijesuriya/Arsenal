@@ -4,39 +4,39 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
-             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+>
     <ScrollViewer Style="{StaticResource PageScrollStyle}">
         <StackPanel Style="{StaticResource PageBodyStyle}">
             <Grid Style="{StaticResource PageHeaderStyle}">
                 <StackPanel>
-                    <TextBlock Text="{loc:Loc MobileCompanionMobileCompanion}" Style="{StaticResource PageTitleStyle}"/>
-                    <TextBlock Text="{loc:Loc MobileCompanionSecurelyPairPhonesScanConnection}" Style="{StaticResource PageSubtitleStyle}"/>
+                    <TextBlock Text="Mobile Companion" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="Securely pair phones, scan connection details and manage connected devices" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
             </Grid>
 
-            <ui:InfoBar Title="{loc:Loc MobileCompanionPrivateByDesign}"
+            <ui:InfoBar Title="Private by design"
                         Message="Control stays on your local network. Every phone receives its own encrypted credential and pins this PC's TLS certificate."
                         Severity="Informational" IsOpen="True" IsClosable="False"
                         Margin="{StaticResource SectionGap}"/>
 
-            <ui:InfoBar Title="{loc:Loc MobileCompanionAllowPrivateNetworkAccessTo}"
+            <ui:InfoBar Title="Allow private-network access to begin pairing"
                         Message="Use the button below and approve the Windows prompt. Arsenal will then listen only on its companion port for devices on your local private network."
                         Severity="Warning" IsOpen="True" IsClosable="False"
                         Margin="0,12,0,0"
                         Visibility="{Binding IsNetworkAccessAllowed, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
 
-            <controls:SettingsGroup Header="{loc:Loc MobileCompanionPairAPhone}" Icon="QrCode24"
-                                    Description="{loc:Loc MobileCompanionTheAndroidAppCanDiscover}">
-                <controls:SettingsRow Header="{loc:Loc MobileCompanionPrivateNetworkAccess}"
-                                      Description="{loc:Loc MobileCompanionAllowInboundCompanionHTTPSAnd}">
+            <controls:SettingsGroup Header="Pair a phone" Icon="QrCode24"
+                                    Description="The Android app can discover this PC automatically, or scan the QR to fill every pairing field at once.">
+                <controls:SettingsRow Header="Private network access"
+                                      Description="Allow inbound companion HTTPS and device discovery on private networks only, from this app alone, including a phone on another subnet of the same network.">
                     <ui:Button Content="{Binding NetworkAccessButtonLabel}"
                                Command="{Binding AllowCompanionNetworkCommand}"
                                Icon="{ui:SymbolIcon ShieldTask24}"
                                Appearance="Primary"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc MobileCompanionScanFromTheMobileApp}"
-                                      Description="{loc:Loc MobileCompanionTheQRIncludesThisPC}"
+                <controls:SettingsRow Header="Scan from the mobile app"
+                                      Description="The QR includes this PC's local address, port, temporary pairing code and TLS fingerprint."
                                       Visibility="{Binding IsCompanionRunning, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <controls:SettingsRow.ContentBelow>
                         <Grid Margin="0,18,0,4">
@@ -48,17 +48,17 @@
                                 <Image Source="{Binding PairingQrCode}" Width="210" Height="210" Stretch="Uniform"/>
                             </Border>
                             <StackPanel Grid.Column="1" Margin="28,4,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="{loc:Loc SetupPAIRINGCODE}" Foreground="{DynamicResource AccentPrimary}" FontSize="12" FontWeight="SemiBold"/>
+                                <TextBlock Text="PAIRING CODE" Foreground="{DynamicResource AccentPrimary}" FontSize="12" FontWeight="SemiBold"/>
                                 <TextBlock Text="{Binding CompanionPairingCode}" FontFamily="Consolas" FontSize="34" FontWeight="SemiBold" Margin="0,4,0,14"/>
-                                <TextBlock Text="{loc:Loc MobileCompanionExpiresAfterFiveMinutesOr}" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap"/>
-                                <ui:Button Content="{loc:Loc MobileCompanionGenerateANewCode}" Icon="{ui:SymbolIcon ArrowClockwise24}"
+                                <TextBlock Text="Expires after five minutes or one successful pairing." Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap"/>
+                                <ui:Button Content="Generate a new code" Icon="{ui:SymbolIcon ArrowClockwise24}"
                                            Command="{Binding RegenerateCompanionCodeCommand}" Appearance="Secondary"
                                            HorizontalAlignment="Left" Margin="0,18,0,0"/>
                             </StackPanel>
                         </Grid>
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
-                <controls:SettingsRow Header="{loc:Loc MobileCompanionManualAddress}" Description="{loc:Loc MobileCompanionUseThisIfThePhone}"
+                <controls:SettingsRow Header="Manual address" Description="Use this if the phone cannot scan the QR code."
                                       Visibility="{Binding IsCompanionRunning, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <TextBox Text="{Binding CompanionAddress, Mode=OneWay}" IsReadOnly="True" MinWidth="220"
                              FontFamily="Consolas" HorizontalContentAlignment="Center"/>
@@ -67,7 +67,7 @@
                      address cannot verify this itself, so it shows what it received and
                      asks the person to compare - which needs the whole thing here to
                      compare against. Grouped exactly as the phone groups it. -->
-                <controls:SettingsRow Header="{loc:Loc MobileCompanionTLSIdentity}" Description="{loc:Loc MobileCompanionAShortPreviewOfThe}"
+                <controls:SettingsRow Header="TLS identity" Description="A short preview of the certificate identity stored by each paired phone."
                                       Visibility="{Binding IsCompanionRunning, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <TextBlock Text="{Binding CompanionFingerprintBlock}" FontFamily="Consolas" FontSize="12"
                                LineHeight="18" TextAlignment="Right"
@@ -75,8 +75,8 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc MobileCompanionConnectedDevices}" Icon="PhoneLaptop24"
-                                    Description="{loc:Loc MobileCompanionAPhoneIsShownAs}"
+            <controls:SettingsGroup Header="Connected devices" Icon="PhoneLaptop24"
+                                    Description="A phone is shown as connected while it is actively receiving live status from this PC."
                                     ItemsSource="{Binding Devices}">
                 <controls:SettingsGroup.ItemTemplate>
                     <DataTemplate>
@@ -95,7 +95,7 @@
                                     </Border.Style>
                                 </Border>
                                 <TextBlock Text="{Binding Status}" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="0,0,14,0"/>
-                                <ui:Button Content="{loc:Loc MobileCompanionRevoke}" Appearance="Secondary" Icon="{ui:SymbolIcon LinkDismiss24}"
+                                <ui:Button Content="Revoke" Appearance="Secondary" Icon="{ui:SymbolIcon LinkDismiss24}"
                                            Command="{Binding DataContext.RevokeDeviceCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
                                            CommandParameter="{Binding Id}"/>
                             </StackPanel>
@@ -103,13 +103,13 @@
                     </DataTemplate>
                 </controls:SettingsGroup.ItemTemplate>
                 <controls:SettingsGroup.Footer>
-                    <ui:Button Content="{loc:Loc MobileCompanionRevokeAllDevices}" Icon="{ui:SymbolIcon LinkDismiss24}"
+                    <ui:Button Content="Revoke all devices" Icon="{ui:SymbolIcon LinkDismiss24}"
                                Command="{Binding RevokeAllDevicesCommand}" Appearance="Secondary"
                                HorizontalAlignment="Left" IsEnabled="{Binding HasPairedDevices}"/>
                 </controls:SettingsGroup.Footer>
             </controls:SettingsGroup>
 
-            <ui:InfoBar Title="{loc:Loc MobileCompanionNoPhonesPairedYet}"
+            <ui:InfoBar Title="No phones paired yet"
                         Message="Scan the code above from the Android app to add your first device."
                         Severity="Informational" IsOpen="True" IsClosable="False"
                         Visibility="{Binding HasPairedDevices, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>

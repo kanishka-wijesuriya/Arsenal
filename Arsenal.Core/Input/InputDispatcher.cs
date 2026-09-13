@@ -562,11 +562,11 @@ namespace Arsenal.Input
                         ToggleScreenRate();
                         break;
                     case Keys.F14:
-                        Program.toast.RunToast(Properties.Strings.EcoMode, ToastIcon.Charger, "GPU mode");
+                        Program.toast.RunToast("Eco", ToastIcon.Charger, "GPU mode");
                         Program.gpuControl?.SetGPUMode(AsusACPI.GPUModeEco);
                         break;
                     case Keys.F15:
-                        Program.toast.RunToast(Properties.Strings.StandardMode, ToastIcon.Charger, "GPU mode");
+                        Program.toast.RunToast("Standard", ToastIcon.Charger, "GPU mode");
                         Program.gpuControl?.SetGPUMode(AsusACPI.GPUModeStandard);
                         break;
                 }
@@ -673,7 +673,7 @@ namespace Arsenal.Input
                 case "miniled":
                     if (ScreenCCD.GetHDRStatus()) return;
                     string miniledName = ScreenControl.ToogleMiniled();
-                    Program.toast.RunToast(miniledName, miniledName == Properties.Strings.OneZone ? ToastIcon.BrightnessDown : ToastIcon.BrightnessUp, "Mini-LED backlight");
+                    Program.toast.RunToast(miniledName, miniledName == "One Zone" ? ToastIcon.BrightnessDown : ToastIcon.BrightnessUp, "Mini-LED backlight");
                     break;
                 case "aura":
                     OnCycleAura?.Invoke(Control.ModifierKeys == Keys.Shift ? -1 : 1);
@@ -738,7 +738,7 @@ namespace Arsenal.Input
             Logger.WriteLine("Touchscreen status: " + status);
             if (status is not null)
             {
-                Program.toast.RunToast(Properties.Strings.Touchscreen + " " + ((bool)status ? Properties.Strings.On : Properties.Strings.Off), ToastIcon.Touchpad);
+                Program.toast.RunToast("Touchscreen" + " " + ((bool)status ? "On" : "Off"), ToastIcon.Touchpad);
                 TouchscreenHelper.ToggleTouchscreen((bool)status);
             }
         }
@@ -746,7 +746,7 @@ namespace Arsenal.Input
         public static void ToggleMic()
         {
             bool muteStatus = Audio.ToggleMicMute();
-            Program.toast.RunToast(muteStatus ? Properties.Strings.Muted : Properties.Strings.Unmuted, muteStatus ? ToastIcon.MicrophoneMute : ToastIcon.Microphone);
+            Program.toast.RunToast(muteStatus ? "Muted" : "Unmuted", muteStatus ? ToastIcon.MicrophoneMute : ToastIcon.Microphone);
             if (AppConfig.IsVivoZenbook()) Program.acpi.DeviceSet(AsusACPI.MicMuteLed, muteStatus ? 1 : 0, "MicmuteLed");
         }
 
@@ -782,7 +782,7 @@ namespace Arsenal.Input
             if (hotkey || !AppConfig.IsHardwareTouchpadToggle()) ToggleTouchpad();
             Thread.Sleep(200);
             bool enabled = GetTouchpadState();
-            Program.toast.RunToast(enabled ? Properties.Strings.On : Properties.Strings.Off, ToastIcon.Touchpad);
+            Program.toast.RunToast(enabled ? "On" : "Off", ToastIcon.Touchpad);
             OnTouchpadChanged?.Invoke(enabled);
         }
 
@@ -811,7 +811,7 @@ namespace Arsenal.Input
             AppConfig.Set("arrow_lock", arLock);
 
             Program.inputDispatcher?.RegisterKeys();
-            Program.toast.RunToast("Arrow-Lock " + (arLock == 1 ? Properties.Strings.On : Properties.Strings.Off), ToastIcon.FnLock);
+            Program.toast.RunToast("Arrow-Lock " + (arLock == 1 ? "On" : "Off"), ToastIcon.FnLock);
         }
 
         public static bool IsHardwareFnLock()
@@ -844,12 +844,12 @@ namespace Arsenal.Input
 
             OnFnLockChanged?.Invoke();
 
-            Program.toast.RunToast(fnLock ? Properties.Strings.FnLockOn : Properties.Strings.FnLockOff, ToastIcon.FnLock, "Function row");
+            Program.toast.RunToast(fnLock ? "FN-Lock On" : "FN-Lock Off", ToastIcon.FnLock, "Function row");
         }
 
         public static void ToggleWinLock()
         {
-            Program.toast.RunToast(Properties.Strings.WinLockToggle);
+            Program.toast.RunToast("Win-Lock Toggle");
         }
 
         public static void SetSlateMode(int status)
@@ -1184,7 +1184,7 @@ namespace Arsenal.Input
 
             if (!AsusService.IsOSDRunning())
             {
-                string[] backlightNames = new string[] { Properties.Strings.BacklightOff, Properties.Strings.BacklightLow, Properties.Strings.BacklightMid, Properties.Strings.BacklightMax };
+                string[] backlightNames = new string[] { "Off", "Low", "Mid", "Max" };
                 Program.toast.RunToast(backlightNames[backlight], delta > 0 ? ToastIcon.BacklightUp : ToastIcon.BacklightDown, "Keyboard backlight");
             }
 

@@ -64,8 +64,8 @@ namespace Arsenal.UI.Services.Remote
         {
             // Resource lookups are not compile-time constants, so the button labels
             // default here rather than in the signature.
-            confirm ??= AppStrings.Get("RemoteRestartPromptRestartNow");
-            cancel ??= AppStrings.Get("RemoteRestartPromptNotNow");
+            confirm ??= "Restart now";
+            cancel ??= "Not now";
 
             // Waiting here holds whatever thread called in, for up to the timeout. On the
             // dispatcher that is fatal rather than slow: the answer arrives as another

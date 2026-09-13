@@ -61,7 +61,6 @@ namespace Arsenal.UI
             AppDomain.CurrentDomain.UnhandledException += (s, ev) => Logger.WriteLine("Unhandled: " + ev.ExceptionObject);
             DispatcherUnhandledException += (s, ev) => { Logger.WriteLine("Dispatcher Unhandled: " + ev.Exception); ev.Handled = true; };
 
-            ApplyConfiguredCulture();
             string action = e.Args.FirstOrDefault()?.Trim().ToLowerInvariant() ?? string.Empty;
 
             if (action == "--install-colors")
@@ -245,7 +244,7 @@ namespace Arsenal.UI
 
                 _pendingUpdate = release;
                 Program.Bridge?.ShowToast(
-                    AppStrings.Get("UpdateReady"), ToastIcon.Charger, $"Arsenal {release.Version}");
+                    "An update is ready", ToastIcon.Charger, $"Arsenal {release.Version}");
             });
         }
 
@@ -297,22 +296,6 @@ namespace Arsenal.UI
             catch (Exception ex)
             {
                 Logger.WriteLine("Setup panel: " + ex.Message);
-            }
-        }
-
-        private static void ApplyConfiguredCulture()
-        {
-            string language = AppConfig.GetString("language");
-            if (string.IsNullOrWhiteSpace(language)) return;
-            try
-            {
-                var culture = CultureInfo.GetCultureInfo(language);
-                CultureInfo.CurrentUICulture = culture;
-                Thread.CurrentThread.CurrentUICulture = culture;
-            }
-            catch (CultureNotFoundException)
-            {
-                Logger.WriteLine("Unknown language: " + language);
             }
         }
 

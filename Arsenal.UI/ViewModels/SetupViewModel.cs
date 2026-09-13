@@ -144,24 +144,24 @@ namespace Arsenal.UI.ViewModels
 
         public ObservableCollection<SetupStep> Steps { get; } = new()
         {
-            new SetupStep(SetupStage.Welcome, 0, AppStrings.Get("SetupWelcomeToArsenal"),
-                AppStrings.Get("SetupALighterWayToDrive"),
-                AppStrings.Get("SetupWelcome"), Wpf.Ui.Controls.SymbolRegular.Sparkle24),
-            new SetupStep(SetupStage.Startup, 1, AppStrings.Get("SetupStartWithWindows"),
-                AppStrings.Get("SetupChooseNormalAccessOr"),
-                AppStrings.Get("SetupStartup"), Wpf.Ui.Controls.SymbolRegular.Power24),
-            new SetupStep(SetupStage.Experience, 2, AppStrings.Get("SetupNotificationsAndUpdates"),
-                AppStrings.Get("SetupHowMuchArsenalSaysAnd"),
-                AppStrings.Get("SettingsNotifications"), Wpf.Ui.Controls.SymbolRegular.Alert24),
-            new SetupStep(SetupStage.AsusSoftware, 3, AppStrings.Get("SetupASUSSoftware"),
-                AppStrings.Get("SetupArsenalTalksToTheSame2"),
-                AppStrings.Get("SetupASUSSoftware"), Wpf.Ui.Controls.SymbolRegular.Wrench24),
-            new SetupStep(SetupStage.Phone, 4, AppStrings.Get("SetupConnectYourPhone"),
-                AppStrings.Get("SetupOptionalPairTheCompanionApp"),
-                AppStrings.Get("SetupYourPhone"), Wpf.Ui.Controls.SymbolRegular.PhoneLaptop24),
-            new SetupStep(SetupStage.Finish, 5, AppStrings.Get("SetupAllSet"),
-                AppStrings.Get("SetupApplyingYourChoices"),
-                AppStrings.Get("SetupFinish"), Wpf.Ui.Controls.SymbolRegular.CheckmarkCircle24)
+            new SetupStep(SetupStage.Welcome, 0, "Welcome to Arsenal",
+                "A lighter way to drive your ASUS laptop. Four short steps and you are done.",
+                "Welcome", Wpf.Ui.Controls.SymbolRegular.Sparkle24),
+            new SetupStep(SetupStage.Startup, 1, "Start with Windows",
+                "Choose normal access or administrator rights, then decide whether Arsenal starts at sign-in.",
+                "Startup", Wpf.Ui.Controls.SymbolRegular.Power24),
+            new SetupStep(SetupStage.Experience, 2, "Notifications and updates",
+                "How much Arsenal says, and whether it looks for new releases.",
+                "Notifications", Wpf.Ui.Controls.SymbolRegular.Alert24),
+            new SetupStep(SetupStage.AsusSoftware, 3, "ASUS software",
+                "Arsenal talks to the same firmware Armoury Crate does, so running both is usually unnecessary.",
+                "ASUS software", Wpf.Ui.Controls.SymbolRegular.Wrench24),
+            new SetupStep(SetupStage.Phone, 4, "Connect your phone",
+                "Optional. Pair the companion app to check temperatures and switch profiles from your phone.",
+                "Your phone", Wpf.Ui.Controls.SymbolRegular.PhoneLaptop24),
+            new SetupStep(SetupStage.Finish, 5, "All set",
+                "Applying your choices.",
+                "Finish", Wpf.Ui.Controls.SymbolRegular.CheckmarkCircle24)
         };
 
         [ObservableProperty]
@@ -187,17 +187,17 @@ namespace Arsenal.UI.ViewModels
         /// <summary>The finish step has nothing left to skip past.</summary>
         public bool IsSkippable => !IsFinishStep;
 
-        public string StepCounter => IsFinishStep ? AppStrings.Get("SetupDone") : $"Step {CurrentIndex + 1} of {Steps.Count - 1}";
+        public string StepCounter => IsFinishStep ? "Done" : $"Step {CurrentIndex + 1} of {Steps.Count - 1}";
 
         /// <summary>0 to 1 across the configurable steps, for the footer's progress bar.</summary>
         public double Progress => (double)CurrentIndex / (Steps.Count - 1);
 
         public string NextLabel => CurrentStage switch
         {
-            SetupStage.Welcome => AppStrings.Get("SetupGetStarted"),
-            SetupStage.Phone => AppStrings.Get("SetupFinishSetup"),
-            SetupStage.Finish => AppStrings.Get("SetupDone"),
-            _ => AppStrings.Get("SetupContinue")
+            SetupStage.Welcome => "Get started",
+            SetupStage.Phone => "Finish setup",
+            SetupStage.Finish => "Done",
+            _ => "Continue"
         };
 
         // ===== Choices =====
@@ -234,11 +234,11 @@ namespace Arsenal.UI.ViewModels
         [NotifyPropertyChangedFor(nameof(FinishCaption))]
         private bool _isComplete;
 
-        public string FinishHeadline => IsComplete ? AppStrings.Get("SetupYouReAllSet") : AppStrings.Get("SetupSettingThingsUp");
+        public string FinishHeadline => IsComplete ? "You're all set" : "Setting things up";
 
         public string FinishCaption => IsComplete
             ? CompletionSummary
-            : AppStrings.Get("SetupThisOnlyTakesAMoment");
+            : "This only takes a moment. Registering a scheduled task is the slowest part.";
 
         [ObservableProperty]
         private string _statusMessage = string.Empty;
@@ -260,8 +260,8 @@ namespace Arsenal.UI.ViewModels
         public bool NeedsElevation => !IsElevated;
 
         public string StartupDescription => RunAsAdministrator
-            ? AppStrings.Get("SetupStartsElevatedAtSignIn")
-            : AppStrings.Get("SetupStartsNormallyAtSignIn");
+            ? "Starts elevated at sign-in through Task Scheduler, without a UAC prompt at logon. Manual launches still use the normal Windows consent prompt."
+            : "Starts normally at sign-in without administrator rights.";
 
         // ===== Phone pairing =====
 
@@ -273,8 +273,8 @@ namespace Arsenal.UI.ViewModels
         public bool IsCompanionUnavailable => !_companion.IsRunning;
         public bool IsNetworkAccessAllowed => CompanionFirewall.IsAllowed;
         public string NetworkAccessButtonLabel => CompanionFirewall.NeedsRuleUpgrade
-            ? AppStrings.Get("MobileCompanionUpdateNetworkAccess")
-            : IsNetworkAccessAllowed ? AppStrings.Get("MobileCompanionNetworkAccessAllowed") : AppStrings.Get("MobileCompanionAllowNetworkAccess");
+            ? "Update network access"
+            : IsNetworkAccessAllowed ? "Network access allowed" : "Allow network access";
 
         [ObservableProperty]
         private ImageSource? _pairingQrCode;
@@ -291,10 +291,10 @@ namespace Arsenal.UI.ViewModels
         [NotifyPropertyChangedFor(nameof(PhoneHeadline))]
         private string _pairedPhoneName = string.Empty;
 
-        public string PhoneHeadline => IsPhonePaired ? PairedPhoneName : AppStrings.Get("SetupNoPhoneYet");
+        public string PhoneHeadline => IsPhonePaired ? PairedPhoneName : "No phone yet";
 
         [ObservableProperty]
-        private string _phoneStatus = AppStrings.Get("SetupWaitingForAPhoneTo");
+        private string _phoneStatus = "Waiting for a phone to scan…";
 
         public SetupViewModel(RemoteCompanionService companion)
         {
@@ -338,7 +338,7 @@ namespace Arsenal.UI.ViewModels
             _devicesAtStart = _companion.PairedDevices.Count;
             IsPhonePaired = false;
             PairedPhoneName = string.Empty;
-            PhoneStatus = AppStrings.Get("SetupWaitingForAPhoneTo");
+            PhoneStatus = "Waiting for a phone to scan…";
 
             Tasks.Clear();
             _work.Clear();
@@ -526,7 +526,7 @@ namespace Arsenal.UI.ViewModels
             Tasks.Clear();
             _work.Clear();
 
-            Add(RunOnStartup ? AppStrings.Get("SetupRegisterTheStartupTask") : AppStrings.Get("SetupLeaveStartupUnchanged"),
+            Add(RunOnStartup ? "Register the startup task" : "Leave startup unchanged",
                 SetupTaskState.Pending,
                 () =>
                 {
@@ -540,8 +540,8 @@ namespace Arsenal.UI.ViewModels
                 });
 
             Add(KeepChargeLimitAfterReboot && IsElevated
-                    ? AppStrings.Get("SetupKeepTheChargeLimitAfter")
-                    : AppStrings.Get("SetupChargeLimitTaskLeftUnchanged"),
+                    ? "Keep the charge limit after a reboot"
+                    : "Charge limit task left unchanged",
                 KeepChargeLimitAfterReboot && !IsElevated ? SetupTaskState.Skipped : SetupTaskState.Pending,
                 () =>
                 {
@@ -554,7 +554,7 @@ namespace Arsenal.UI.ViewModels
                     catch (Exception ex) { Logger.WriteLine("Setup charge task: " + ex.Message); return false; }
                 });
 
-            Add(AppStrings.Get("SetupSaveNotificationAndUpdate"), SetupTaskState.Pending, () =>
+            Add("Save notification and update preferences", SetupTaskState.Pending, () =>
             {
                 AppConfig.Set("check_updates", CanSelfUpdate && CheckUpdates ? 1 : 0);
                 AppConfig.Set("toast_enabled", ShowNotifications ? 1 : 0);
@@ -563,7 +563,7 @@ namespace Arsenal.UI.ViewModels
 
             if (StopArmouryCrateServices)
             {
-                Add(AppStrings.Get("SetupStopArmouryCrateBackground"), SetupTaskState.Pending, () =>
+                Add("Stop Armoury Crate background services", SetupTaskState.Pending, () =>
                 {
                     try { AsusService.StopAsusServices(); return true; }
                     catch (Exception ex) { Logger.WriteLine("Setup ASUS services: " + ex.Message); return false; }
@@ -572,7 +572,7 @@ namespace Arsenal.UI.ViewModels
 
             if (IsPhonePaired)
             {
-                var paired = new SetupTask(AppStrings.Get("SetupPhonePaired")) { Detail = PairedPhoneName, State = SetupTaskState.Done };
+                var paired = new SetupTask("Phone paired") { Detail = PairedPhoneName, State = SetupTaskState.Done };
                 Tasks.Add(paired);
             }
         }
@@ -599,7 +599,7 @@ namespace Arsenal.UI.ViewModels
 
                 return IsPhonePaired
                     ? $"Arsenal is configured and {PairedPhoneName} is paired. You can change any of this in Settings."
-                    : AppStrings.Get("SetupArsenalIsConfiguredYouCan");
+                    : "Arsenal is configured. You can change any of this in Settings.";
             }
         }
 
@@ -655,32 +655,32 @@ namespace Arsenal.UI.ViewModels
             IReadOnlyList<CompanionDeviceInfo> devices = _companion.PairedDevices;
             if (devices.Count <= _devicesAtStart)
             {
-                if (!IsPhonePaired) PhoneStatus = AppStrings.Get("SetupWaitingForAPhoneTo");
+                if (!IsPhonePaired) PhoneStatus = "Waiting for a phone to scan…";
                 return;
             }
 
             CompanionDeviceInfo newest = devices.OrderByDescending(device => device.PairedUtc).First();
             PairedPhoneName = newest.Name;
             IsPhonePaired = true;
-            PhoneStatus = newest.IsOnline ? AppStrings.Get("SetupConnectedNow") : AppStrings.Get("SetupPairedWaitingForItTo");
+            PhoneStatus = newest.IsOnline ? "Connected now" : "Paired, waiting for it to connect";
         }
 
         [RelayCommand]
         private async Task AllowCompanionNetwork()
         {
             PhoneStatus = ProcessHelper.IsUserAdministrator()
-                ? AppStrings.Get("SetupAddingPrivateNetworkAccess")
-                : AppStrings.Get("SetupApproveTheWindowsAdministrator");
+                ? "Adding private-network access…"
+                : "Approve the Windows administrator prompt to allow private-network access.";
 
             bool started = ProcessHelper.IsUserAdministrator()
                 ? await Task.Run(() => CompanionFirewall.AllowPrivateNetwork())
                 : await CompanionFirewall.RequestAccessAsync();
 
-            if (!started) PhoneStatus = AppStrings.Get("SetupNetworkAccessWasNotChanged");
+            if (!started) PhoneStatus = "Network access was not changed.";
             else if (CompanionFirewall.IsAllowed)
             {
                 _companion.Start();
-                PhoneStatus = AppStrings.Get("SetupPrivateNetworkAccessAllowed");
+                PhoneStatus = "Private-network access allowed.";
             }
             OnPropertyChanged(nameof(IsNetworkAccessAllowed));
             OnPropertyChanged(nameof(NetworkAccessButtonLabel));

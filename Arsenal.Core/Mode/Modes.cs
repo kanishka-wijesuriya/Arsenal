@@ -198,11 +198,11 @@ namespace Arsenal.Mode
                 switch (mode)
                 {
                     case 0:
-                        return Properties.Strings.Balanced ?? "Balanced";
+                        return "Balanced";
                     case 1:
-                        return Properties.Strings.Turbo ?? "Turbo";
+                        return "Turbo";
                     case 2:
-                        return Properties.Strings.Silent ?? "Silent";
+                        return "Silent";
                     default:
                         return AppConfig.GetString("mode_name_" + mode) ?? ("Custom " + mode);
                 }

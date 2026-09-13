@@ -26,10 +26,10 @@ namespace Arsenal.UI.ViewModels
         private string _activePageTag = "Home";
 
         [ObservableProperty]
-        private string _currentModeName = AppStrings.Get("Balanced");
+        private string _currentModeName = "Balanced";
 
         [ObservableProperty]
-        private string _currentGpuStatus = AppStrings.Get("StandardMode");
+        private string _currentGpuStatus = "Standard";
 
         [ObservableProperty]
         private bool _isCommandPaletteOpen = false;
@@ -42,7 +42,7 @@ namespace Arsenal.UI.ViewModels
         private bool _isUpdateOpen = false;
 
         [ObservableProperty]
-        private string _modelName = AppStrings.Get("MainASUSROGTUF");
+        private string _modelName = "ASUS ROG / TUF";
 
         /// <summary>Covers the window while a GPU switch runs; it can take many seconds.</summary>
         [ObservableProperty]
@@ -75,16 +75,16 @@ namespace Arsenal.UI.ViewModels
         }
 
         [ObservableProperty]
-        private string _gpuSwitchingMessage = AppStrings.Get("MainSwitchingGPUMode");
+        private string _gpuSwitchingMessage = "Switching GPU mode";
 
         [ObservableProperty]
         private bool _isAsusServicesChanging;
 
         [ObservableProperty]
-        private string _asusServicesMessage = AppStrings.Get("MainUpdatingASUSServices");
+        private string _asusServicesMessage = "Updating ASUS services";
 
         [ObservableProperty]
-        private string _asusServicesDetail = AppStrings.Get("MainPreparingTheInstalledASUS");
+        private string _asusServicesDetail = "Preparing the installed ASUS background services.";
 
         public MainViewModel(
             IDeviceStateService deviceStateService,
@@ -124,10 +124,10 @@ namespace Arsenal.UI.ViewModels
                 {
                     CurrentModeName = mode switch
                     {
-                        0 => AppStrings.Get("Balanced"),
-                        1 => AppStrings.Get("Turbo"),
-                        2 => AppStrings.Get("Silent"),
-                        _ => AppStrings.Get("Custom")
+                        0 => "Balanced",
+                        1 => "Turbo",
+                        2 => "Silent",
+                        _ => "Custom"
                     };
                 });
             };
@@ -155,7 +155,7 @@ namespace Arsenal.UI.ViewModels
             };
 
             int startupMode = AppConfig.Get("performance_" + Program.PerformanceKey());
-            CurrentModeName = startupMode switch { 0 => AppStrings.Get("Balanced"), 1 => AppStrings.Get("Turbo"), 2 => AppStrings.Get("Silent"), _ => _performanceService.CurrentModeName };
+            CurrentModeName = startupMode switch { 0 => "Balanced", 1 => "Turbo", 2 => "Silent", _ => _performanceService.CurrentModeName };
             ModelName = AppConfig.GetModel();
         }
 
@@ -326,16 +326,16 @@ namespace Arsenal.UI.ViewModels
         private bool _isGpuSwitching;
 
         [ObservableProperty]
-        private string _gpuSwitchingMessage = AppStrings.Get("MainSwitchingGPUMode");
+        private string _gpuSwitchingMessage = "Switching GPU mode";
 
         [ObservableProperty]
         private bool _isAsusServicesChanging;
 
         [ObservableProperty]
-        private string _asusServicesMessage = AppStrings.Get("MainUpdatingASUSServices");
+        private string _asusServicesMessage = "Updating ASUS services";
 
         [ObservableProperty]
-        private string _asusServicesDetail = AppStrings.Get("MainPreparingTheInstalledASUS");
+        private string _asusServicesDetail = "Preparing the installed ASUS background services.";
 
         public QuickPanelViewModel(
             IPerformanceService performanceService,
@@ -697,10 +697,10 @@ namespace Arsenal.UI.ViewModels
 
         public string GpuModeName => SelectedGpuMode switch
         {
-            0 => AppStrings.Get("DisplayEcoIGPUOnly"),
-            1 => AppStrings.Get("DisplayStandardHybrid"),
-            2 => AppStrings.Get("DisplayUltimateMUX"),
-            _ => AppStrings.Get("DisplayOptimizedAutomatic")
+            0 => "Eco · iGPU only",
+            1 => "Standard · hybrid",
+            2 => "Ultimate · MUX",
+            _ => "Optimized · automatic"
         };
 
         public string DisplayModeName => $"{RefreshRate} Hz"
@@ -709,17 +709,17 @@ namespace Arsenal.UI.ViewModels
 
         public string KeyboardBrightnessName => KeyboardBrightness switch
         {
-            0 => AppStrings.Get("BacklightOff"),
-            1 => AppStrings.Get("BacklightLow"),
-            2 => AppStrings.Get("MatrixMedium"),
-            _ => AppStrings.Get("MainMaximum")
+            0 => "Off",
+            1 => "Low",
+            2 => "Medium",
+            _ => "Maximum"
         };
 
         public string OverlayStateName => !IsHardwareOverlay
-            ? AppStrings.Get("BacklightOff")
-            : OverlayGameOnly ? AppStrings.Get("MainGamesOnly") : AppStrings.Get("MainAlwaysOn");
+            ? "Off"
+            : OverlayGameOnly ? "Games only" : "Always on";
 
-        public string FullChargeStateName => IsFullChargeOverride ? AppStrings.Get("MainChargingTo100") : $"Stops at {ChargeLimit}%";
+        public string FullChargeStateName => IsFullChargeOverride ? "Charging to 100%" : $"Stops at {ChargeLimit}%";
 
         partial void OnSelectedPerformanceModeChanged(int value)
         {
@@ -1077,30 +1077,30 @@ namespace Arsenal.UI.ViewModels
         {
             "performance" => PerformanceModeName,
             "gpu" => GpuModeName,
-            "kill_gpu_apps" => AppStrings.Get("MainCloseThemNow"),
-            "restart_nv" => AppStrings.Get("MainRestartThemNow"),
-            "xgm" => _gpuService.IsXgmConnected ? AppStrings.Get("MainConnected") : AppStrings.Get("MainDisconnected"),
+            "kill_gpu_apps" => "Close them now",
+            "restart_nv" => "Restart them now",
+            "xgm" => _gpuService.IsXgmConnected ? "Connected" : "Disconnected",
             "auto_tdp" => OnOff(Advanced.AutoTdpEnabled),
-            "fps_limit" => Advanced.FpsLimit > 0 ? $"{Advanced.FpsLimit} fps" : AppStrings.Get("BacklightOff"),
+            "fps_limit" => Advanced.FpsLimit > 0 ? $"{Advanced.FpsLimit} fps" : "Off",
             "refresh" => DisplayModeName,
             "overdrive" => OnOff(IsOverdrive),
             "auto_refresh" => OnOff(IsAutoRefresh),
-            "miniled" => IsMiniLed ? AppStrings.Get("MainMultiZone") : AppStrings.Get("MainSingleZone"),
-            "visual" => VisualControl.GetVisualModes().TryGetValue((SplendidCommand)_displayService.CurrentVisualProfile, out string? visual) ? visual : AppStrings.Get("Default"),
-            "gamut" => VisualControl.GetGamutModes().TryGetValue((SplendidGamut)_displayService.CurrentGamut, out string? gamut) ? gamut.Replace("Gamut: ", string.Empty) : AppStrings.Get("DisplayNative"),
-            "resolution" => AppStrings.Get("MainSwitchMode"),
-            "hdr" => AppStrings.Get("MainHandBackToWindows"),
-            "touchscreen" => AppStrings.Get("MainToggle"),
+            "miniled" => IsMiniLed ? "Multi-zone" : "Single zone",
+            "visual" => VisualControl.GetVisualModes().TryGetValue((SplendidCommand)_displayService.CurrentVisualProfile, out string? visual) ? visual : "Default",
+            "gamut" => VisualControl.GetGamutModes().TryGetValue((SplendidGamut)_displayService.CurrentGamut, out string? gamut) ? gamut.Replace("Gamut: ", string.Empty) : "Native",
+            "resolution" => "Switch mode",
+            "hdr" => "Hand back to Windows",
+            "touchscreen" => "Toggle",
             "touchpad" => OnOff(IsTouchpadEnabled),
             "full_charge" => FullChargeStateName,
             "charge_limit" => $"{ChargeLimit}%",
-            "battery_report" => AppStrings.Get("MainGenerate"),
+            "battery_report" => "Generate",
             "keyboard" => KeyboardBrightnessName,
-            "aura" => Arsenal.USB.Aura.GetModes().TryGetValue((Arsenal.USB.AuraMode)_lightingService.CurrentMode, out string? aura) ? aura : AppStrings.Get("AuraStatic"),
+            "aura" => Arsenal.USB.Aura.GetModes().TryGetValue((Arsenal.USB.AuraMode)_lightingService.CurrentMode, out string? aura) ? aura : "Static",
             "matrix" => MatrixBrightnessName(_lightingService.MatrixBrightness),
             "overlay" => OverlayStateName,
             "auto_switch" => OnOff(Automation.IsAutoSwitchEnabled),
-            "fn_lock" => AppConfig.Is("fn_lock") ? "F1-F12" : AppStrings.Get("MainMediaKeys"),
+            "fn_lock" => AppConfig.Is("fn_lock") ? "F1-F12" : "Media keys",
             "status_leds" => OnOff(AppConfig.IsNotFalse("status_led")),
             "number_pad" => OnOff(Arsenal.Input.NumberPad.Get() == 1),
             "clamshell" => OnOff(AppConfig.Is("clamshell")),
@@ -1108,7 +1108,7 @@ namespace Arsenal.UI.ViewModels
             "aspm" => OnOff(AppConfig.IsNotFalse("aspm")),
             "standby_network" => OnOff(AppConfig.IsNotFalse("standby_networking")),
             "always_on_top" => OnOff(AppConfig.Is("topmost")),
-            "power_options" => AppStrings.Get("AdvancedOpen"),
+            "power_options" => "Open",
             _ => string.Empty
         };
 
@@ -1207,14 +1207,14 @@ namespace Arsenal.UI.ViewModels
             else ClamshellModeControl.DisableClamshellMode();
         }
 
-        private static string OnOff(bool value) => value ? "On" : AppStrings.Get("BacklightOff");
+        private static string OnOff(bool value) => value ? "On" : "Off";
 
         private static string MatrixBrightnessName(int level) => level switch
         {
-            0 => AppStrings.Get("BacklightOff"),
-            1 => AppStrings.Get("BacklightLow"),
-            2 => AppStrings.Get("MatrixMedium"),
-            _ => AppStrings.Get("MainMaximum")
+            0 => "Off",
+            1 => "Low",
+            2 => "Medium",
+            _ => "Maximum"
         };
 
         // ===== Detail pages ===================================================
@@ -1248,67 +1248,67 @@ namespace Arsenal.UI.ViewModels
             switch (page)
             {
                 case QuickDetailPage.Performance:
-                    DetailTitle = AppStrings.Get("HomePerformanceMode");
+                    DetailTitle = "Performance mode";
                     foreach (PerformancePlanInfo plan in _performanceService.GetProfiles())
                     {
                         string detail = plan.ModeIndex switch
                         {
-                            2 => AppStrings.Get("MainQuietestFansLowestPower"),
-                            0 => AppStrings.Get("MainDefaultFanCurveAndLimits"),
-                            1 => AppStrings.Get("MainHighestLimitsLoudestFans"),
-                            _ => AppStrings.Get("PerformanceTunePlanDescription")
+                            2 => "Quietest fans, lowest power",
+                            0 => "Default fan curve and limits",
+                            1 => "Highest limits, loudest fans",
+                            _ => "Adjust power limits, clocks, thermals, and fan curves for the selected plan."
                         };
                         DetailOptions.Add(new QuickOptionItem(page, plan.ModeIndex, plan.Name, detail));
                     }
                     break;
 
                 case QuickDetailPage.PerformanceShortcuts:
-                    DetailTitle = AppStrings.Get("QuickPanelChooseShortcuts");
+                    DetailTitle = "Choose performance shortcuts";
                     break;
 
                 case QuickDetailPage.Gpu:
-                    DetailTitle = AppStrings.Get("DisplayGPUMode");
+                    DetailTitle = "GPU mode";
                     if (IsEcoSupported)
-                        DetailOptions.Add(new QuickOptionItem(page, 0, AppStrings.Get("EcoMode"), AppStrings.Get("MainIntegratedGraphicsOnly")));
-                    DetailOptions.Add(new QuickOptionItem(page, 1, AppStrings.Get("StandardMode"), AppStrings.Get("MainHybridAppsPickAGPU")));
+                        DetailOptions.Add(new QuickOptionItem(page, 0, "Eco", "Integrated graphics only"));
+                    DetailOptions.Add(new QuickOptionItem(page, 1, "Standard", "Hybrid, apps pick a GPU"));
                     if (IsMuxSupported)
-                        DetailOptions.Add(new QuickOptionItem(page, 2, AppStrings.Get("UltimateMode"), AppStrings.Get("MainDedicatedGPUDrivesThePanel")));
-                    DetailOptions.Add(new QuickOptionItem(page, 3, AppStrings.Get("Optimized"), AppStrings.Get("MainSwitchesWithThePowerSource")));
+                        DetailOptions.Add(new QuickOptionItem(page, 2, "Ultimate", "Dedicated GPU drives the panel · needs a restart"));
+                    DetailOptions.Add(new QuickOptionItem(page, 3, "Optimized", "Switches with the power source"));
                     break;
 
                 case QuickDetailPage.Display:
-                    DetailTitle = AppStrings.Get("DisplayRefreshRate");
+                    DetailTitle = "Refresh rate";
                     int min = Arsenal.Display.ScreenControl.MIN_RATE;
                     int max = _displayService.MaxRefreshRate;
-                    DetailOptions.Add(new QuickOptionItem(page, min, $"{min} Hz", AppStrings.Get("MainLongestBatteryLife"), "min"));
-                    DetailOptions.Add(new QuickOptionItem(page, max, $"{max} Hz", AppStrings.Get("MainSmoothestMotion"), "max"));
+                    DetailOptions.Add(new QuickOptionItem(page, min, $"{min} Hz", "Longest battery life", "min"));
+                    DetailOptions.Add(new QuickOptionItem(page, max, $"{max} Hz", "Smoothest motion", "max"));
                     // Offered as its own choice only where the panel has overdrive.
                     if (IsOverdriveAvailable)
-                        DetailOptions.Add(new QuickOptionItem(page, max, $"{max} Hz + OD", AppStrings.Get("MainFastestPixelResponse"), "max_od"));
+                        DetailOptions.Add(new QuickOptionItem(page, max, $"{max} Hz + OD", "Fastest pixel response", "max_od"));
                     break;
 
                 case QuickDetailPage.Keyboard:
-                    DetailTitle = AppStrings.Get("LightingKeyboardBacklight");
-                    DetailOptions.Add(new QuickOptionItem(page, 0, AppStrings.Get("BacklightOff")));
-                    DetailOptions.Add(new QuickOptionItem(page, 1, AppStrings.Get("BacklightLow")));
-                    DetailOptions.Add(new QuickOptionItem(page, 2, AppStrings.Get("MatrixMedium")));
-                    DetailOptions.Add(new QuickOptionItem(page, 3, AppStrings.Get("MainMaximum")));
+                    DetailTitle = "Keyboard backlight";
+                    DetailOptions.Add(new QuickOptionItem(page, 0, "Off"));
+                    DetailOptions.Add(new QuickOptionItem(page, 1, "Low"));
+                    DetailOptions.Add(new QuickOptionItem(page, 2, "Medium"));
+                    DetailOptions.Add(new QuickOptionItem(page, 3, "Maximum"));
                     break;
 
                 case QuickDetailPage.Aura:
-                    DetailTitle = AppStrings.Get("LightingAuraEffect");
+                    DetailTitle = "Aura effect";
                     foreach (var mode in Arsenal.USB.Aura.GetModes())
                         DetailOptions.Add(new QuickOptionItem(page, (int)mode.Key, mode.Value));
                     break;
 
                 case QuickDetailPage.Visual:
-                    DetailTitle = AppStrings.Get("MainColourProfile");
+                    DetailTitle = "Colour profile";
                     foreach (var visual in VisualControl.GetVisualModes())
                         DetailOptions.Add(new QuickOptionItem(page, (int)visual.Key, visual.Value));
                     break;
 
                 case QuickDetailPage.Gamut:
-                    DetailTitle = AppStrings.Get("DisplayColourGamut");
+                    DetailTitle = "Colour gamut";
                     // The desktop prefixes these with "Gamut: " because its row has no
                     // heading; this page has one, so the prefix would only repeat it.
                     foreach (var gamut in VisualControl.GetGamutModes())
@@ -1316,34 +1316,34 @@ namespace Arsenal.UI.ViewModels
                     break;
 
                 case QuickDetailPage.Matrix:
-                    DetailTitle = AppStrings.Get("MainAniMeMatrix");
-                    DetailOptions.Add(new QuickOptionItem(page, 0, AppStrings.Get("BacklightOff")));
-                    DetailOptions.Add(new QuickOptionItem(page, 1, AppStrings.Get("BacklightLow")));
-                    DetailOptions.Add(new QuickOptionItem(page, 2, AppStrings.Get("MatrixMedium")));
-                    DetailOptions.Add(new QuickOptionItem(page, 3, AppStrings.Get("MainMaximum")));
+                    DetailTitle = "AniMe Matrix";
+                    DetailOptions.Add(new QuickOptionItem(page, 0, "Off"));
+                    DetailOptions.Add(new QuickOptionItem(page, 1, "Low"));
+                    DetailOptions.Add(new QuickOptionItem(page, 2, "Medium"));
+                    DetailOptions.Add(new QuickOptionItem(page, 3, "Maximum"));
                     break;
 
                 case QuickDetailPage.ChargeLimit:
-                    DetailTitle = AppStrings.Get("BatteryChargeLimit2");
+                    DetailTitle = "Charge limit";
                     // The same three stops the Battery page offers as presets. The free
                     // range lives on the slider at the bottom of this panel.
                     if (!HasSteppedChargeLimit)
-                        DetailOptions.Add(new QuickOptionItem(page, 60, "60%", AppStrings.Get("MainBestForAMachineThat")));
+                        DetailOptions.Add(new QuickOptionItem(page, 60, "60%", "Best for a machine that lives on mains"));
                     else
-                        DetailOptions.Add(new QuickOptionItem(page, 60, "60%", AppStrings.Get("MainLowestThisModelAccepts")));
-                    DetailOptions.Add(new QuickOptionItem(page, 80, "80%", AppStrings.Get("MainRecommendedForEverydayUse")));
-                    DetailOptions.Add(new QuickOptionItem(page, 100, "100%", AppStrings.Get("MainFullChargeForTravelling")));
+                        DetailOptions.Add(new QuickOptionItem(page, 60, "60%", "Lowest this model accepts"));
+                    DetailOptions.Add(new QuickOptionItem(page, 80, "80%", "Recommended for everyday use"));
+                    DetailOptions.Add(new QuickOptionItem(page, 100, "100%", "Full charge, for travelling"));
                     break;
 
                 case QuickDetailPage.Overlay:
-                    DetailTitle = AppStrings.Get("AdvancedHardwareOverlay");
-                    DetailOptions.Add(new QuickOptionItem(page, 0, AppStrings.Get("BacklightOff"), AppStrings.Get("MainHideTheHardwareReadout")));
-                    DetailOptions.Add(new QuickOptionItem(page, 1, AppStrings.Get("MainAlwaysOn"), AppStrings.Get("MainShowTheReadoutOnThe")));
-                    DetailOptions.Add(new QuickOptionItem(page, 2, AppStrings.Get("MainGamesOnly"), AppStrings.Get("MainShowTheReadoutOnlyWhile")));
+                    DetailTitle = "Hardware overlay";
+                    DetailOptions.Add(new QuickOptionItem(page, 0, "Off", "Hide the hardware readout"));
+                    DetailOptions.Add(new QuickOptionItem(page, 1, "Always on", "Show the readout on the desktop and in applications"));
+                    DetailOptions.Add(new QuickOptionItem(page, 2, "Games only", "Show the readout only while a game is active"));
                     break;
 
                 case QuickDetailPage.TilePicker:
-                    DetailTitle = _slotBeingPicked is null ? AppStrings.Get("QuickPanelAddATile") : AppStrings.Get("MainChangeThisTile");
+                    DetailTitle = _slotBeingPicked is null ? "Add a tile" : "Change this tile";
                     foreach (QuickTileDefinition tile in QuickTileCatalog.All)
                     {
                         if (!IsTileAvailable(tile.Key)) continue;

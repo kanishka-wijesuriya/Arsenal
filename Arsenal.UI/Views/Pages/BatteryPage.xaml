@@ -4,14 +4,14 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
              xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
-             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+>
     <ScrollViewer Style="{StaticResource PageScrollStyle}">
         <StackPanel Style="{StaticResource PageBodyStyle}">
 
             <Grid Style="{StaticResource PageHeaderStyle}">
                 <StackPanel>
-                    <TextBlock Text="{loc:Loc Battery}" Style="{StaticResource PageTitleStyle}"/>
-                    <TextBlock Text="{loc:Loc BatteryChargeLimitsLivePowerTelemetry}" Style="{StaticResource PageSubtitleStyle}"/>
+                    <TextBlock Text="Battery" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="Charge limits, live power telemetry and battery health" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
             </Grid>
 
@@ -37,17 +37,17 @@
                                      Detail="{Binding BatteryHealthDetail}"/>
             </controls:ResponsiveGrid>
 
-            <controls:SettingsGroup Header="{loc:Loc BatteryChargeLimit2}" Icon="BatteryCharge24"
-                                    Description="{loc:Loc BatteryStoppingTheChargeBelow100}">
-                <controls:SettingsRow Header="{loc:Loc BatteryWindowsIsNotShowingSmart}"
-                                      Description="{loc:Loc BatteryTheLimitBelowIsApplied}"
+            <controls:SettingsGroup Header="Charge limit" Icon="BatteryCharge24"
+                                    Description="Stopping the charge below 100% while plugged in is the single biggest thing you can do for long-term battery health.">
+                <controls:SettingsRow Header="Windows is not showing smart charging"
+                                      Description="The limit below is applied to the battery firmware and is working. Reporting it to Windows, which is what puts the leaf on the battery icon, writes to a machine-wide setting that needs administrator rights."
                                       Visibility="{Binding NeedsElevation, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0"
-                               Content="{loc:Loc AdvancedRestartAsAdministrator}"
+                               Content="Restart as administrator"
                                Command="{Binding RestartAsAdministratorCommand}" Appearance="Primary"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc BatteryMaximumChargeLevel}" Description="{Binding ChargeLimitNote}">
+                <controls:SettingsRow Header="Maximum charge level" Description="{Binding ChargeLimitNote}">
                     <controls:ValueSlider Minimum="{Binding ChargeLimitMinimum}" Maximum="100"
                                           Ticks="{Binding ChargeLimitTicks}"
                                           IsSnapToTickEnabled="{Binding HasSteppedChargeLimit}"
@@ -57,32 +57,32 @@
                                           KeyUp="ChargeLimitSlider_KeyUp"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc BatteryPresets}">
+                <controls:SettingsRow Header="Presets">
                     <controls:SettingsRow.ContentBelow>
                         <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="ChargeLimit" Content="{loc:Loc BatteryText60Desk}" MinWidth="150"
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="ChargeLimit" Content="60% · desk" MinWidth="150"
                                          IsChecked="{Binding ChargeLimit, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=60}"
                                          Command="{Binding SetLimitCommand}" CommandParameter="60"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="ChargeLimit" Content="{loc:Loc BatteryText80Recommended}" MinWidth="150"
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="ChargeLimit" Content="80% · recommended" MinWidth="150"
                                          IsChecked="{Binding ChargeLimit, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=80}"
                                          Command="{Binding SetLimitCommand}" CommandParameter="80"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="ChargeLimit" Content="{loc:Loc BatteryText100Travel}" MinWidth="150"
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="ChargeLimit" Content="100% · travel" MinWidth="150"
                                          IsChecked="{Binding ChargeLimit, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=100}"
                                          Command="{Binding SetLimitCommand}" CommandParameter="100"/>
                         </WrapPanel>
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc BatteryOneTimeFullCharge}"
-                                      Description="{loc:Loc BatteryChargeTo100ForThis}">
+                <controls:SettingsRow Header="One-time full charge"
+                                      Description="Charge to 100% for this trip without changing the saved limit.">
                     <ui:ToggleSwitch IsChecked="{Binding IsFullChargeOverride}" Command="{Binding ToggleFullChargeCommand}"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc AdvancedDiagnostics}" Icon="Document24">
-                <controls:SettingsRow Header="{loc:Loc BatteryWindowsBatteryReport}"
-                                      Description="{loc:Loc BatteryGeneratesTheFullPowercfgReport}">
-                    <ui:Button Content="{loc:Loc BatteryGenerateReport}" Command="{Binding GenerateReportCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Open24}"/>
+            <controls:SettingsGroup Header="Diagnostics" Icon="Document24">
+                <controls:SettingsRow Header="Windows battery report"
+                                      Description="Generates the full powercfg report, including design capacity against current capacity.">
+                    <ui:Button Content="Generate report" Command="{Binding GenerateReportCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Open24}"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
