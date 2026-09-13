@@ -216,10 +216,16 @@ namespace Arsenal.Application.Services.Implementations
         public async Task<bool> DownloadAndInstallUpdateAsync(IProgress<long>? progress = null, CancellationToken cancellationToken = default)
         {
             if (_pendingRelease is null) return false;
+            return await DownloadAndInstallUpdateAsync(_pendingRelease, progress, cancellationToken);
+        }
+
+        public async Task<bool> DownloadAndInstallUpdateAsync(ReleaseUpdate release, IProgress<long>? progress = null,
+            CancellationToken cancellationToken = default)
+        {
             try
             {
                 var updater = new AutoUpdateControl();
-                return await updater.DownloadAndInstallAsync(_pendingRelease, progress, cancellationToken);
+                return await updater.DownloadAndInstallAsync(release, progress, cancellationToken);
             }
             catch (Exception ex)
             {

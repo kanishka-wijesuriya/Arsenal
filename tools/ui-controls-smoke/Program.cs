@@ -624,6 +624,8 @@ internal static class Program
         public event Action<UpdateInfo>? UpdateStatusChanged;
         public Task<UpdateInfo> CheckForUpdatesAsync(bool force = false) => Task.FromResult(new UpdateInfo());
         public Task<bool> DownloadAndInstallUpdateAsync(IProgress<long>? progress = null, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task<bool> DownloadAndInstallUpdateAsync(Arsenal.AutoUpdate.ReleaseUpdate release,
+            IProgress<long>? progress = null, CancellationToken cancellationToken = default) => Task.FromResult(false);
         public Task<List<UpdateInfo>> CheckAsusUpdatesAsync() => Task.FromResult(new List<UpdateInfo>());
         public Task<string?> DownloadAsusPackageAsync(
             string downloadUrl, IProgress<int>? progress, CancellationToken cancellationToken, string? expectedSha256 = null)
