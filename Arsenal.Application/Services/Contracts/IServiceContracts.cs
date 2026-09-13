@@ -1,4 +1,5 @@
 using Arsenal.Application.Models;
+using Arsenal.AutoUpdate;
 using Arsenal.Display;
 
 namespace Arsenal.Application.Services.Contracts
@@ -290,6 +291,14 @@ namespace Arsenal.Application.Services.Contracts
         /// the check returned.
         /// </summary>
         Task<bool> DownloadAndInstallUpdateAsync(IProgress<long>? progress = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Downloads and installs the exact signed release already presented by the
+        /// startup checker. Unlike the parameterless overload, this path does not
+        /// depend on a second service having populated private pending state.
+        /// </summary>
+        Task<bool> DownloadAndInstallUpdateAsync(ReleaseUpdate release, IProgress<long>? progress = null,
+            CancellationToken cancellationToken = default);
         Task<List<UpdateInfo>> CheckAsusUpdatesAsync();
 
         /// <summary>

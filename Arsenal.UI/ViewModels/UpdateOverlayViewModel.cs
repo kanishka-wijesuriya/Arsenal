@@ -33,6 +33,7 @@ namespace Arsenal.UI.ViewModels
     {
         private readonly IUpdateService _updateService;
         private CancellationTokenSource? _cancellation;
+        private ReleaseUpdate? _presentedRelease;
 
         public UpdateOverlayViewModel(IUpdateService updateService)
         {
@@ -88,6 +89,7 @@ namespace Arsenal.UI.ViewModels
         /// <summary>Fills the card from a release and returns it to its opening state.</summary>
         public void Present(ReleaseUpdate release)
         {
+            _presentedRelease = release;
             Headline = string.IsNullOrWhiteSpace(release.Title) ? $"Arsenal {release.Version}" : release.Title;
             VersionLine = AppStrings.Format(
                 "UpdateVersionLine",
@@ -112,6 +114,10 @@ namespace Arsenal.UI.ViewModels
         /// </summary>
         public void Present(UpdateInfo info)
         {
+            // About has already run IUpdateService.CheckForUpdatesAsync, so the service
+            // owns the corresponding signed release. Startup supplies that release
+            // directly through the other Present overload instead.
+            _presentedRelease = null;
             Headline = string.IsNullOrWhiteSpace(info.Title) ? $"Arsenal {info.LatestVersion}" : info.Title;
             VersionLine = AppStrings.Format("UpdateVersionLine", info.CurrentVersion, info.LatestVersion);
             SizeText = FormatSize(info.PackageBytes);
@@ -149,7 +155,9 @@ namespace Arsenal.UI.ViewModels
 
             try
             {
-                bool launched = await _updateService.DownloadAndInstallUpdateAsync(progress, _cancellation.Token);
+                bool launched = _presentedRelease is null
+                    ? await _updateService.DownloadAndInstallUpdateAsync(progress, _cancellation.Token)
+                    : await _updateService.DownloadAndInstallUpdateAsync(_presentedRelease, progress, _cancellation.Token);
 
                 // Only reached when the hand-off failed: a successful install ends the
                 // process from inside the call above.

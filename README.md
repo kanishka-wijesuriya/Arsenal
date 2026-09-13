@@ -6,6 +6,8 @@
 
 ### Everything your ROG or TUF laptop can do, in one window.
 
+**A focused Armoury Crate alternative for supported ASUS laptops.**
+
 Fan curves, power limits, GPU modes, panel settings, charge limits and Aura lighting.
 Native Windows, no account, no background service stack, about 12 MB on disk.
 

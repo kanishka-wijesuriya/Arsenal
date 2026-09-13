@@ -1,5 +1,6 @@
 using Arsenal.Application.Models;
 using Arsenal.Application.Services.Contracts;
+using Arsenal.AutoUpdate;
 using Arsenal.UI;
 using Arsenal.UI.ViewModels;
 using System.IO;
@@ -32,7 +33,17 @@ internal static class Program
             app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             App.ApplyConfiguredTheme();
 
-            string directory = args.FirstOrDefault() ?? AppContext.BaseDirectory;
+            if (args.Any(value => value.Equals("--install-route-test", StringComparison.OrdinalIgnoreCase)))
+            {
+                var logicResult = AssertInstallRoutes();
+                Console.WriteLine("progress arithmetic: " + logicResult.PercentText + "  " + logicResult.ProgressText);
+                Console.WriteLine("startup and About install routes: passed");
+                app.Shutdown();
+                return 0;
+            }
+
+            string directory = args.FirstOrDefault(value => !value.StartsWith("--", StringComparison.Ordinal))
+                ?? AppContext.BaseDirectory;
             Directory.CreateDirectory(directory);
 
             var service = new StubUpdateService();
@@ -56,23 +67,11 @@ internal static class Program
             failed.ErrorText = "Arsenal could not verify or start this update. Your current installation was not changed.";
             Render(failed, Path.Combine(directory, "update-card-failed.png"));
 
-            // The progress arithmetic is the part a screenshot cannot confirm.
-            var arithmetic = new UpdateOverlayViewModel(service);
-            arithmetic.Present(SampleInfo());
-            arithmetic.InstallCommand.Execute(null);
-
-            // Progress<T> posts its callback to the captured context, so the report is
-            // still queued at this point; let the dispatcher run it.
-            System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(
-                () => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-            if (arithmetic.PercentText != "50%" || arithmetic.ProgressText != "5.9 MB of 11.8 MB")
-                throw new InvalidOperationException(
-                    $"Progress reporting is wrong: {arithmetic.PercentText} / {arithmetic.ProgressText}");
-            if (Math.Abs(arithmetic.Progress - 0.5) > 0.001)
-                throw new InvalidOperationException("Progress fraction is wrong: " + arithmetic.Progress);
+            var visualResult = AssertInstallRoutes();
 
             Console.WriteLine("update card states rendered to " + Path.GetFullPath(directory));
-            Console.WriteLine("progress arithmetic: " + arithmetic.PercentText + "  " + arithmetic.ProgressText);
+            Console.WriteLine("progress arithmetic: " + visualResult.PercentText + "  " + visualResult.ProgressText);
+            Console.WriteLine("startup and About install routes: passed");
             app.Shutdown();
             return 0;
         }
@@ -81,6 +80,42 @@ internal static class Program
             Console.Error.WriteLine(exception);
             return 1;
         }
+    }
+
+    private static (string PercentText, string ProgressText) AssertInstallRoutes()
+    {
+        // The progress arithmetic is the part a screenshot cannot confirm. Presenting
+        // UpdateInfo models the About page, whose check has populated service state.
+        var service = new StubUpdateService();
+        var arithmetic = new UpdateOverlayViewModel(service);
+        arithmetic.Present(SampleInfo());
+        arithmetic.Install().GetAwaiter().GetResult();
+
+        // Progress<T> posts its callback to the captured context, so the report is
+        // still queued at this point; let the dispatcher run it.
+        System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(
+            () => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        if (arithmetic.PercentText != "50%" || arithmetic.ProgressText != "5.9 MB of 11.8 MB")
+            throw new InvalidOperationException(
+                $"Progress reporting is wrong: {arithmetic.PercentText} / {arithmetic.ProgressText}");
+        if (Math.Abs(arithmetic.Progress - 0.5) > 0.001)
+            throw new InvalidOperationException("Progress fraction is wrong: " + arithmetic.Progress);
+        if (!service.PendingReleaseInstallUsed)
+            throw new InvalidOperationException("The About-page update did not use the service's pending release.");
+
+        // Startup discovers the signed release through AutoUpdateControl, not
+        // IUpdateService.CheckForUpdatesAsync. The modal therefore has to pass the
+        // exact release it was presented into the installer; otherwise the
+        // service's private pending slot is empty and Install fails immediately.
+        var startupService = new StubUpdateService();
+        var startup = new UpdateOverlayViewModel(startupService);
+        ReleaseUpdate startupRelease = SampleRelease();
+        startup.Present(startupRelease);
+        startup.Install().GetAwaiter().GetResult();
+        if (!ReferenceEquals(startupService.ExplicitRelease, startupRelease))
+            throw new InvalidOperationException("The startup update card did not forward its verified release.");
+
+        return (arithmetic.PercentText, arithmetic.ProgressText);
     }
 
     private static UpdateInfo SampleInfo() => new()
@@ -97,6 +132,17 @@ internal static class Program
             "The update card now shows the package size, the bytes received and the percentage as it downloads.",
         },
     };
+
+    private static ReleaseUpdate SampleRelease() => new(
+        "1.1.1",
+        "Arsenal 1.1.1",
+        new[] { "Startup modal regression test." },
+        "2026-09-13",
+        false,
+        "1.0.0",
+        "https://get-arsenal.com/downloads/Arsenal-1.1.1-win-x64.exe",
+        11812547,
+        new string('a', 64));
 
     /// <summary>
     /// Renders through a real (off-screen) window rather than measuring the control on
@@ -163,11 +209,23 @@ internal static class Program
     /// <summary>Reports half of the sample package, then stops. Nothing is installed.</summary>
     private sealed class StubUpdateService : IUpdateService
     {
+        public bool PendingReleaseInstallUsed { get; private set; }
+        public ReleaseUpdate? ExplicitRelease { get; private set; }
+
         public event Action<UpdateInfo>? UpdateStatusChanged { add { } remove { } }
         public Task<UpdateInfo> CheckForUpdatesAsync(bool force = false) => Task.FromResult(new UpdateInfo());
 
         public Task<bool> DownloadAndInstallUpdateAsync(IProgress<long>? progress = null, CancellationToken cancellationToken = default)
         {
+            PendingReleaseInstallUsed = true;
+            progress?.Report(5906273);
+            return Task.FromResult(true);
+        }
+
+        public Task<bool> DownloadAndInstallUpdateAsync(ReleaseUpdate release, IProgress<long>? progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            ExplicitRelease = release;
             progress?.Report(5906273);
             return Task.FromResult(true);
         }

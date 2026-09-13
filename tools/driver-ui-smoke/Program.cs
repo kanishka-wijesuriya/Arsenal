@@ -93,6 +93,8 @@ internal static class Program
         public event Action<UpdateInfo>? UpdateStatusChanged { add { } remove { } }
         public Task<UpdateInfo> CheckForUpdatesAsync(bool force = false) => Task.FromResult(new UpdateInfo());
         public Task<bool> DownloadAndInstallUpdateAsync(IProgress<long>? progress = null, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task<bool> DownloadAndInstallUpdateAsync(Arsenal.AutoUpdate.ReleaseUpdate release,
+            IProgress<long>? progress = null, CancellationToken cancellationToken = default) => Task.FromResult(false);
         public int BacklightZoneType => (int)Arsenal.USB.AuraBacklightType.PerKey;
         public bool HasLightbar => false;
         public Task<string?> DownloadAsusPackageAsync(string downloadUrl, IProgress<int>? progress,
