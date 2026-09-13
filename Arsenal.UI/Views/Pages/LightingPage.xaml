@@ -4,30 +4,30 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
              xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
-             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+>
     <ScrollViewer Style="{StaticResource PageScrollStyle}">
         <StackPanel Style="{StaticResource PageBodyStyle}">
 
             <Grid Style="{StaticResource PageHeaderStyle}">
                 <StackPanel>
-                    <TextBlock Text="{loc:Loc Lighting}" Style="{StaticResource PageTitleStyle}"/>
-                    <TextBlock Text="{loc:Loc LightingKeyboardAuraLightbarAnimeMatrix}" Style="{StaticResource PageSubtitleStyle}"/>
+                    <TextBlock Text="Lighting" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="Keyboard Aura, lightbar, Anime Matrix and Slash controls" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
             </Grid>
 
-            <controls:SettingsGroup Header="{loc:Loc LightingKeyboardBacklight}" Icon="Lightbulb24">
-                <controls:SettingsRow Header="{loc:Loc Brightness}" Description="{loc:Loc LightingKeyboardAndLightbarIllumination}">
+            <controls:SettingsGroup Header="Keyboard backlight" Icon="Lightbulb24">
+                <controls:SettingsRow Header="Brightness" Description="Keyboard and lightbar illumination level.">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="{loc:Loc BacklightOff}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Off"
                                      IsChecked="{Binding Brightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                      Command="{Binding SetBrightnessLevelCommand}" CommandParameter="0"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="{loc:Loc BacklightLow}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Low"
                                      IsChecked="{Binding Brightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                      Command="{Binding SetBrightnessLevelCommand}" CommandParameter="1"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="{loc:Loc MatrixMedium}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Medium"
                                      IsChecked="{Binding Brightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                      Command="{Binding SetBrightnessLevelCommand}" CommandParameter="2"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="{loc:Loc BacklightMax}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Max"
                                      IsChecked="{Binding Brightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
                                      Command="{Binding SetBrightnessLevelCommand}" CommandParameter="3"/>
                     </WrapPanel>
@@ -39,7 +39,7 @@
                      picking an effect and seeing the result do not need a scroll
                      between them.
                 -->
-                <controls:SettingsRow Header="{loc:Loc LightingKeyboardPreview}"
+                <controls:SettingsRow Header="Preview"
                                       Description="{Binding PreviewCaption}"
                                       Visibility="{Binding HasAuraEffects, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <controls:SettingsRow.ContentBelow>
@@ -59,11 +59,11 @@
                             </Border>
 
                             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                                <TextBlock Text="{loc:Loc LightingPreviewLayout}" Style="{StaticResource CaptionStyle}"
+                                <TextBlock Text="Keyboard shape" Style="{StaticResource CaptionStyle}"
                                            VerticalAlignment="Center" Margin="0,0,14,0"/>
-                                <ui:ToggleSwitch Content="{loc:Loc LightingPreviewNumpad}" Margin="0,0,20,0"
+                                <ui:ToggleSwitch Content="Number pad" Margin="0,0,20,0"
                                                  IsChecked="{Binding PreviewNumpad, Mode=TwoWay}"/>
-                                <ui:ToggleSwitch Content="{loc:Loc LightingPreviewIso}"
+                                <ui:ToggleSwitch Content="Tall Enter key (ISO)"
                                                  IsChecked="{Binding PreviewIso, Mode=TwoWay}"/>
                             </StackPanel>
                             <TextBlock Text="{Binding PreviewShapeSource}" Style="{StaticResource CaptionStyle}"
@@ -72,7 +72,7 @@
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc LightingAuraEffect}"
+                <controls:SettingsRow Header="Aura effect"
                                       Visibility="{Binding HasAuraEffects, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <controls:SettingsRow.ContentBelow>
                         <ItemsControl ItemsSource="{Binding AuraModes}">
@@ -93,21 +93,21 @@
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc LightingAnimationSpeed}" Description="{loc:Loc LightingUsedByTheAnimatedAura}">
+                <controls:SettingsRow Header="Animation speed" Description="Used by the animated Aura effects.">
                     <StackPanel Orientation="Horizontal">
-                        <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" Margin="0,0,8,0" MinWidth="84" GroupName="AuraSpeed" Content="{loc:Loc AuraSlow}"
+                        <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" Margin="0,0,8,0" MinWidth="84" GroupName="AuraSpeed" Content="Slow"
                                      IsChecked="{Binding Speed, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                      Command="{Binding SetSpeedCommand}" CommandParameter="0"/>
-                        <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" Margin="0,0,8,0" MinWidth="84" GroupName="AuraSpeed" Content="{loc:Loc AuraNormal}"
+                        <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" Margin="0,0,8,0" MinWidth="84" GroupName="AuraSpeed" Content="Normal"
                                      IsChecked="{Binding Speed, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                      Command="{Binding SetSpeedCommand}" CommandParameter="1"/>
-                        <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" Margin="0" MinWidth="84" GroupName="AuraSpeed" Content="{loc:Loc AuraFast}"
+                        <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" Margin="0" MinWidth="84" GroupName="AuraSpeed" Content="Fast"
                                      IsChecked="{Binding Speed, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                      Command="{Binding SetSpeedCommand}" CommandParameter="2"/>
                     </StackPanel>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc DisplayColour}" Description="{loc:Loc LightingPickSaturationAndBrightnessOn}"
+                <controls:SettingsRow Header="Colour" Description="Pick saturation and brightness on the square, then hue on the strip below it."
                                       Visibility="{Binding HasKeyboardColor, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <controls:SettingsRow.ContentBelow>
                         <Grid>
@@ -120,7 +120,7 @@
                             <controls:ColorSpectrumPicker SelectedColor="{Binding SelectedColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                           Height="206"
                                                           VerticalAlignment="Top"
-                                                          ToolTip="{loc:Loc LightingChooseSaturationAndBrightness}"/>
+                                                          ToolTip="Choose saturation and brightness, then use the hue strip below"/>
 
                             <StackPanel Grid.Column="2">
                                 <Border Height="72" CornerRadius="{StaticResource RadiusCard}" Background="{Binding ColorPreviewBrush}"
@@ -130,14 +130,14 @@
                                            Foreground="{DynamicResource TextPrimary}" Margin="0,12,0,0"/>
                                 <TextBlock Text="{Binding RgbColor}" Style="{StaticResource CaptionStyle}" Margin="0,2,0,0"/>
 
-                                <TextBlock Text="{loc:Loc BatteryPresets}" Style="{StaticResource CaptionStyle}" Margin="0,16,0,0"/>
+                                <TextBlock Text="Presets" Style="{StaticResource CaptionStyle}" Margin="0,16,0,0"/>
                                 <WrapPanel Margin="0,8,-6,-6">
-                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#FF3B30" ToolTip="{loc:Loc LightingRed}" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#FF3B30"/></ui:Button>
-                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#FF9F0A" ToolTip="{loc:Loc LightingOrange}" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#FF9F0A"/></ui:Button>
-                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#32D74B" ToolTip="{loc:Loc LightingGreen}" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#32D74B"/></ui:Button>
-                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#0A84FF" ToolTip="{loc:Loc LightingBlue}" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#0A84FF"/></ui:Button>
-                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#BF5AF2" ToolTip="{loc:Loc LightingPurple}" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#BF5AF2"/></ui:Button>
-                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#FFFFFF" ToolTip="{loc:Loc LightingWhite}" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#FFFFFF"/></ui:Button>
+                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#FF3B30" ToolTip="Red" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#FF3B30"/></ui:Button>
+                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#FF9F0A" ToolTip="Orange" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#FF9F0A"/></ui:Button>
+                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#32D74B" ToolTip="Green" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#32D74B"/></ui:Button>
+                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#0A84FF" ToolTip="Blue" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#0A84FF"/></ui:Button>
+                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#BF5AF2" ToolTip="Purple" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#BF5AF2"/></ui:Button>
+                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#FFFFFF" ToolTip="White" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#FFFFFF"/></ui:Button>
                                 </WrapPanel>
                             </StackPanel>
                         </Grid>
@@ -145,30 +145,30 @@
                 </controls:SettingsRow>
 
                 <controls:SettingsGroup.Footer>
-                    <ui:Button Content="{loc:Loc LightingApplyColour}" Icon="{ui:SymbolIcon Checkmark24}" Command="{Binding ApplyColorCommand}"
+                    <ui:Button Content="Apply colour" Icon="{ui:SymbolIcon Checkmark24}" Command="{Binding ApplyColorCommand}"
                                Appearance="Primary" HorizontalAlignment="Right"
                                Visibility="{Binding HasKeyboardColor, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                 </controls:SettingsGroup.Footer>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc LightingLightingPowerStates}" Icon="Power24"
-                                    Description="{loc:Loc LightingWhenTheKeyboardBacklightAnd}">
-                <controls:SettingsRow Header="{loc:Loc LightingStayLitDuring}">
+            <controls:SettingsGroup Header="Lighting power states" Icon="Power24"
+                                    Description="When the keyboard backlight and RGB lightbar are allowed to be on.">
+                <controls:SettingsRow Header="Stay lit during">
                     <controls:SettingsRow.ContentBelow>
                         <UniformGrid Columns="2">
-                            <CheckBox Style="{StaticResource ListCheckBoxStyle}" Content="{loc:Loc LightingAwakeLaptopInUse}" IsChecked="{Binding Awake, Mode=TwoWay}"/>
-                            <CheckBox Style="{StaticResource ListCheckBoxStyle}" Content="{loc:Loc LightingBootStartupSequence}" IsChecked="{Binding Boot, Mode=TwoWay}"/>
-                            <CheckBox Style="{StaticResource ListCheckBoxStyle}" Content="{loc:Loc LightingSleepStandby}" IsChecked="{Binding Sleep, Mode=TwoWay}"/>
-                            <CheckBox Style="{StaticResource ListCheckBoxStyle}" Content="{loc:Loc LightingShutdownPoweredOffOnAC}" IsChecked="{Binding Shutdown, Mode=TwoWay}"/>
+                            <CheckBox Style="{StaticResource ListCheckBoxStyle}" Content="Awake: laptop in use" IsChecked="{Binding Awake, Mode=TwoWay}"/>
+                            <CheckBox Style="{StaticResource ListCheckBoxStyle}" Content="Boot: startup sequence" IsChecked="{Binding Boot, Mode=TwoWay}"/>
+                            <CheckBox Style="{StaticResource ListCheckBoxStyle}" Content="Sleep: standby" IsChecked="{Binding Sleep, Mode=TwoWay}"/>
+                            <CheckBox Style="{StaticResource ListCheckBoxStyle}" Content="Shutdown: powered off on AC" IsChecked="{Binding Shutdown, Mode=TwoWay}"/>
                         </UniformGrid>
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
             <controls:SettingsGroup Header="{Binding LightingDeviceTitle}" Icon="Diversity24"
-                                    Description="{loc:Loc LightingChooseTheRunningVisualAnd}"
+                                    Description="Choose the running visual and when the display is allowed to run."
                                     Visibility="{Binding HasMatrixOrSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <controls:SettingsRow Header="{loc:Loc LightingVisual}">
+                <controls:SettingsRow Header="Visual">
                     <controls:SettingsRow.ContentBelow>
                         <ItemsControl ItemsSource="{Binding MatrixModes}">
                             <ItemsControl.ItemsPanel>
@@ -188,52 +188,52 @@
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc Brightness}">
+                <controls:SettingsRow Header="Brightness">
                     <controls:SettingsRow.ContentBelow>
                         <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="{loc:Loc BacklightOff}"
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="Off"
                                          IsChecked="{Binding MatrixBrightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                          Command="{Binding SetMatrixBrightnessLevelCommand}" CommandParameter="0"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="{loc:Loc BacklightLow}"
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="Low"
                                          IsChecked="{Binding MatrixBrightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                          Command="{Binding SetMatrixBrightnessLevelCommand}" CommandParameter="1"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="{loc:Loc MatrixMedium}"
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="Medium"
                                          IsChecked="{Binding MatrixBrightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                          Command="{Binding SetMatrixBrightnessLevelCommand}" CommandParameter="2"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="{loc:Loc High}"
+                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="High"
                                          IsChecked="{Binding MatrixBrightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
                                          Command="{Binding SetMatrixBrightnessLevelCommand}" CommandParameter="3"/>
                         </WrapPanel>
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc LightingTurnOffOnBattery}">
+                <controls:SettingsRow Header="Turn off on battery">
                     <ui:ToggleSwitch IsChecked="{Binding MatrixDisableOnBattery, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc LightingTurnOffWhenTheLid}">
+                <controls:SettingsRow Header="Turn off when the lid is closed">
                     <ui:ToggleSwitch IsChecked="{Binding MatrixDisableWithLid, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc MatrixFlip}"
+                <controls:SettingsRow Header="Rotate 180°"
                                       Visibility="{Binding HasAnimeMatrix, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ui:ToggleSwitch IsChecked="{Binding MatrixFlip, Mode=TwoWay}"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc MatrixContent}" Icon="Image24"
-                                    Description="{loc:Loc MatrixContentDescription}"
+            <controls:SettingsGroup Header="AniMe Matrix content" Icon="Image24"
+                                    Description="Choose a picture, create text, configure the clock, or react to audio."
                                     Visibility="{Binding HasAnimeMatrix, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <controls:SettingsRow Header="{loc:Loc MatrixPicture}">
-                    <ui:Button Content="{loc:Loc PictureGif}" Icon="{ui:SymbolIcon FolderOpen24}"
+                <controls:SettingsRow Header="Picture">
+                    <ui:Button Content="Picture / Gif" Icon="{ui:SymbolIcon FolderOpen24}"
                                Command="{Binding ChooseMatrixPictureCommand}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc MatrixText}">
+                <controls:SettingsRow Header="Text">
                     <controls:SettingsRow.ContentBelow>
                         <StackPanel Margin="0,8,0,0">
                             <TextBox Text="{Binding MatrixText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"
-                                     ToolTip="{loc:Loc MatrixFirstLine}"/>
+                                     ToolTip="First line"/>
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -242,10 +242,10 @@
                                 </Grid.ColumnDefinitions>
                                 <ComboBox ItemsSource="{Binding MatrixFonts}" SelectedIndex="{Binding MatrixTextFont}"/>
                                 <controls:ValueSlider Grid.Column="2" Minimum="8" Maximum="36" TickFrequency="1" IsSnapToTickEnabled="True"
-                                                      Header="{loc:Loc MatrixFontSize}" Value="{Binding MatrixTextSize}"/>
+                                                      Header="Size" Value="{Binding MatrixTextSize}"/>
                             </Grid>
                             <TextBox Text="{Binding MatrixText2, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"
-                                     ToolTip="{loc:Loc MatrixSecondLine}"/>
+                                     ToolTip="Second line"/>
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -254,80 +254,80 @@
                                 </Grid.ColumnDefinitions>
                                 <ComboBox ItemsSource="{Binding MatrixFonts}" SelectedIndex="{Binding MatrixTextFont2}"/>
                                 <controls:ValueSlider Grid.Column="2" Minimum="8" Maximum="36" TickFrequency="1" IsSnapToTickEnabled="True"
-                                                      Header="{loc:Loc MatrixFontSize}" Value="{Binding MatrixTextSize2}"/>
+                                                      Header="Size" Value="{Binding MatrixTextSize2}"/>
                             </Grid>
                             <DockPanel>
-                                <ui:ToggleSwitch Content="{loc:Loc MatrixRunningText}" IsChecked="{Binding MatrixTextRunning}"/>
-                                <ui:Button DockPanel.Dock="Right" HorizontalAlignment="Right" Content="{loc:Loc Apply}"
+                                <ui:ToggleSwitch Content="Running Text" IsChecked="{Binding MatrixTextRunning}"/>
+                                <ui:Button DockPanel.Dock="Right" HorizontalAlignment="Right" Content="Apply"
                                            Appearance="Primary" Command="{Binding ApplyMatrixTextCommand}"/>
                             </DockPanel>
                         </StackPanel>
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc MatrixClock}">
+                <controls:SettingsRow Header="Clock">
                     <controls:SettingsRow.ContentBelow>
                         <StackPanel Margin="0,8,0,0">
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
-                                <TextBox Text="{Binding MatrixTimeFormat, UpdateSourceTrigger=PropertyChanged}" ToolTip="{loc:Loc MatrixTimeFormat}"/>
-                                <TextBox Grid.Column="2" Text="{Binding MatrixDateFormat, UpdateSourceTrigger=PropertyChanged}" ToolTip="{loc:Loc MatrixDateFormat}"/>
+                                <TextBox Text="{Binding MatrixTimeFormat, UpdateSourceTrigger=PropertyChanged}" ToolTip="Time Format"/>
+                                <TextBox Grid.Column="2" Text="{Binding MatrixDateFormat, UpdateSourceTrigger=PropertyChanged}" ToolTip="Date Format"/>
                             </Grid>
                             <DockPanel>
-                                <ui:ToggleSwitch Content="{loc:Loc MatrixShowBattery}" IsChecked="{Binding MatrixClockBattery}"/>
-                                <ui:Button DockPanel.Dock="Right" HorizontalAlignment="Right" Content="{loc:Loc Apply}"
+                                <ui:ToggleSwitch Content="Show battery instead of date" IsChecked="{Binding MatrixClockBattery}"/>
+                                <ui:Button DockPanel.Dock="Right" HorizontalAlignment="Right" Content="Apply"
                                            Appearance="Primary" Command="{Binding ApplyMatrixClockCommand}"/>
                             </DockPanel>
                         </StackPanel>
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc MatrixAudio}">
+                <controls:SettingsRow Header="Audio">
                     <StackPanel Orientation="Horizontal">
                         <ComboBox SelectedIndex="{Binding MatrixAudioMode}" MinWidth="180" Margin="0,0,8,0">
-                            <ComboBoxItem Content="{loc:Loc MatrixAudioBars}"/>
-                            <ComboBoxItem Content="{loc:Loc MatrixAudioSpectrum}"/>
+                            <ComboBoxItem Content="Bars"/>
+                            <ComboBoxItem Content="Spectrum"/>
                         </ComboBox>
-                        <ui:Button Content="{loc:Loc Apply}" Command="{Binding ApplyMatrixAudioCommand}"/>
+                        <ui:Button Content="Apply" Command="{Binding ApplyMatrixAudioCommand}"/>
                     </StackPanel>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc LightingSlashBehaviour}" Icon="Timer24"
+            <controls:SettingsGroup Header="Slash behaviour" Icon="Timer24"
                                     Visibility="{Binding HasSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <controls:SettingsRow Header="{loc:Loc LightingAnimationInterval}">
+                <controls:SettingsRow Header="Animation interval">
                     <controls:ValueSlider Minimum="0" Maximum="5" TickFrequency="1" IsSnapToTickEnabled="True"
                                           Value="{Binding SlashInterval, Mode=TwoWay}" Format="{}{0} s"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc LightingBootAnimation}">
+                <controls:SettingsRow Header="Boot animation">
                     <ui:ToggleSwitch IsChecked="{Binding SlashBootAnimation, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc SlashSleepAnimation}">
+                <controls:SettingsRow Header="Sleep animation">
                     <ui:ToggleSwitch IsChecked="{Binding SlashSleepAnimation, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc LightingSleepPattern}">
+                <controls:SettingsRow Header="Sleep pattern">
                     <ComboBox SelectedIndex="{Binding SlashSleepPattern, Mode=TwoWay}" MinWidth="240">
-                        <ComboBoxItem Content="{loc:Loc LightingSystemDefault}"/>
-                        <ComboBoxItem Content="{loc:Loc LightingSelectedAnimation}"/>
+                        <ComboBoxItem Content="System default"/>
+                        <ComboBoxItem Content="Selected animation"/>
                     </ComboBox>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc LightingLowBatteryAlert}">
+                <controls:SettingsRow Header="Low-battery alert">
                     <ui:ToggleSwitch IsChecked="{Binding SlashLowBatteryAlert, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc LightingBatteryLevelIndicator}">
+                <controls:SettingsRow Header="Battery-level indicator">
                     <ui:ToggleSwitch IsChecked="{Binding SlashBatteryIndicator, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc LightingDimAtLowBattery}">
+                <controls:SettingsRow Header="Dim at low battery">
                     <ui:ToggleSwitch IsChecked="{Binding SlashPowerSaving, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc LightingLowBatteryDimLevel}">
+                <controls:SettingsRow Header="Low-battery dim level">
                     <ComboBox ItemsSource="{Binding SlashDimLevels}" SelectedItem="{Binding SlashDimLevel, Mode=TwoWay}" MinWidth="240"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>

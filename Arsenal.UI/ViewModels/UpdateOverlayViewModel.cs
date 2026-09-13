@@ -91,8 +91,8 @@ namespace Arsenal.UI.ViewModels
         {
             _presentedRelease = release;
             Headline = string.IsNullOrWhiteSpace(release.Title) ? $"Arsenal {release.Version}" : release.Title;
-            VersionLine = AppStrings.Format(
-                "UpdateVersionLine",
+            VersionLine = string.Format(
+                "You have {0}. This update installs {1}.",
                 ReleaseVersion.CurrentDisplayString(),
                 ReleaseVersion.DisplayString(release.Version));
             SizeText = FormatSize(release.PackageBytes);
@@ -100,7 +100,7 @@ namespace Arsenal.UI.ViewModels
 
             Notes.Clear();
             foreach (string note in release.Notes.Take(8)) Notes.Add(note);
-            if (Notes.Count == 0) Notes.Add(AppStrings.Get("UpdateGenericNote"));
+            if (Notes.Count == 0) Notes.Add("This release includes product and reliability improvements.");
 
             ResetProgress();
             ErrorText = string.Empty;
@@ -119,13 +119,13 @@ namespace Arsenal.UI.ViewModels
             // directly through the other Present overload instead.
             _presentedRelease = null;
             Headline = string.IsNullOrWhiteSpace(info.Title) ? $"Arsenal {info.LatestVersion}" : info.Title;
-            VersionLine = AppStrings.Format("UpdateVersionLine", info.CurrentVersion, info.LatestVersion);
+            VersionLine = string.Format("You have {0}. This update installs {1}.", info.CurrentVersion, info.LatestVersion);
             SizeText = FormatSize(info.PackageBytes);
             TotalBytes = info.PackageBytes;
 
             Notes.Clear();
             foreach (string note in info.ReleaseNoteLines.Take(8)) Notes.Add(note);
-            if (Notes.Count == 0) Notes.Add(AppStrings.Get("UpdateGenericNote"));
+            if (Notes.Count == 0) Notes.Add("This release includes product and reliability improvements.");
 
             ResetProgress();
             ErrorText = string.Empty;
@@ -143,7 +143,7 @@ namespace Arsenal.UI.ViewModels
 
             State = UpdateOverlayState.Downloading;
             ErrorText = string.Empty;
-            StatusText = AppStrings.Get("UpdateDownloading");
+            StatusText = "Downloading and verifying the update";
             ResetProgress();
 
             _cancellation?.Dispose();
@@ -161,7 +161,7 @@ namespace Arsenal.UI.ViewModels
 
                 // Only reached when the hand-off failed: a successful install ends the
                 // process from inside the call above.
-                if (!launched) Fail(AppStrings.Get("UpdateInstallFailed"));
+                if (!launched) Fail("Arsenal could not verify or start this update. Your current installation was not changed.");
             }
             catch (OperationCanceledException)
             {
@@ -172,7 +172,7 @@ namespace Arsenal.UI.ViewModels
             catch (Exception exception)
             {
                 Logger.WriteLine("Update overlay install: " + exception.Message);
-                Fail(AppStrings.Get("UpdateInstallFailed"));
+                Fail("Arsenal could not verify or start this update. Your current installation was not changed.");
             }
         }
 
@@ -209,7 +209,7 @@ namespace Arsenal.UI.ViewModels
             double fraction = Math.Clamp((double)received / TotalBytes, 0, 1);
             Progress = fraction;
             PercentText = ((int)Math.Round(fraction * 100)) + "%";
-            ProgressText = AppStrings.Format("UpdateProgressOf", FormatSize(received), FormatSize(TotalBytes));
+            ProgressText = string.Format("{0} of {1}", FormatSize(received), FormatSize(TotalBytes));
         }
 
         private void Fail(string message)
@@ -224,7 +224,7 @@ namespace Arsenal.UI.ViewModels
             Progress = 0;
             PercentText = "0%";
             ProgressText = TotalBytes > 0
-                ? AppStrings.Format("UpdateProgressOf", FormatSize(0), FormatSize(TotalBytes))
+                ? string.Format("{0} of {1}", FormatSize(0), FormatSize(TotalBytes))
                 : string.Empty;
         }
 

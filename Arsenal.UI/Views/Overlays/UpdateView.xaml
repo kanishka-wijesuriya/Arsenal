@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
-             xmlns:loc="clr-namespace:Arsenal.UI.Markup"
              Width="560">
 
     <!--
@@ -47,7 +46,7 @@
             </Border>
 
             <StackPanel Grid.Column="1">
-                <TextBlock Text="{loc:Loc UpdateReady}"
+                <TextBlock Text="An update is ready"
                            Style="{StaticResource CaptionStyle}"
                            HorizontalAlignment="Left"/>
                 <TextBlock Text="{Binding Headline}"
@@ -67,7 +66,7 @@
                 Background="{DynamicResource SurfaceSunken}"
                 BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1">
             <StackPanel Margin="18,15,18,16">
-                <TextBlock Text="{loc:Loc UpdateWhatsNew}"
+                <TextBlock Text="What's new"
                            Style="{StaticResource CaptionStyle}"
                            HorizontalAlignment="Left" Margin="0,0,0,9"/>
                 <ScrollViewer MaxHeight="168" VerticalScrollBarVisibility="Auto"
@@ -103,7 +102,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="{loc:Loc UpdateExplanation}"
+                <TextBlock Text="Arsenal will verify the signed package, close, install the update and start again."
                            Style="{StaticResource UpdateNoteStyle}"
                            VerticalAlignment="Center" Margin="0,0,16,0"/>
                 <Border Grid.Column="1" CornerRadius="7" Padding="10,5" VerticalAlignment="Center"
@@ -159,24 +158,24 @@
         <Grid Grid.Row="3" Margin="0,20,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
                         Visibility="{Binding IsAvailable, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <ui:Button Content="{loc:Loc UpdateLater}" Appearance="Secondary"
+                <ui:Button Content="Later" Appearance="Secondary"
                            MinWidth="104" Command="{Binding LaterCommand}"/>
-                <ui:Button Content="{loc:Loc UpdateInstallNow}" Appearance="Primary"
+                <ui:Button Content="Update now" Appearance="Primary"
                            Icon="{ui:SymbolIcon ArrowDownload24}"
                            MinWidth="140" Margin="10,0,0,0" Command="{Binding InstallCommand}"/>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
                         Visibility="{Binding IsDownloading, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <ui:Button Content="{loc:Loc UpdateCancel}" Appearance="Secondary"
+                <ui:Button Content="Cancel" Appearance="Secondary"
                            MinWidth="104" Command="{Binding CancelCommand}"/>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
                         Visibility="{Binding HasFailed, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <ui:Button Content="{loc:Loc UpdateLater}" Appearance="Secondary"
+                <ui:Button Content="Later" Appearance="Secondary"
                            MinWidth="104" Command="{Binding LaterCommand}"/>
-                <ui:Button Content="{loc:Loc UpdateRetry}" Appearance="Primary"
+                <ui:Button Content="Try again" Appearance="Primary"
                            Icon="{ui:SymbolIcon ArrowSync24}"
                            MinWidth="140" Margin="10,0,0,0" Command="{Binding RetryCommand}"/>
             </StackPanel>

@@ -3,77 +3,77 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
-             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+>
     <ScrollViewer Style="{StaticResource PageScrollStyle}">
         <StackPanel Style="{StaticResource PageBodyStyle}">
 
             <Grid Style="{StaticResource PageHeaderStyle}">
                 <StackPanel>
-                    <TextBlock Text="{loc:Loc SettingsSettings}" Style="{StaticResource PageTitleStyle}"/>
-                    <TextBlock Text="{loc:Loc SettingsStartupTrayBehaviourAppearance}" Style="{StaticResource PageSubtitleStyle}"/>
+                    <TextBlock Text="Settings" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="Startup, tray behaviour, appearance and notifications" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
             </Grid>
 
-            <controls:SettingsGroup Header="{loc:Loc SettingsApplication}" Icon="Settings24">
-                <controls:SettingsRow Header="{loc:Loc SetupRunAsAdministrator}"
+            <controls:SettingsGroup Header="Application" Icon="Settings24">
+                <controls:SettingsRow Header="Run as administrator"
                                       Description="{Binding AdministratorDescription}">
                     <ui:ToggleSwitch IsChecked="{Binding RunAsAdministrator, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc SettingsRunAtWindowsSignIn}"
-                                      Description="{loc:Loc SettingsRegistersASignInTask}">
+                <controls:SettingsRow Header="Run at Windows sign-in"
+                                      Description="Registers a sign-in task using the administrator preference above. Elevated sign-in starts do not show a UAC prompt.">
                     <ui:ToggleSwitch IsChecked="{Binding RunOnStartup, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc SettingsSetup}"
-                                      Description="{loc:Loc SettingsStartupNotificationsUpdatesAnd}">
+                <controls:SettingsRow Header="Setup"
+                                      Description="Startup, notifications, updates and ASUS services, in one place.">
                     <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0"
-                               Content="{loc:Loc SettingsRunSetupAgain}" Appearance="Secondary"
+                               Content="Run setup again" Appearance="Secondary"
                                Command="{Binding RunSetupCommand}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc SettingsMinimiseToTrayOnClose}"
-                                      Description="{loc:Loc SettingsKeepsHotkeysAutomationAnd}">
+                <controls:SettingsRow Header="Minimise to tray on close"
+                                      Description="Keeps hotkeys, automation and hardware monitoring running.">
                     <ui:ToggleSwitch IsChecked="{Binding MinimizeToTray, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc SettingsCheckForUpdatesAtStartup}"
-                                      Description="{loc:Loc SettingsUsesArsenalSUpdateChannel}"
+                <controls:SettingsRow Header="Check for updates at startup"
+                                      Description="Uses Arsenal's update channel in the background."
                                       Visibility="{Binding CanSelfUpdate, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ui:ToggleSwitch IsChecked="{Binding CheckUpdatesOnStartup, Mode=TwoWay}"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc SettingsAppearance}" Icon="Color24">
-                <controls:SettingsRow Header="{loc:Loc SettingsTheme}"
-                                      Description="{loc:Loc SettingsAppliesImmediatelySystemMode}">
+            <controls:SettingsGroup Header="Appearance" Icon="Color24">
+                <controls:SettingsRow Header="Theme"
+                                      Description="Applies immediately. System mode follows Windows from the next theme change.">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="Theme" Content="{loc:Loc SettingsSystem}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="Theme" Content="System"
                                      IsChecked="{Binding SelectedTheme, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                      Command="{Binding SetThemeCommand}" CommandParameter="0"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="Theme" Content="{loc:Loc SettingsDark}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="Theme" Content="Dark"
                                      IsChecked="{Binding SelectedTheme, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                      Command="{Binding SetThemeCommand}" CommandParameter="1"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="Theme" Content="{loc:Loc SettingsLight}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="Theme" Content="Light"
                                      IsChecked="{Binding SelectedTheme, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                      Command="{Binding SetThemeCommand}" CommandParameter="2"/>
                     </WrapPanel>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc SettingsDisableTransparency}"
-                                      Description="{loc:Loc SettingsDisableTransparencyDescription}">
+                <controls:SettingsRow Header="Disable transparency"
+                                      Description="Turns off the Mica backdrop for Arsenal only and paints the window on flat colours. Windows transparency elsewhere is unaffected.">
                     <ui:ToggleSwitch IsChecked="{Binding DisableTransparency, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc SettingsAccentColour}"
+                <controls:SettingsRow Header="Accent colour"
                                       Description="{Binding AccentDescription}">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
                         <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AccentSource"
-                                     Content="{loc:Loc SettingsWindows}"
+                                     Content="Windows"
                                      IsChecked="{Binding SelectedAccentSource, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                      Command="{Binding SetAccentSourceCommand}" CommandParameter="0"/>
                         <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AccentSource"
-                                     Content="{loc:Loc Custom}"
+                                     Content="Custom"
                                      IsChecked="{Binding SelectedAccentSource, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                      Command="{Binding SetAccentSourceCommand}" CommandParameter="1"/>
                     </WrapPanel>
@@ -105,52 +105,47 @@
                                              VerticalContentAlignment="Center"
                                              Text="{Binding CustomAccentHex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <ui:Button Grid.Column="2" Height="32" Margin="8,0,0,0"
-                                               Content="{loc:Loc SettingsApplyHex}" Appearance="Secondary"
+                                               Content="Apply hex" Appearance="Secondary"
                                                Command="{Binding ApplyCustomAccentHexCommand}"/>
                                 </Grid>
 
                                 <TextBlock Margin="0,10,0,0" FontSize="12"
                                            Foreground="{DynamicResource TextTertiary}"
-                                           Text="{loc:Loc SettingsDragAnywhereInTheSpectrum}"/>
+                                           Text="Drag anywhere in the spectrum. Every Arsenal window updates live."/>
                             </StackPanel>
                         </Border>
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc SettingsLanguage}" Description="{loc:Loc SettingsRestartArsenalAfterChangingThe}">
-                    <ComboBox ItemsSource="{Binding AvailableLanguages}" DisplayMemberPath="DisplayName"
-                              SelectedValuePath="Code" SelectedValue="{Binding SelectedLanguageCode}"
-                              SelectionChanged="Language_SelectionChanged" MinWidth="240"/>
-                </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc SettingsNotifications}" Icon="Alert24"
-                                    Description="{loc:Loc SettingsFloatingFeedbackShownFor}">
-                <controls:SettingsRow Header="{loc:Loc SettingsShowFloatingNotifications}">
+            <controls:SettingsGroup Header="Notifications" Icon="Alert24"
+                                    Description="Floating feedback shown for brightness, mode, hotkey and hardware actions.">
+                <controls:SettingsRow Header="Show floating notifications">
                     <ui:ToggleSwitch IsChecked="{Binding ToastEnabled, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc SettingsDesign}" IsEnabled="{Binding ToastEnabled}">
+                <controls:SettingsRow Header="Design" IsEnabled="{Binding ToastEnabled}">
                     <ComboBox ItemsSource="{Binding ToastStyles}" SelectedIndex="{Binding ToastStyle, Mode=TwoWay}" MinWidth="240"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc SettingsLocation}" IsEnabled="{Binding ToastEnabled}">
+                <controls:SettingsRow Header="Location" IsEnabled="{Binding ToastEnabled}">
                     <ComboBox ItemsSource="{Binding ToastPositions}" SelectedIndex="{Binding ToastPosition, Mode=TwoWay}" MinWidth="240"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc SettingsVisibleDuration}" IsEnabled="{Binding ToastEnabled}">
+                <controls:SettingsRow Header="Visible duration" IsEnabled="{Binding ToastEnabled}">
                     <controls:ValueSlider Minimum="2" Maximum="12" TickFrequency="1" IsSnapToTickEnabled="True"
                                           Value="{Binding ToastDurationSeconds, Mode=TwoWay}" Format="{}{0} s"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc SettingsCountdownBar}"
-                                      Description="{loc:Loc SettingsDrawAThinBarShowing}"
+                <controls:SettingsRow Header="Countdown bar"
+                                      Description="Draw a thin bar showing how long the notification has left."
                                       IsEnabled="{Binding ToastEnabled}">
                     <ui:ToggleSwitch IsChecked="{Binding ToastProgress, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
                 <controls:SettingsGroup.Footer>
-                    <ui:Button Content="{loc:Loc SettingsPreviewNotification}" Icon="{ui:SymbolIcon Alert24}" Command="{Binding TestToastCommand}"
+                    <ui:Button Content="Preview notification" Icon="{ui:SymbolIcon Alert24}" Command="{Binding TestToastCommand}"
                                Appearance="Secondary" HorizontalAlignment="Left"
                                IsEnabled="{Binding ToastEnabled}"/>
                 </controls:SettingsGroup.Footer>

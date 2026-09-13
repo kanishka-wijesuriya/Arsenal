@@ -2,7 +2,6 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-        xmlns:loc="clr-namespace:Arsenal.UI.Markup"
         Width="456" SizeToContent="Height" MaxHeight="420"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowActivated="False" ShowInTaskbar="False" Topmost="False" ResizeMode="NoResize">
@@ -69,7 +68,7 @@
 
                     <ui:Button Grid.Column="3" Icon="{ui:SymbolIcon Dismiss20}" Click="Close_Click"
                                Width="28" Height="28" Padding="0" Appearance="Secondary"
-                               VerticalAlignment="Top" ToolTip="{loc:Loc ToastDismiss}"/>
+                               VerticalAlignment="Top" ToolTip="Dismiss"/>
                 </Grid>
 
                 <Grid x:Name="LiveValuePanel" Grid.Row="1" Margin="49,12,4,0" Visibility="Collapsed">

@@ -328,7 +328,7 @@ namespace Arsenal.Mode
 
         public void SetModeLabel()
         {
-            string label = Properties.Strings.PerformanceMode + ": " + Modes.GetCurrentName() + (customFans ? "+" : "") + ((customPower > 0) ? " " + customPower + "W" : "");
+            string label = "Mode" + ": " + Modes.GetCurrentName() + (customFans ? "+" : "") + ((customPower > 0) ? " " + customPower + "W" : "");
             OnModeLabelChanged?.Invoke(label);
             Program.Bridge?.SetModeLabel(label);
         }

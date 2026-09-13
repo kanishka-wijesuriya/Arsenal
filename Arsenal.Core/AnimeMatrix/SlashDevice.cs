@@ -56,34 +56,34 @@ namespace Arsenal.AnimeMatrix
 
         public static Dictionary<SlashMode, string> Modes = new Dictionary<SlashMode, string>
         {
-            { SlashMode.Bounce, Properties.Strings.SlashBounce},
-            { SlashMode.Slash, Properties.Strings.SlashMode},
-            { SlashMode.Loading, Properties.Strings.SlashLoading},
+            { SlashMode.Bounce, "Bounce"},
+            { SlashMode.Slash, "Slash"},
+            { SlashMode.Loading, "Loading"},
 
-            { SlashMode.BitStream, Properties.Strings.SlashBitStream},
-            { SlashMode.Transmission, Properties.Strings.SlashTransmission},
+            { SlashMode.BitStream, "Bit Stream"},
+            { SlashMode.Transmission, "Transmission"},
 
-            { SlashMode.Flow, Properties.Strings.SlashFlow},
-            { SlashMode.Flux, Properties.Strings.SlashFlux},
-            { SlashMode.Phantom, Properties.Strings.SlashPhantom},
-            { SlashMode.Spectrum, Properties.Strings.SlashSpectrum},
+            { SlashMode.Flow, "Flow"},
+            { SlashMode.Flux, "Flux"},
+            { SlashMode.Phantom, "Phantom"},
+            { SlashMode.Spectrum, "Spectrum"},
 
-            { SlashMode.Hazard, Properties.Strings.SlashHazard},
-            { SlashMode.Interfacing, Properties.Strings.SlashInterfacing},
-            { SlashMode.Ramp, Properties.Strings.SlashRamp},
+            { SlashMode.Hazard, "Hazard"},
+            { SlashMode.Interfacing, "Interfacing"},
+            { SlashMode.Ramp, "Ramp"},
 
-            { SlashMode.GameOver, Properties.Strings.SlashGameOver},
-            { SlashMode.Start, Properties.Strings.SlashStart},
-            { SlashMode.Buzzer, Properties.Strings.SlashBuzzer},
+            { SlashMode.GameOver, "Game Over"},
+            { SlashMode.Start, "Start"},
+            { SlashMode.Buzzer, "Buzzer"},
 
-            { SlashMode.Static, Properties.Strings.SlashStatic},
+            { SlashMode.Static, "Static"},
 
             { SlashMode.FX1, "FX1"},
             { SlashMode.FX2, "FX2"},
             { SlashMode.FX3, "FX3"},
 
-            { SlashMode.BatteryLevel, Properties.Strings.SlashBatteryLevel},
-            { SlashMode.Audio, Properties.Strings.MatrixAudio},
+            { SlashMode.BatteryLevel, "Battery Level"},
+            { SlashMode.Audio, "Audio"},
             { SlashMode.Dark, "Dark"}
 
         };

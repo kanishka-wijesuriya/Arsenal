@@ -145,9 +145,9 @@ namespace Arsenal.USB
         {
             return new Dictionary<AuraSpeed, string>
             {
-                { AuraSpeed.Slow, Properties.Strings.AuraSlow },
-                { AuraSpeed.Normal, Properties.Strings.AuraNormal },
-                { AuraSpeed.Fast, Properties.Strings.AuraFast }
+                { AuraSpeed.Slow, "Slow" },
+                { AuraSpeed.Normal, "Normal" },
+                { AuraSpeed.Fast, "Fast" }
             };
         }
 
@@ -158,18 +158,18 @@ namespace Arsenal.USB
 
             if (isWhite)
             {
-                modes[AuraMode.AuraStatic] = Properties.Strings.AuraStatic;
-                modes[AuraMode.AuraBreathe] = Properties.Strings.AuraBreathe;
-                modes[AuraMode.AuraStrobe] = Properties.Strings.AuraStrobe;
+                modes[AuraMode.AuraStatic] = "Static";
+                modes[AuraMode.AuraBreathe] = "Breathe";
+                modes[AuraMode.AuraStrobe] = "Strobe";
                 return modes;
             }
 
             if (AppConfig.IsDynamicLightingOnly())
             {
-                modes[AuraMode.AuraStatic] = Properties.Strings.AuraStatic;
-                modes[AuraMode.AuraBreathe] = Properties.Strings.AuraColorCycle;
-                modes[AuraMode.AuraRainbow] = Properties.Strings.AuraRainbow;
-                modes[AuraMode.AuraStrobe] = Properties.Strings.AuraStrobe;
+                modes[AuraMode.AuraStatic] = "Static";
+                modes[AuraMode.AuraBreathe] = "Color Cycle";
+                modes[AuraMode.AuraRainbow] = "Rainbow";
+                modes[AuraMode.AuraStrobe] = "Strobe";
                 return modes;
             }
 
@@ -178,10 +178,10 @@ namespace Arsenal.USB
             bool isStrixKb = perKey || multiZone;
             bool isAlly = AppConfig.IsAlly();
 
-            modes[AuraMode.AuraStatic] = Properties.Strings.AuraStatic;
-            modes[AuraMode.AuraBreathe] = Properties.Strings.AuraBreathe;
-            modes[AuraMode.AuraColorCycle] = Properties.Strings.AuraColorCycle;
-            if (isStrixKb) modes[AuraMode.AuraRainbow] = Properties.Strings.AuraRainbow;
+            modes[AuraMode.AuraStatic] = "Static";
+            modes[AuraMode.AuraBreathe] = "Breathe";
+            modes[AuraMode.AuraColorCycle] = "Color Cycle";
+            if (isStrixKb) modes[AuraMode.AuraRainbow] = "Rainbow";
 
             if (perKey)
             {
@@ -192,7 +192,7 @@ namespace Arsenal.USB
                 modes[AuraMode.Ripple] = "Ripple";
             }
 
-            modes[AuraMode.AuraStrobe] = Properties.Strings.AuraStrobe;
+            modes[AuraMode.AuraStrobe] = "Strobe";
 
             if (perKey)
             {
@@ -224,11 +224,11 @@ namespace Arsenal.USB
 
         private static Dictionary<AuraMode, string> _modesRear = new Dictionary<AuraMode, string>
         {
-            { AuraMode.AuraStatic, Properties.Strings.AuraStatic },
-            { AuraMode.AuraBreathe, Properties.Strings.AuraBreathe },
-            { AuraMode.AuraColorCycle, Properties.Strings.AuraColorCycle },
-            { AuraMode.AuraRainbow, Properties.Strings.AuraRainbow },
-            { AuraMode.AuraStrobe, Properties.Strings.AuraStrobe },
+            { AuraMode.AuraStatic, "Static" },
+            { AuraMode.AuraBreathe, "Breathe" },
+            { AuraMode.AuraColorCycle, "Color Cycle" },
+            { AuraMode.AuraRainbow, "Rainbow" },
+            { AuraMode.AuraStrobe, "Strobe" },
         };
 
         public static Dictionary<AuraMode, string> GetRearModes()

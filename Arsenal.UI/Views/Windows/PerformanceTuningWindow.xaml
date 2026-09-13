@@ -2,8 +2,7 @@
                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-                  xmlns:loc="clr-namespace:Arsenal.UI.Markup"
-                  Title="{loc:Loc PerformanceCustomModes}"
+                  Title="Custom performance modes"
                   Width="940" Height="760" MinWidth="780" MinHeight="600"
                   WindowStartupLocation="CenterScreen"
                   WindowBackdropType="Mica">
@@ -29,9 +28,9 @@
                             <ui:SymbolIcon Symbol="WeatherDuststorm24" FontSize="18" Foreground="{DynamicResource AccentPrimary}"/>
                         </Border>
                         <StackPanel>
-                            <TextBlock Text="{loc:Loc PerformanceCustomModes}" FontSize="20" FontWeight="SemiBold"
+                            <TextBlock Text="Custom performance modes" FontSize="20" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimary}"/>
-                            <TextBlock Text="{loc:Loc PerformanceTunePlanDescription}" FontSize="11.5"
+                            <TextBlock Text="Adjust power limits, clocks, thermals, and fan curves for the selected plan." FontSize="11.5"
                                        Foreground="{DynamicResource TextSecondary}"/>
                         </StackPanel>
                     </StackPanel>
@@ -43,8 +42,8 @@
                         </Grid.ColumnDefinitions>
                         <ComboBox ItemsSource="{Binding Profiles}" DisplayMemberPath="Name"
                                   SelectedItem="{Binding SelectedProfile, Mode=TwoWay}"
-                                  MinWidth="300" AutomationProperties.Name="{loc:Loc PerformanceSelectPlan}"/>
-                        <ui:Button Grid.Column="1" Content="{loc:Loc PerformanceNewPlan}" Command="{Binding OpenCreateProfileCommand}"
+                                  MinWidth="300" AutomationProperties.Name="Select plan"/>
+                        <ui:Button Grid.Column="1" Content="New plan" Command="{Binding OpenCreateProfileCommand}"
                                    Appearance="Secondary" Icon="{ui:SymbolIcon Add24}" Margin="10,0,0,0"/>
                     </Grid>
                 </StackPanel>
@@ -53,11 +52,11 @@
                     <ui:Button x:Name="CloseButton" Icon="{ui:SymbolIcon Dismiss24}" Click="CloseWindow_Click"
                                Appearance="Secondary" Width="34" Height="34" Padding="0"
                                HorizontalAlignment="Right" VerticalAlignment="Top"
-                               ToolTip="{loc:Loc QuickPanelClose}"/>
+                               ToolTip="Close"/>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
-                        <ui:Button Content="{loc:Loc PerformanceResetProfile}" Command="{Binding ResetSettingsCommand}"
+                        <ui:Button Content="Reset profile" Command="{Binding ResetSettingsCommand}"
                                    Appearance="Secondary" Icon="{ui:SymbolIcon ArrowReset24}" Margin="0,0,8,0"/>
-                        <ui:Button Content="{loc:Loc PerformanceApplyChanges}" Command="{Binding ApplySettingsCommand}"
+                        <ui:Button Content="Apply changes" Command="{Binding ApplySettingsCommand}"
                                    Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}"/>
                     </StackPanel>
                 </Grid>

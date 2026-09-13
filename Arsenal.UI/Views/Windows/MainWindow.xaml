@@ -5,7 +5,6 @@
                   xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
                   xmlns:controls="clr-namespace:Arsenal.UI.Controls"
                   xmlns:overlays="clr-namespace:Arsenal.UI.Views.Overlays"
-                  xmlns:loc="clr-namespace:Arsenal.UI.Markup"
                   Title="Arsenal"
                   Width="1180"
                   Height="780"
@@ -98,25 +97,25 @@
                                Style="{StaticResource TitleBarIconButtonStyle}"
                                Click="PaneToggleButton_Click"
                                Icon="{ui:SymbolIcon PanelLeft24}"
-                               ToolTip="{loc:Loc MainCollapseOrExpandTheNavigation}"/>
+                               ToolTip="Collapse or expand the navigation pane"/>
 
                     <ui:Button x:Name="NavigateBackButton"
                                Style="{StaticResource TitleBarIconButtonStyle}"
                                Click="NavigateBackButton_Click"
                                Icon="{ui:SymbolIcon ArrowLeft24}"
-                               ToolTip="{loc:Loc MainBack}"/>
+                               ToolTip="Back"/>
 
                     <ui:Button x:Name="NavigateForwardButton"
                                Style="{StaticResource TitleBarIconButtonStyle}"
                                Click="NavigateForwardButton_Click"
                                Icon="{ui:SymbolIcon ArrowRight24}"
-                               ToolTip="{loc:Loc MainForward}"/>
+                               ToolTip="Forward"/>
 
                     <ui:Button x:Name="SearchButton"
                                Style="{StaticResource TitleBarIconButtonStyle}"
                                Click="SearchButton_Click"
                                Icon="{ui:SymbolIcon Search24}"
-                               ToolTip="{loc:Loc MainSearchEverySettingAndCommand}"/>
+                               ToolTip="Search every setting and command (Ctrl+K)"/>
                 </StackPanel>
             </ui:TitleBar.Header>
 
@@ -131,7 +130,7 @@
                             Background="{DynamicResource AccentSubtle}"
                             BorderBrush="{DynamicResource AccentPrimary}"
                             Margin="0"
-                            ToolTip="{loc:Loc MainActivePerformanceProfile}">
+                            ToolTip="Active performance profile">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="6" Height="6" Margin="0,0,7,0" VerticalAlignment="Center" Fill="{DynamicResource AccentPrimary}"/>
                             <TextBlock Text="{Binding CurrentModeName}" Style="{StaticResource PillTextStyle}"
@@ -139,15 +138,15 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Style="{StaticResource CompactStatusPillStyle}" ToolTip="{loc:Loc MainCPUPackageTemperature}">
+                    <Border Style="{StaticResource CompactStatusPillStyle}" ToolTip="CPU package temperature">
                         <TextBlock Text="{Binding Telemetry.CpuTemp, StringFormat='{}CPU {0:F0}°'}" Style="{StaticResource PillTextStyle}"/>
                     </Border>
 
-                    <Border Style="{StaticResource CompactStatusPillStyle}" ToolTip="{loc:Loc MainDedicatedGPUTemperature}">
+                    <Border Style="{StaticResource CompactStatusPillStyle}" ToolTip="Dedicated GPU temperature">
                         <TextBlock Text="{Binding Telemetry.GpuTemp, StringFormat='{}GPU {0:F0}°'}" Style="{StaticResource PillTextStyle}"/>
                     </Border>
 
-                    <Border Style="{StaticResource CompactStatusPillStyle}" ToolTip="{loc:Loc MainBatteryCharge}">
+                    <Border Style="{StaticResource CompactStatusPillStyle}" ToolTip="Battery charge">
                         <TextBlock Text="{Binding Telemetry.BatteryPercentage, StringFormat='{}BAT {0}%'}" Style="{StaticResource PillTextStyle}"/>
                     </Border>
                 </StackPanel>
@@ -179,21 +178,21 @@
             </ui:NavigationView.PaneHeader>
 
             <ui:NavigationView.MenuItems>
-                <ui:NavigationViewItem Content="{loc:Loc MainHome}" TargetPageTag="Home" Icon="{ui:SymbolIcon Home24}" Click="NavigationItem_Click"/>
-                <ui:NavigationViewItem Content="{loc:Loc MousePerformance}" TargetPageTag="Performance" Icon="{ui:SymbolIcon Gauge24}" Click="NavigationItem_Click"/>
-                <ui:NavigationViewItem Content="{loc:Loc DisplayDisplayGraphics}" TargetPageTag="Display" Icon="{ui:SymbolIcon Desktop24}" Click="NavigationItem_Click"/>
-                <ui:NavigationViewItem Content="{loc:Loc Battery}" TargetPageTag="Battery" Icon="{ui:SymbolIcon BatteryCharge24}" Click="NavigationItem_Click"/>
-                <ui:NavigationViewItem Content="{loc:Loc DevicesDevices}" TargetPageTag="Devices" Icon="{ui:SymbolIcon Keyboard24}" Click="NavigationItem_Click"/>
-                <ui:NavigationViewItem Content="{loc:Loc Lighting}" TargetPageTag="Lighting" Icon="{ui:SymbolIcon Lightbulb24}" Click="NavigationItem_Click"/>
-                <ui:NavigationViewItem Content="{loc:Loc AutomationAutomation}" TargetPageTag="Automation" Icon="{ui:SymbolIcon Flash24}" Click="NavigationItem_Click"/>
-                <ui:NavigationViewItem Content="{loc:Loc UpdatesDrivers}" TargetPageTag="Drivers" Icon="{ui:SymbolIcon Box24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="Home" TargetPageTag="Home" Icon="{ui:SymbolIcon Home24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="Performance" TargetPageTag="Performance" Icon="{ui:SymbolIcon Gauge24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="Display &amp; graphics" TargetPageTag="Display" Icon="{ui:SymbolIcon Desktop24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="Battery" TargetPageTag="Battery" Icon="{ui:SymbolIcon BatteryCharge24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="Devices" TargetPageTag="Devices" Icon="{ui:SymbolIcon Keyboard24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="Lighting" TargetPageTag="Lighting" Icon="{ui:SymbolIcon Lightbulb24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="Automation" TargetPageTag="Automation" Icon="{ui:SymbolIcon Flash24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="Drivers" TargetPageTag="Drivers" Icon="{ui:SymbolIcon Box24}" Click="NavigationItem_Click"/>
             </ui:NavigationView.MenuItems>
 
             <ui:NavigationView.FooterMenuItems>
-                <ui:NavigationViewItem Content="{loc:Loc MobileCompanionMobileCompanion}" TargetPageTag="MobileCompanion" Icon="{ui:SymbolIcon PhoneLaptop24}" Click="NavigationItem_Click"/>
-                <ui:NavigationViewItem Content="{loc:Loc AdvancedAdvanced}" TargetPageTag="Advanced" Icon="{ui:SymbolIcon DeveloperBoard24}" Click="NavigationItem_Click"/>
-                <ui:NavigationViewItem Content="{loc:Loc SettingsSettings}" TargetPageTag="Settings" Icon="{ui:SymbolIcon Settings24}" Click="NavigationItem_Click"/>
-                <ui:NavigationViewItem Content="{loc:Loc AboutAbout}" TargetPageTag="About" Icon="{ui:SymbolIcon Info24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="Mobile Companion" TargetPageTag="MobileCompanion" Icon="{ui:SymbolIcon PhoneLaptop24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="Advanced" TargetPageTag="Advanced" Icon="{ui:SymbolIcon DeveloperBoard24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="Settings" TargetPageTag="Settings" Icon="{ui:SymbolIcon Settings24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="About" TargetPageTag="About" Icon="{ui:SymbolIcon Info24}" Click="NavigationItem_Click"/>
             </ui:NavigationView.FooterMenuItems>
 
             <ui:NavigationView.ContentOverlay>

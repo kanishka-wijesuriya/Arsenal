@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
-             xmlns:loc="clr-namespace:Arsenal.UI.Markup"
              Width="820" Height="556">
 
     <!--
@@ -357,10 +356,10 @@
                     </Border>
                 </StackPanel>
 
-                <TextBlock Text="{loc:Loc SetupWelcomeToArsenal}" Style="{StaticResource StepTitleStyle}" Margin="0,20,0,0"/>
+                <TextBlock Text="Welcome to Arsenal" Style="{StaticResource StepTitleStyle}" Margin="0,20,0,0"/>
 
                 <TextBlock Style="{StaticResource StepCaptionStyle}"
-                           Text="{loc:Loc SetupFourShortStepsSetUp}"/>
+                           Text="Four short steps set up the things a new install cannot guess. Everything here is also in Settings, so nothing you choose now is final."/>
 
                 <StackPanel Margin="0,26,0,0">
                     <Grid Margin="0,0,0,14">
@@ -373,8 +372,8 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="{loc:Loc SetupPerformanceWithoutArmouryCrate}" Style="{StaticResource SettingLabelStyle}"/>
-                            <TextBlock Text="{loc:Loc SetupTurboBalancedAndSilentCustom}"
+                            <TextBlock Text="Performance without Armoury Crate" Style="{StaticResource SettingLabelStyle}"/>
+                            <TextBlock Text="Turbo, Balanced and Silent, custom fan curves and power limits, from a few megabytes of memory."
                                        Style="{StaticResource SettingDescriptionStyle}"/>
                         </StackPanel>
                     </Grid>
@@ -389,8 +388,8 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="{loc:Loc SetupDisplayGraphicsAndLighting}" Style="{StaticResource SettingLabelStyle}"/>
-                            <TextBlock Text="{loc:Loc SetupRefreshRateMUXAndGPU}"
+                            <TextBlock Text="Display, graphics and lighting" Style="{StaticResource SettingLabelStyle}"/>
+                            <TextBlock Text="Refresh rate, MUX and GPU mode, keyboard backlight and Aura effects, all in one window."
                                        Style="{StaticResource SettingDescriptionStyle}"/>
                         </StackPanel>
                     </Grid>
@@ -405,8 +404,8 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="{loc:Loc SetupYourPhoneAsASecond}" Style="{StaticResource SettingLabelStyle}"/>
-                            <TextBlock Text="{loc:Loc SetupPairTheCompanionAppAt}"
+                            <TextBlock Text="Your phone as a second screen" Style="{StaticResource SettingLabelStyle}"/>
+                            <TextBlock Text="Pair the companion app at the last step to watch temperatures and switch profiles from across the room."
                                        Style="{StaticResource SettingDescriptionStyle}"/>
                         </StackPanel>
                     </Grid>
@@ -426,29 +425,29 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0">
-                    <TextBlock Text="{loc:Loc SetupStartWithWindows}" Style="{StaticResource StepTitleStyle}"/>
+                    <TextBlock Text="Start with Windows" Style="{StaticResource StepTitleStyle}"/>
                     <TextBlock Style="{StaticResource StepCaptionStyle}"
-                               Text="{loc:Loc SetupChooseWhetherArsenalShouldRun}"/>
+                               Text="Choose whether Arsenal should run normally or request administrator rights for machine-wide controls."/>
                 </StackPanel>
 
                 <ScrollViewer Grid.Row="1" Style="{StaticResource StepScrollStyle}">
                     <StackPanel Style="{StaticResource StepBodyStyle}">
                         <controls:SettingsGroup>
-                            <controls:SettingsRow Header="{loc:Loc SetupRunAsAdministrator}"
+                            <controls:SettingsRow Header="Run as administrator"
                                                   Icon="ShieldTask24"
-                                                  Description="{loc:Loc SetupWindowsAsksForPermissionAs}">
+                                                  Description="Windows asks for permission as soon as this is enabled. The choice remains active until you turn it off in Settings.">
                                 <ui:ToggleSwitch IsChecked="{Binding RunAsAdministrator}"/>
                             </controls:SettingsRow>
 
-                            <controls:SettingsRow Header="{loc:Loc SetupStartWithWindows}"
+                            <controls:SettingsRow Header="Start with Windows"
                                                   Icon="Power24"
                                                   Description="{Binding StartupDescription}">
                                 <ui:ToggleSwitch IsChecked="{Binding RunOnStartup}"/>
                             </controls:SettingsRow>
 
-                            <controls:SettingsRow Header="{loc:Loc SetupKeepTheBatteryChargeLimit}"
+                            <controls:SettingsRow Header="Keep the battery charge limit after a reboot"
                                                   Icon="BatteryCharge24"
-                                                  Description="{loc:Loc SetupRegistersASmallTaskThat}">
+                                                  Description="Registers a small task that re-applies the limit at logon, before the desktop appears.">
                                 <ui:ToggleSwitch IsChecked="{Binding KeepChargeLimitAfterReboot}" IsEnabled="{Binding IsElevated}"/>
                             </controls:SettingsRow>
                         </controls:SettingsGroup>
@@ -469,23 +468,23 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0">
-                    <TextBlock Text="{loc:Loc SetupNotificationsAndUpdates}" Style="{StaticResource StepTitleStyle}"/>
+                    <TextBlock Text="Notifications and updates" Style="{StaticResource StepTitleStyle}"/>
                     <TextBlock Style="{StaticResource StepCaptionStyle}"
-                               Text="{loc:Loc SetupHowMuchArsenalSaysWhen}"/>
+                               Text="How much Arsenal says when something changes, and whether it looks for new releases."/>
                 </StackPanel>
 
                 <ScrollViewer Grid.Row="1" Style="{StaticResource StepScrollStyle}">
                     <StackPanel Style="{StaticResource StepBodyStyle}">
                         <controls:SettingsGroup>
-                            <controls:SettingsRow Header="{loc:Loc SetupShowNotifications}"
+                            <controls:SettingsRow Header="Show notifications"
                                                   Icon="Alert24"
-                                                  Description="{loc:Loc SetupASmallToastWhenThe}">
+                                                  Description="A small toast when the power profile, keyboard backlight or refresh rate changes.">
                                 <ui:ToggleSwitch IsChecked="{Binding ShowNotifications}"/>
                             </controls:SettingsRow>
 
-                            <controls:SettingsRow Header="{loc:Loc SetupCheckForUpdates}"
+                            <controls:SettingsRow Header="Check for updates"
                                                   Icon="ArrowDownload24"
-                                                  Description="{loc:Loc SetupLooksForANewerArsenal}"
+                                                  Description="Looks for a newer Arsenal release on startup. Nothing is installed without asking."
                                                   Visibility="{Binding CanSelfUpdate, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <ui:ToggleSwitch IsChecked="{Binding CheckUpdates}"/>
                             </controls:SettingsRow>
@@ -507,22 +506,22 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0">
-                    <TextBlock Text="{loc:Loc SetupASUSSoftware}" Style="{StaticResource StepTitleStyle}"/>
+                    <TextBlock Text="ASUS software" Style="{StaticResource StepTitleStyle}"/>
                     <TextBlock Style="{StaticResource StepCaptionStyle}"
-                               Text="{loc:Loc SetupArsenalTalksToTheSame}"/>
+                               Text="Arsenal talks to the same firmware Armoury Crate does, so running both is usually unnecessary, and they will fight over fan and lighting control."/>
                 </StackPanel>
 
                 <ScrollViewer Grid.Row="1" Style="{StaticResource StepScrollStyle}">
                     <StackPanel Style="{StaticResource StepBodyStyle}">
                         <controls:SettingsGroup>
-                            <controls:SettingsRow Header="{loc:Loc SetupStopArmouryCrateBackground}"
+                            <controls:SettingsRow Header="Stop Armoury Crate background services"
                                                   Icon="Wrench24"
-                                                  Description="{loc:Loc SetupFreesMemoryAndEndsThe}">
+                                                  Description="Frees memory and ends the tug-of-war over fan curves and lighting. Leave this off if you still use Armoury Crate; you can stop the services later from Advanced.">
                                 <ui:ToggleSwitch IsChecked="{Binding StopArmouryCrateServices}" IsEnabled="{Binding IsElevated}"/>
                             </controls:SettingsRow>
                         </controls:SettingsGroup>
 
-                        <ui:InfoBar Title="{loc:Loc SetupNothingIsUninstalled}"
+                        <ui:InfoBar Title="Nothing is uninstalled"
                                     Message="Only the background services are stopped. Armoury Crate stays installed and starts them again if you open it."
                                     Severity="Informational" IsOpen="True" IsClosable="False"
                                     Margin="0,16,0,0"/>
@@ -547,17 +546,17 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0">
-                    <TextBlock Text="{loc:Loc SetupConnectYourPhone}" Style="{StaticResource StepTitleStyle}"/>
+                    <TextBlock Text="Connect your phone" Style="{StaticResource StepTitleStyle}"/>
                     <TextBlock Style="{StaticResource StepCaptionStyle}"
-                               Text="{loc:Loc SetupOptionalPairingStaysOnYour}"/>
+                               Text="Optional. Pairing stays on your local network: the phone pins this PC's certificate and gets its own credential."/>
                 </StackPanel>
 
                 <ScrollViewer Grid.Row="1" Style="{StaticResource StepScrollStyle}">
                     <StackPanel Style="{StaticResource StepBodyStyle}">
                         <controls:SettingsGroup>
-                            <controls:SettingsRow Header="{loc:Loc SetupAllowCompanionNetworkAccess}"
+                            <controls:SettingsRow Header="Allow companion network access"
                                                   Icon="PhoneLaptop24"
-                                                  Description="{loc:Loc SetupAddsPrivateNetworkOnlyWindows}">
+                                                  Description="Adds private-network-only Windows Firewall rules for this app and its secure companion port, so a phone can reach it from anywhere on your home network.">
                                 <ui:Button Content="{Binding NetworkAccessButtonLabel}"
                                            Command="{Binding AllowCompanionNetworkCommand}"
                                            Icon="{ui:SymbolIcon ShieldTask24}"
@@ -565,7 +564,7 @@
                             </controls:SettingsRow>
                         </controls:SettingsGroup>
 
-                        <ui:InfoBar Title="{loc:Loc SetupTheCompanionBridgeIsNot}"
+                        <ui:InfoBar Title="The companion bridge is not listening"
                                     Message="Another program may hold the port, or a firewall rule is blocking it. You can pair later from Mobile Companion."
                                     Severity="Warning" IsOpen="True" IsClosable="False"
                                     Margin="0,20,0,0"
@@ -590,28 +589,28 @@
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="1" Style="{StaticResource PillTextStyle}"
                                                Foreground="{DynamicResource AccentPrimary}" Width="14"/>
-                                    <TextBlock Text="{loc:Loc SetupInstallArsenalCompanionOnYour}" FontSize="13"
+                                    <TextBlock Text="Install Arsenal Companion on your phone" FontSize="13"
                                                Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
                                     <TextBlock Text="2" Style="{StaticResource PillTextStyle}"
                                                Foreground="{DynamicResource AccentPrimary}" Width="14"/>
-                                    <TextBlock Text="{loc:Loc SetupOpenItAndTapPair}" FontSize="13"
+                                    <TextBlock Text="Open it and tap Pair a PC" FontSize="13"
                                                Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
                                     <TextBlock Text="3" Style="{StaticResource PillTextStyle}"
                                                Foreground="{DynamicResource AccentPrimary}" Width="14"/>
-                                    <TextBlock Text="{loc:Loc SetupScanThisCodeOrType}" FontSize="13"
+                                    <TextBlock Text="Scan this code, or type the code and address below" FontSize="13"
                                                Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap"/>
                                 </StackPanel>
 
-                                <TextBlock Text="{loc:Loc SetupPAIRINGCODE}" Margin="0,18,0,0"
+                                <TextBlock Text="PAIRING CODE" Margin="0,18,0,0"
                                            Foreground="{DynamicResource AccentPrimary}"
                                            FontSize="11" FontWeight="SemiBold"/>
                                 <TextBlock Text="{Binding CompanionPairingCode}" Style="{StaticResource PairingCodeStyle}"/>
 
-                                <TextBlock Text="{loc:Loc SetupExpiresAfterFiveMinutesOr}"
+                                <TextBlock Text="Expires after five minutes, or one successful pairing."
                                            Style="{StaticResource SettingDescriptionStyle}" Margin="0,2,0,0"/>
 
                                 <TextBlock Text="{Binding CompanionAddress}" Style="{StaticResource MonoDetailStyle}" Margin="0,10,0,0"/>
@@ -619,7 +618,7 @@
                                            Foreground="{DynamicResource TextTertiary}"
                                            Visibility="{Binding CompanionFingerprint, Converter={StaticResource HideWhenEmptyText}}"/>
 
-                                <ui:Button Content="{loc:Loc SetupNewCode}" Appearance="Secondary" Margin="0,12,0,0"
+                                <ui:Button Content="New code" Appearance="Secondary" Margin="0,12,0,0"
                                            Icon="{ui:SymbolIcon ArrowClockwise24}"
                                            HorizontalAlignment="Left"
                                            Command="{Binding RegeneratePairingCodeCommand}"/>
@@ -882,7 +881,7 @@
 
                 <TextBlock Grid.Row="2" Style="{StaticResource CaptionStyle}"
                            Foreground="{DynamicResource TextTertiary}"
-                           Text="{loc:Loc SetupEveryChoiceHereIsAlso}"/>
+                           Text="Every choice here is also in Settings."/>
             </Grid>
         </Grid>
 
@@ -927,7 +926,7 @@
                              asking not to be pressed - next to a filled primary button it
                              read as the second of two offers. -->
                         <ui:Button Grid.Column="0" Style="{StaticResource ActionButtonStyle}"
-                                   Content="{loc:Loc SetupSkipSetup}" Appearance="Transparent" Margin="-8,0,0,0"
+                                   Content="Skip setup" Appearance="Transparent" Margin="-8,0,0,0"
                                    Background="Transparent" BorderThickness="0"
                                    Foreground="{DynamicResource TextTertiary}"
                                    Visibility="{Binding IsSkippable, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -939,7 +938,7 @@
                                    TextTrimming="CharacterEllipsis"/>
 
                         <StackPanel Grid.Column="2" Orientation="Horizontal">
-                            <ui:Button Style="{StaticResource ActionButtonStyle}" Content="{loc:Loc SetupBack}"
+                            <ui:Button Style="{StaticResource ActionButtonStyle}" Content="Back"
                                        Appearance="Secondary" MinWidth="88"
                                        Icon="{ui:SymbolIcon ArrowLeft24}"
                                        Visibility="{Binding CanGoBack, Converter={StaticResource BooleanToVisibilityConverter}}"

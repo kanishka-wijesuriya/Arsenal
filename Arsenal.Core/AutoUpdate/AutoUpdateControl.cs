@@ -16,7 +16,7 @@ public sealed class AutoUpdateControl
     public AutoUpdateControl()
     {
         string version = ReleaseVersion.CurrentDisplayString();
-        string label = Properties.Strings.VersionLabel + $": {version}";
+        string label = "Version" + $": {version}";
         OnVersionLabelChanged?.Invoke(label, false);
         Program.Bridge?.VisualiseUpdates(label);
     }
@@ -49,7 +49,7 @@ public sealed class AutoUpdateControl
                 return;
             }
 
-            string label = Properties.Strings.DownloadUpdate + $": {current} → {latest}";
+            string label = "Download" + $": {current} → {latest}";
             OnVersionLabelChanged?.Invoke(label, true);
             Program.Bridge?.VisualiseUpdates(label);
             UpdateAvailable?.Invoke(release);

@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
-             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+>
     <ScrollViewer Style="{StaticResource PageScrollStyle}">
         <StackPanel Style="{StaticResource PageBodyStyle}">
 
@@ -13,32 +13,32 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Margin="0,0,24,0">
-                    <TextBlock Text="{loc:Loc AdvancedAdvanced}" Style="{StaticResource PageTitleStyle}"/>
-                    <TextBlock Text="{loc:Loc AdvancedPowerUserControlsForFirmware}" Style="{StaticResource PageSubtitleStyle}"/>
+                    <TextBlock Text="Advanced" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="Power-user controls for firmware, Windows power policy and ASUS services" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Style="{StaticResource ActionBarStyle}">
-                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="{loc:Loc AdvancedSaveChanges}" Command="{Binding SaveSystemTweaksCommand}" Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}"/>
+                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="Save changes" Command="{Binding SaveSystemTweaksCommand}" Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}"/>
                 </StackPanel>
             </Grid>
 
-            <ui:InfoBar Title="{loc:Loc AdvancedUseWithCare}"
+            <ui:InfoBar Title="Use with care"
                         Message="These controls change firmware-facing behaviour and Windows power policy. Options your model does not support are ignored by the hardware backend."
                         Severity="Warning" IsOpen="True" IsClosable="False"
                         Margin="{StaticResource SectionGap}"/>
 
-            <controls:SettingsGroup Header="{loc:Loc AdvancedPermissions}" Icon="ShieldTask24"
-                                    Description="{loc:Loc AdvancedSomeFirmwareAndWindowsSettings}"
+            <controls:SettingsGroup Header="Permissions" Icon="ShieldTask24"
+                                    Description="Some firmware and Windows settings can only be written by an elevated process."
                                     Visibility="{Binding NeedsElevation, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <controls:SettingsRow Header="{loc:Loc AdvancedRunningWithoutAdministrator}"
-                                      Description="{loc:Loc AdvancedTheBatteryIconSSmart}">
-                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="{loc:Loc AdvancedRestartAsAdministrator}"
+                <controls:SettingsRow Header="Running without administrator rights"
+                                      Description="The battery icon's smart-charging shield, the charge-limit startup task and the panel refresh flag all need elevation. The charge limit itself still applies without it.">
+                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="Restart as administrator"
                                Command="{Binding RestartAsAdministratorCommand}" Appearance="Primary"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc AdvancedASUSServicesAndKeyboard}" Icon="Wrench24">
-                <controls:SettingsRow Header="{loc:Loc AdvancedASUSBackgroundServices}"
-                                      Description="{loc:Loc AdvancedStopOrStartASUSOptimization}">
+            <controls:SettingsGroup Header="ASUS services and keyboard" Icon="Wrench24">
+                <controls:SettingsRow Header="ASUS background services"
+                                      Description="Stop or start ASUS Optimization and the services it depends on.">
                     <!-- Deliberately not a switch. Starting and stopping services is an
                          operation: it takes time, it can need elevation, and it can fail.
                          A switch would claim it had happened the moment it was moved. The
@@ -51,7 +51,7 @@
                               Visibility="{Binding AsusOptimizationRunning, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <Border Background="{DynamicResource StatusSuccess}" Opacity="0.14" CornerRadius="10"/>
                             <Border BorderBrush="{DynamicResource StatusSuccess}" BorderThickness="1" CornerRadius="10" Padding="9,2">
-                                <TextBlock Text="{loc:Loc AdvancedServicesRunning}" FontSize="11" FontWeight="SemiBold"
+                                <TextBlock Text="Running" FontSize="11" FontWeight="SemiBold"
                                            Foreground="{DynamicResource StatusSuccess}"/>
                             </Border>
                         </Grid>
@@ -60,20 +60,20 @@
                               Visibility="{Binding AsusOptimizationRunning, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                             <Border Background="{DynamicResource TextSecondary}" Opacity="0.12" CornerRadius="10"/>
                             <Border BorderBrush="{DynamicResource TextSecondary}" BorderThickness="1" CornerRadius="10" Padding="9,2">
-                                <TextBlock Text="{loc:Loc AdvancedServicesStopped}" FontSize="11" FontWeight="SemiBold"
+                                <TextBlock Text="Stopped" FontSize="11" FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextSecondary}"/>
                             </Border>
                         </Grid>
 
                         <Grid MinWidth="128">
                             <ui:Button x:Name="StopAsusServicesButton"
-                                       Content="{loc:Loc AdvancedStopServices}" Icon="{ui:SymbolIcon Stop24}"
+                                       Content="Stop services" Icon="{ui:SymbolIcon Stop24}"
                                        Appearance="Secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                        Command="{Binding StopAsusServicesCommand}"
                                        Visibility="{Binding CanStopAsusServices, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
                             <ui:Button x:Name="StartAsusServicesButton"
-                                       Content="{loc:Loc AdvancedStartServices}" Icon="{ui:SymbolIcon Play24}"
+                                       Content="Start services" Icon="{ui:SymbolIcon Play24}"
                                        Appearance="Primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                        Command="{Binding StartAsusServicesCommand}"
                                        Visibility="{Binding CanStartAsusServices, Converter={StaticResource BooleanToVisibilityConverter}}"/>
@@ -87,127 +87,127 @@
                                        Visibility="{Binding IsAsusServiceOperationRunning, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <StackPanel Orientation="Horizontal">
                                     <ui:ProgressRing IsIndeterminate="True" Width="14" Height="14" Margin="0,0,8,0"/>
-                                    <TextBlock Text="{loc:Loc AdvancedServicesWorking}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Working…" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </ui:Button>
                         </Grid>
                     </StackPanel>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedFnLock}" Description="{loc:Loc AdvancedInvertTheDefaultBehaviourOf}">
+                <controls:SettingsRow Header="Fn lock" Description="Invert the default behaviour of the function row.">
                     <ui:ToggleSwitch IsChecked="{Binding FnLockEnabled}" Command="{Binding ToggleFnLockCommand}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedStatusLEDs}" Description="{loc:Loc AdvancedASUSKeyboardAndChassisStatus}"
+                <controls:SettingsRow Header="Status LEDs" Description="ASUS keyboard and chassis status indicators."
                                       Visibility="{Binding HasStatusLed, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ui:ToggleSwitch IsChecked="{Binding StatusLedEnabled}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedNumberPad}" Description="{loc:Loc AdvancedTheTouchpadNumberPadOnModels}"
+                <controls:SettingsRow Header="NumberPad" Description="The touchpad NumberPad, on models that have one."
                                       Visibility="{Binding HasNumberPad, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ui:ToggleSwitch IsChecked="{Binding NumberPadEnabled}"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc AdvancedHardwareOverlay}" Icon="DataUsage24">
-                <controls:SettingsRow Header="{loc:Loc AdvancedOnScreenHardwareMonitor}"
-                                      Description="{loc:Loc AdvancedLowOverheadCPUGPUFan}">
+            <controls:SettingsGroup Header="Hardware overlay" Icon="DataUsage24">
+                <controls:SettingsRow Header="On-screen hardware monitor"
+                                      Description="Low-overhead CPU, GPU, fan, power and FPS readout drawn over full-screen apps.">
                     <ui:ToggleSwitch IsChecked="{Binding HardwareOverlayEnabled}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedOnlyWhileGaming}"
-                                      Description="{loc:Loc AdvancedHideTheOverlayAutomatically}">
+                <controls:SettingsRow Header="Only while gaming"
+                                      Description="Hide the overlay automatically outside a detected game.">
                     <ui:ToggleSwitch IsChecked="{Binding OverlayGameOnly}"
                                      IsEnabled="{Binding HardwareOverlayEnabled}"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc AdvancedROGAlly}" Icon="XboxController24"
+            <controls:SettingsGroup Header="ROG Ally" Icon="XboxController24"
                                     Visibility="{Binding HasHandheldControls, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <controls:SettingsRow Header="{loc:Loc AdvancedAutomaticTDP}" Description="{loc:Loc AdvancedAdaptAPUPowerToThe}">
+                <controls:SettingsRow Header="Automatic TDP" Description="Adapt APU power to the active frame-rate target.">
                     <ui:ToggleSwitch IsChecked="{Binding AutoTdpEnabled}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedFrameRateLimit}" Description="{loc:Loc AdvancedCycleTheAMDFrameRate}">
+                <controls:SettingsRow Header="Frame-rate limit" Description="Cycle the AMD frame-rate limiter presets.">
                     <ui:Button Content="{Binding FpsLimit, StringFormat='{}{0} FPS'}"
                                Command="{Binding CycleFpsLimitCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowSync24}"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc AdvancedPowerAndGraphicsPolicy}" Icon="PlugConnected24">
-                <controls:SettingsRow Header="{loc:Loc AdvancedPCIeLinkPowerManagement}"
-                                      Description="{loc:Loc AdvancedASPMLetBalancedPowerPlans}">
+            <controls:SettingsGroup Header="Power and graphics policy" Icon="PlugConnected24">
+                <controls:SettingsRow Header="PCIe link power management"
+                                      Description="ASPM. Let balanced power plans reduce PCIe link power.">
                     <ui:ToggleSwitch IsChecked="{Binding AspmEnabled}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedStandbyNetworking}"
-                                      Description="{loc:Loc AdvancedKeepNetworkConnectivityAvailable}">
+                <controls:SettingsRow Header="Standby networking"
+                                      Description="Keep network connectivity available during modern standby.">
                     <ui:ToggleSwitch IsChecked="{Binding StandbyNetworkingEnabled}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedNVIDIAPlatformController}"
-                                      Description="{loc:Loc AdvancedKeepNVIDIAPlatformBehaviour}">
+                <controls:SettingsRow Header="NVIDIA platform controller"
+                                      Description="Keep NVIDIA platform behaviour enabled on supported configurations.">
                     <ui:ToggleSwitch IsChecked="{Binding NvidiaPlatformEnabled}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedCloseAppsBeforeEcoMode}"
-                                      Description="{loc:Loc AdvancedCloseApplicationsHoldingTheDGPU}">
+                <controls:SettingsRow Header="Close apps before Eco mode"
+                                      Description="Close applications holding the dGPU before it is switched off.">
                     <ui:ToggleSwitch IsChecked="{Binding KillGpuAppsEnabled}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedOptimizedModeOnUSBC}"
-                                      Description="{loc:Loc AdvancedAllowAutomaticGPUSwitchingWhile}">
+                <controls:SettingsRow Header="Optimized mode on USB-C power"
+                                      Description="Allow automatic GPU switching while charging over USB-C.">
                     <ui:ToggleSwitch IsChecked="{Binding OptimizedUsbCEnabled}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedDisablePanelOverdriveAutomation}"
-                                      Description="{loc:Loc AdvancedStopOverdriveFromChanging}">
+                <controls:SettingsRow Header="Disable panel overdrive automation"
+                                      Description="Stop overdrive from changing whenever the refresh rate changes.">
                     <ui:ToggleSwitch IsChecked="{Binding DisableOverdrive}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedForcePanelOverdrive}"
-                                      Description="{loc:Loc AdvancedShowAndWriteOverdriveEven}">
+                <controls:SettingsRow Header="Force panel overdrive"
+                                      Description="Show and write overdrive even when the panel firmware reports it as unsupported. Turn this on only if your model is documented to have overdrive. Check log.txt afterwards for a 'ScreenOverdrive = 1 : OK' line to confirm the panel accepted it.">
                     <ui:ToggleSwitch IsChecked="{Binding ForceOverdrive}"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc AdvancedSleepLidAndWindowBehaviour}" Icon="Sleep24">
-                <controls:SettingsRow Header="{loc:Loc AdvancedAutomaticClamshellMode}"
-                                      Description="{loc:Loc AdvancedStayAwakeWithTheLid}">
+            <controls:SettingsGroup Header="Sleep, lid and window behaviour" Icon="Sleep24">
+                <controls:SettingsRow Header="Automatic clamshell mode"
+                                      Description="Stay awake with the lid closed when an external display is connected.">
                     <ui:ToggleSwitch IsChecked="{Binding AutoClamshellEnabled}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedBootSound}" Description="{loc:Loc AdvancedTheFirmwareStartupSoundOn}">
+                <controls:SettingsRow Header="Boot sound" Description="The firmware startup sound, on models that have one.">
                     <ui:ToggleSwitch IsChecked="{Binding BootSoundEnabled}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedAlwaysOnTop}" Description="{loc:Loc AdvancedKeepTheArsenalWindowAbove}">
+                <controls:SettingsRow Header="Always on top" Description="Keep the Arsenal window above other windows.">
                     <ui:ToggleSwitch IsChecked="{Binding AlwaysOnTop}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedHibernateAfter}" Description="{loc:Loc AdvancedZeroLeavesTheWindowsSetting}">
+                <controls:SettingsRow Header="Hibernate after" Description="Zero leaves the Windows setting untouched.">
                     <controls:ValueSlider Minimum="0" Maximum="{Binding HibernateAfterMaximum}" TickFrequency="5" IsSnapToTickEnabled="True"
                                           Value="{Binding HibernateAfterMinutes}" Format="{}{0} min"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedBacklightTimeoutBattery}">
+                <controls:SettingsRow Header="Backlight timeout · battery">
                     <controls:ValueSlider Minimum="0" Maximum="{Binding KeyboardTimeoutMaximum}" TickFrequency="15" IsSnapToTickEnabled="True"
                                           Value="{Binding KeyboardTimeoutSeconds}" Format="{}{0} s"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedBacklightTimeoutAC}">
+                <controls:SettingsRow Header="Backlight timeout · AC">
                     <controls:ValueSlider Minimum="0" Maximum="{Binding KeyboardAcTimeoutMaximum}" TickFrequency="15" IsSnapToTickEnabled="True"
                                           Value="{Binding KeyboardAcTimeoutSeconds}" Format="{}{0} s"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc AdvancedDiagnostics}" Icon="Document24">
-                <controls:SettingsRow Header="{loc:Loc AdvancedWindowsPowerOptions}" Description="{loc:Loc AdvancedOpensTheSystemPowerPlan}">
-                    <ui:Button Content="{loc:Loc AdvancedOpen}" Command="{Binding OpenPowerPlanSettingsCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Open24}"/>
+            <controls:SettingsGroup Header="Diagnostics" Icon="Document24">
+                <controls:SettingsRow Header="Windows power options" Description="Opens the system power plan control panel.">
+                    <ui:Button Content="Open" Command="{Binding OpenPowerPlanSettingsCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Open24}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AdvancedArsenalLog}" Description="{loc:Loc AdvancedTheApplicationLogUsefulWhen}">
-                    <ui:Button Content="{loc:Loc AdvancedOpen}" Command="{Binding OpenLogCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Open24}"/>
+                <controls:SettingsRow Header="Arsenal log" Description="The application log, useful when reporting an issue.">
+                    <ui:Button Content="Open" Command="{Binding OpenLogCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Open24}"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 

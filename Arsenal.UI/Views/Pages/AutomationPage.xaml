@@ -4,54 +4,54 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
              xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
-             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+>
     <ScrollViewer Style="{StaticResource PageScrollStyle}">
         <StackPanel Style="{StaticResource PageBodyStyle}">
 
             <Grid Style="{StaticResource PageHeaderStyle}">
                 <StackPanel>
-                    <TextBlock Text="{loc:Loc AutomationAutomation}" Style="{StaticResource PageTitleStyle}"/>
-                    <TextBlock Text="{loc:Loc AutomationWhatShouldHappenOnIts}" Style="{StaticResource PageSubtitleStyle}"/>
+                    <TextBlock Text="Automation" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="What should happen on its own when the power source or the lid changes" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
             </Grid>
 
-            <controls:SettingsGroup Header="{loc:Loc AutomationPowerSource}" Icon="Flash24"
-                                    Description="{loc:Loc AutomationApplyAPerformanceProfile}">
-                <controls:SettingsRow Header="{loc:Loc AutomationSwitchProfileWithThePower}">
+            <controls:SettingsGroup Header="Power source" Icon="Flash24"
+                                    Description="Apply a performance profile automatically when the charger is plugged in or pulled out.">
+                <controls:SettingsRow Header="Switch profile with the power source">
                     <ui:ToggleSwitch IsChecked="{Binding IsAutoSwitchEnabled, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AutomationOnACPower}" IsEnabled="{Binding IsAutoSwitchEnabled}">
+                <controls:SettingsRow Header="On AC power" IsEnabled="{Binding IsAutoSwitchEnabled}">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AcMode" Content="{loc:Loc Silent}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AcMode" Content="Silent"
                                      IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AcMode" Content="{loc:Loc Balanced}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AcMode" Content="Balanced"
                                      IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AcMode" Content="{loc:Loc Turbo}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AcMode" Content="Turbo"
                                      IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"/>
                     </WrapPanel>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AutomationOnBattery}" IsEnabled="{Binding IsAutoSwitchEnabled}">
+                <controls:SettingsRow Header="On battery" IsEnabled="{Binding IsAutoSwitchEnabled}">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="BatteryMode" Content="{loc:Loc Silent}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="BatteryMode" Content="Silent"
                                      IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="BatteryMode" Content="{loc:Loc Balanced}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="BatteryMode" Content="Balanced"
                                      IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="BatteryMode" Content="{loc:Loc Turbo}"
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="BatteryMode" Content="Turbo"
                                      IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"/>
                     </WrapPanel>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{loc:Loc AutomationGraphicsAndLid}" Icon="Laptop24">
-                <controls:SettingsRow Header="{loc:Loc AutomationEcoGPUModeOnBattery}"
-                                      Description="{loc:Loc AutomationSwitchTheDedicatedGPUOff}">
+            <controls:SettingsGroup Header="Graphics and lid" Icon="Laptop24">
+                <controls:SettingsRow Header="Eco GPU mode on battery"
+                                      Description="Switch the dedicated GPU off entirely once the charger is unplugged.">
                     <ui:ToggleSwitch IsChecked="{Binding IsAutoEcoOnBattery, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AutomationClamshellMode}"
-                                      Description="{loc:Loc AutomationStayAwakeWithTheLid}">
+                <controls:SettingsRow Header="Clamshell mode"
+                                      Description="Stay awake with the lid closed while an external monitor is connected.">
                     <ui:ToggleSwitch IsChecked="{Binding IsClamshellMode, Mode=TwoWay}"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>

@@ -4,14 +4,14 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
              xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
-             xmlns:loc="clr-namespace:Arsenal.UI.Markup">
+>
     <ScrollViewer Style="{StaticResource PageScrollStyle}">
         <StackPanel Style="{StaticResource PageBodyStyle}">
 
             <Grid Style="{StaticResource PageHeaderStyle}">
                 <StackPanel>
-                    <TextBlock Text="{loc:Loc AboutAbout}" Style="{StaticResource PageTitleStyle}"/>
-                    <TextBlock Text="{loc:Loc AboutVersionAndWhatArsenalDetected}" Style="{StaticResource PageSubtitleStyle}"/>
+                    <TextBlock Text="About" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="Version and what Arsenal detected about this machine" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
             </Grid>
 
@@ -33,8 +33,8 @@
                 </Grid>
             </Border>
 
-            <controls:SettingsGroup Header="{loc:Loc AboutArsenalUpdates}" Icon="ArrowDownload24"
-                                    Description="{loc:Loc AboutApplicationReleasesAreChecked}"
+            <controls:SettingsGroup Header="Arsenal updates" Icon="ArrowDownload24"
+                                    Description="Application releases are checked separately from ASUS drivers."
                                     Visibility="{Binding CanSelfUpdate, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <controls:SettingsRow Header="{Binding UpdateStatus}">
                     <controls:SettingsRow.Description>
@@ -44,10 +44,10 @@
                         </MultiBinding>
                     </controls:SettingsRow.Description>
                     <StackPanel Orientation="Horizontal">
-                        <ui:Button Content="{loc:Loc AboutCheck}" Command="{Binding CheckForUpdateCommand}"
+                        <ui:Button Content="Check" Command="{Binding CheckForUpdateCommand}"
                                    Appearance="Secondary" Icon="{ui:SymbolIcon ArrowSync24}"
                                    IsEnabled="{Binding IsCheckingForUpdate, Converter={StaticResource InverseBoolConverter}}"/>
-                        <ui:Button Content="{loc:Loc AboutDownloadAndInstall}" Command="{Binding DownloadUpdateCommand}"
+                        <ui:Button Content="Download and install" Command="{Binding DownloadUpdateCommand}"
                                    Appearance="Primary" Icon="{ui:SymbolIcon ArrowDownload24}" Margin="8,0,0,0"
                                    IsEnabled="{Binding IsInstallingUpdate, Converter={StaticResource InverseBoolConverter}}"
                                    Visibility="{Binding UpdateInfo.IsUpdateAvailable, Converter={StaticResource BooleanToVisibilityConverter}}"/>
@@ -62,50 +62,50 @@
                  lines up with the rest of the application. A value the machine would not
                  report leaves its row hidden rather than labelled and blank, which is the
                  same treatment the capability-gated rows elsewhere get. -->
-            <controls:SettingsGroup Header="{loc:Loc AboutThisLaptop}" Icon="Info24">
+            <controls:SettingsGroup Header="This laptop" Icon="Info24">
 
-                <controls:SettingsRow Header="{loc:Loc AboutReadingSpecifications}"
-                                      Description="{loc:Loc AboutAskingTheSystemAboutThe}"
+                <controls:SettingsRow Header="Reading specifications"
+                                      Description="Asking the system about the processor, memory, graphics and storage."
                                       Visibility="{Binding IsLoadingSpecifications, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ui:ProgressRing IsIndeterminate="True" Width="22" Height="22"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AboutModel}" Icon="Laptop24"
+                <controls:SettingsRow Header="Model" Icon="Laptop24"
                                       Visibility="{Binding SpecModel, Converter={StaticResource HideWhenEmptyText}}">
                     <TextBlock Text="{Binding SpecModel}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AboutBIOS}" Icon="Info24"
+                <controls:SettingsRow Header="BIOS" Icon="Info24"
                                       Visibility="{Binding SpecBios, Converter={StaticResource HideWhenEmptyText}}">
                     <TextBlock Text="{Binding SpecBios}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AboutProcessor}" Icon="DeveloperBoard24"
+                <controls:SettingsRow Header="Processor" Icon="DeveloperBoard24"
                                       Visibility="{Binding SpecProcessor, Converter={StaticResource HideWhenEmptyText}}">
                     <TextBlock Text="{Binding SpecProcessor}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AboutMemory}" Icon="Stack24"
+                <controls:SettingsRow Header="Memory" Icon="Stack24"
                                       Visibility="{Binding SpecMemory, Converter={StaticResource HideWhenEmptyText}}">
                     <TextBlock Text="{Binding SpecMemory}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AboutGraphics}" Icon="Desktop24"
+                <controls:SettingsRow Header="Graphics" Icon="Desktop24"
                                       Visibility="{Binding SpecGraphics, Converter={StaticResource HideWhenEmptyText}}">
                     <TextBlock Text="{Binding SpecGraphics}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AboutDisplay}" Icon="TvUsb24"
+                <controls:SettingsRow Header="Display" Icon="TvUsb24"
                                       Visibility="{Binding SpecDisplay, Converter={StaticResource HideWhenEmptyText}}">
                     <TextBlock Text="{Binding SpecDisplay}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AboutStorage}" Icon="Storage24"
+                <controls:SettingsRow Header="Storage" Icon="Storage24"
                                       Visibility="{Binding SpecStorage, Converter={StaticResource HideWhenEmptyText}}">
                     <TextBlock Text="{Binding SpecStorage}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="{loc:Loc AboutOperatingSystem}" Icon="Window24"
+                <controls:SettingsRow Header="Operating system" Icon="Window24"
                                       Visibility="{Binding SpecOperatingSystem, Converter={StaticResource HideWhenEmptyText}}">
                     <TextBlock Text="{Binding SpecOperatingSystem}" Style="{StaticResource SettingLabelStyle}" FontWeight="Normal" TextWrapping="Wrap"/>
                 </controls:SettingsRow>

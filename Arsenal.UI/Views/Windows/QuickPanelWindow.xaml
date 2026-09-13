@@ -3,8 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:controls="clr-namespace:Arsenal.UI.Controls"
-        xmlns:loc="clr-namespace:Arsenal.UI.Markup"
-        Title="{loc:Loc QuickPanelArsenalQuickPanel}" Width="452" SizeToContent="Height" MaxHeight="940"
+        Title="Arsenal Quick Panel" Width="452" SizeToContent="Height" MaxHeight="940"
         WindowStartupLocation="Manual" ShowInTaskbar="False" Topmost="True"
         ResizeMode="NoResize" WindowStyle="None" AllowsTransparency="True" Background="Transparent">
 
@@ -284,18 +283,18 @@
                                                    SourceRect="196,156,632,692"/>
                                 </Image.Source>
                             </Image>
-                            <TextBlock Text="{loc:Loc QuickPanelYourArsenal}" VerticalAlignment="Center"
+                            <TextBlock Text="Your Arsenal" VerticalAlignment="Center"
                                        Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold" FontSize="16"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <ui:Button Content="{loc:Loc QuickPanelOpenApp}" Click="OpenFullApp_Click" Appearance="Secondary"
+                            <ui:Button Content="Open app" Click="OpenFullApp_Click" Appearance="Secondary"
                                        Padding="12,5" FontSize="12" Margin="0,0,8,0"/>
                             <!-- Square, and the same height as Open app beside it, so the
                                  two read as one row of controls rather than two sizes. -->
                             <ui:Button Icon="{ui:SymbolIcon Dismiss24}" Click="ClosePanel_Click" Appearance="Secondary"
                                        Width="28" Height="28" Padding="0" FontSize="12"
-                                       ToolTip="{loc:Loc QuickPanelClose}"/>
+                                       ToolTip="Close"/>
                         </StackPanel>
                     </Grid>
 
@@ -307,24 +306,24 @@
                             Margin="0,0,0,16">
                         <UniformGrid x:Name="TelemetryReadouts" Columns="4">
                             <StackPanel>
-                                <TextBlock Text="{loc:Loc QuickPanelCPU}" Style="{StaticResource PanelReadoutLabel}"/>
+                                <TextBlock Text="CPU" Style="{StaticResource PanelReadoutLabel}"/>
                                 <TextBlock Text="{Binding Telemetry.CpuTemp, StringFormat='{}{0:F0}°'}" Style="{StaticResource PanelReadoutValue}"/>
                                 <TextBlock Text="{Binding Telemetry.FanCpuRpm, StringFormat='{}{0} rpm'}" Style="{StaticResource PanelReadoutDetail}"/>
                             </StackPanel>
                             <StackPanel>
-                                <TextBlock Text="{loc:Loc QuickPanelGPU}" Style="{StaticResource PanelReadoutLabel}"/>
+                                <TextBlock Text="GPU" Style="{StaticResource PanelReadoutLabel}"/>
                                 <TextBlock Text="{Binding Telemetry.GpuTemp, StringFormat='{}{0:F0}°'}" Style="{StaticResource PanelReadoutValue}"/>
                                 <TextBlock Text="{Binding Telemetry.FanGpuRpm, StringFormat='{}{0} rpm'}" Style="{StaticResource PanelReadoutDetail}"/>
                             </StackPanel>
                             <StackPanel>
-                                <TextBlock Text="{loc:Loc Battery}" Style="{StaticResource PanelReadoutLabel}"/>
+                                <TextBlock Text="Battery" Style="{StaticResource PanelReadoutLabel}"/>
                                 <TextBlock Text="{Binding Telemetry.BatteryPercentage, StringFormat='{}{0}%'}" Style="{StaticResource PanelReadoutValue}"/>
                                 <TextBlock Text="{Binding Telemetry.BatteryDischargeRate, StringFormat='{}{0:F1} W'}" Style="{StaticResource PanelReadoutDetail}"/>
                             </StackPanel>
                             <StackPanel>
-                                <TextBlock Text="{loc:Loc AboutDisplay}" Style="{StaticResource PanelReadoutLabel}"/>
+                                <TextBlock Text="Display" Style="{StaticResource PanelReadoutLabel}"/>
                                 <TextBlock Text="{Binding RefreshRate, StringFormat='{}{0} Hz'}" Style="{StaticResource PanelReadoutValue}"/>
-                                <TextBlock Text="{loc:Loc QuickPanelLive}" Style="{StaticResource PanelReadoutDetail}"/>
+                                <TextBlock Text="live" Style="{StaticResource PanelReadoutDetail}"/>
                             </StackPanel>
                         </UniformGrid>
                     </Border>
@@ -334,11 +333,11 @@
                          opens the complete tuning surface. -->
                     <StackPanel Margin="0,0,0,13">
                         <Grid Margin="0,0,0,4">
-                            <TextBlock Text="{loc:Loc QuickPanelPerformanceModes}" Style="{StaticResource PanelSectionLabel}"
+                            <TextBlock Text="Performance modes" Style="{StaticResource PanelSectionLabel}"
                                        Margin="2,0,0,0" VerticalAlignment="Center"/>
                             <ui:Button Icon="{ui:SymbolIcon Edit24}" Appearance="Transparent" Width="28" Height="28" Padding="0"
                                        HorizontalAlignment="Right" Command="{Binding OpenPerformanceShortcutsCommand}"
-                                       ToolTip="{loc:Loc QuickPanelCustomizePerformanceShortcuts}"/>
+                                       ToolTip="Choose which three plans appear here"/>
                         </Grid>
                         <UniformGrid x:Name="PerformanceModeRow" Columns="4">
                             <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickPerformanceModes"
@@ -371,13 +370,13 @@
                             <Button x:Name="CustomPerformanceButton" Style="{StaticResource QuickModeActionStyle}" Click="OpenPerformanceTuning_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <ui:SymbolIcon Symbol="Settings24" FontSize="14" Margin="0,0,5,0"/>
-                                    <TextBlock Text="{loc:Loc Custom}" FontSize="10.5" FontWeight="SemiBold"
+                                    <TextBlock Text="Custom" FontSize="10.5" FontWeight="SemiBold"
                                                TextAlignment="Center" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Button>
                         </UniformGrid>
 
-                        <TextBlock Text="{loc:Loc QuickPanelGpuModes}" Style="{StaticResource PanelSectionLabel}"
+                        <TextBlock Text="GPU modes" Style="{StaticResource PanelSectionLabel}"
                                    Margin="2,10,0,4"/>
                         <UniformGrid x:Name="GpuModeRow" Columns="4">
                             <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickGpuModes"
@@ -386,7 +385,7 @@
                                          Command="{Binding SelectGpuModeCommand}" CommandParameter="0">
                                 <StackPanel Orientation="Horizontal">
                                     <ui:SymbolIcon Symbol="BatterySaver24" FontSize="14" Margin="0,0,5,0"/>
-                                    <TextBlock Text="{loc:Loc EcoMode}" FontSize="11" FontWeight="SemiBold" TextAlignment="Center"/>
+                                    <TextBlock Text="Eco" FontSize="11" FontWeight="SemiBold" TextAlignment="Center"/>
                                 </StackPanel>
                             </RadioButton>
                             <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickGpuModes"
@@ -394,7 +393,7 @@
                                          Command="{Binding SelectGpuModeCommand}" CommandParameter="1">
                                 <StackPanel Orientation="Horizontal">
                                     <ui:SymbolIcon Symbol="Glance24" FontSize="14" Margin="0,0,5,0"/>
-                                    <TextBlock Text="{loc:Loc StandardMode}" FontSize="11" FontWeight="SemiBold" TextAlignment="Center"/>
+                                    <TextBlock Text="Standard" FontSize="11" FontWeight="SemiBold" TextAlignment="Center"/>
                                 </StackPanel>
                             </RadioButton>
                             <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickGpuModes"
@@ -403,7 +402,7 @@
                                          Command="{Binding SelectGpuModeCommand}" CommandParameter="2">
                                 <StackPanel Orientation="Horizontal">
                                     <ui:SymbolIcon Symbol="Flash24" FontSize="14" Margin="0,0,5,0"/>
-                                    <TextBlock Text="{loc:Loc UltimateMode}" FontSize="11" FontWeight="SemiBold" TextAlignment="Center"/>
+                                    <TextBlock Text="Ultimate" FontSize="11" FontWeight="SemiBold" TextAlignment="Center"/>
                                 </StackPanel>
                             </RadioButton>
                             <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickGpuModes"
@@ -411,7 +410,7 @@
                                          Command="{Binding SelectGpuModeCommand}" CommandParameter="3">
                                 <StackPanel Orientation="Horizontal">
                                     <ui:SymbolIcon Symbol="Sparkle24" FontSize="14" Margin="0,0,5,0"/>
-                                    <TextBlock Text="{loc:Loc Optimized}" FontSize="11" FontWeight="SemiBold" TextAlignment="Center"/>
+                                    <TextBlock Text="Optimized" FontSize="11" FontWeight="SemiBold" TextAlignment="Center"/>
                                 </StackPanel>
                             </RadioButton>
                         </UniformGrid>
@@ -431,7 +430,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="{loc:Loc QuickPanelQuickSettings}" Style="{StaticResource PanelSectionLabel}"
+                        <TextBlock Text="Quick settings" Style="{StaticResource PanelSectionLabel}"
                                    VerticalAlignment="Center" Margin="2,0,0,0"/>
 
                         <!-- Pages move vertically, while their complete pager stays in
@@ -443,7 +442,7 @@
                             <ui:Button Icon="{ui:SymbolIcon ChevronUp24}" Command="{Binding PreviousTilePageCommand}"
                                        IsEnabled="{Binding CanGoBackTilePage}"
                                        Appearance="Secondary" Width="22" Height="22" Padding="0" FontSize="10"
-                                       ToolTip="{loc:Loc QuickPanelScrollToThePreviousTile}"/>
+                                       ToolTip="Scroll to the previous tile page"/>
 
                             <ItemsControl ItemsSource="{Binding TilePages}" Margin="6,0" VerticalAlignment="Center">
                                 <ItemsControl.ItemsPanel>
@@ -465,7 +464,7 @@
                             <ui:Button Icon="{ui:SymbolIcon ChevronDown24}" Command="{Binding NextTilePageCommand}"
                                        IsEnabled="{Binding CanGoForwardTilePage}"
                                        Appearance="Secondary" Width="22" Height="22" Padding="0" FontSize="10"
-                                       ToolTip="{loc:Loc QuickPanelScrollToTheNextTile}"/>
+                                       ToolTip="Scroll to the next tile page"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
@@ -473,16 +472,16 @@
                             <ui:Button Icon="{ui:SymbolIcon Add24}" Command="{Binding AddTileCommand}"
                                        IsEnabled="{Binding CanAddTile}"
                                        Appearance="Secondary" Width="26" Height="26" Padding="0"
-                                       FontSize="11" Margin="0,0,6,0" ToolTip="{loc:Loc QuickPanelAddATile}"/>
+                                       FontSize="11" Margin="0,0,6,0" ToolTip="Add a tile"/>
                             <ui:Button Icon="{ui:SymbolIcon ArrowReset24}" Command="{Binding ResetTilesCommand}"
                                        Appearance="Secondary" Width="26" Height="26" Padding="0"
-                                       FontSize="11" Margin="0,0,6,0" ToolTip="{loc:Loc QuickPanelRestoreTheDefaultTiles}"
+                                       FontSize="11" Margin="0,0,6,0" ToolTip="Restore the default tiles"
                                        Visibility="{Binding IsEditingTiles, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                             <ui:Button Command="{Binding ToggleTileEditingCommand}"
                                        Appearance="Secondary" Height="26" Padding="8,0"
                                        FontSize="11"
                                        Content="{Binding IsEditingTiles, Converter={StaticResource BoolToTextConverter}, ConverterParameter='Done|Edit'}"
-                                       ToolTip="{loc:Loc QuickPanelChangeWhichTilesThePanel}"/>
+                                       ToolTip="Change which tiles the panel shows"/>
                         </StackPanel>
                     </Grid>
 
@@ -548,17 +547,17 @@
                             Padding="12,10">
                         <StackPanel>
                             <controls:ValueSlider Style="{StaticResource QuickPanelValueSliderStyle}"
-                                                  Header="{loc:Loc Brightness}" Margin="0,0,0,10"
+                                                  Header="Brightness" Margin="0,0,0,10"
                                                   Minimum="0" Maximum="100" TickFrequency="5"
                                                   Value="{Binding PanelBrightness}" Format="{}{0}%"/>
                             <controls:ValueSlider Style="{StaticResource QuickPanelValueSliderStyle}"
-                                                  Header="{loc:Loc DisplayOLEDDimming}" Margin="0,0,0,10"
+                                                  Header="OLED dimming" Margin="0,0,0,10"
                                                   Minimum="0" Maximum="100" TickFrequency="5"
                                                   IsEnabled="{Binding IsOledDimmingAvailable}"
                                                   Visibility="{Binding IsOledPanel, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                   Value="{Binding OledDimming}" Format="{}{0}%"/>
                             <controls:ValueSlider Style="{StaticResource QuickPanelValueSliderStyle}"
-                                                  Header="{loc:Loc BatteryChargeLimit2}" Margin="0,0,0,10"
+                                                  Header="Charge limit" Margin="0,0,0,10"
                                                   Minimum="{Binding ChargeLimitMinimum}" Maximum="100" TickFrequency="5"
                                                   Ticks="{Binding ChargeLimitTicks}"
                                                   IsSnapToTickEnabled="{Binding HasSteppedChargeLimit}"
@@ -566,7 +565,7 @@
                                                   PreviewMouseLeftButtonUp="ChargeLimitSlider_Commit"
                                                   KeyUp="ChargeLimitSlider_KeyUp"/>
                             <controls:ValueSlider Style="{StaticResource QuickPanelValueSliderStyle}"
-                                                  Header="{loc:Loc Keyboard}"
+                                                  Header="Keyboard"
                                                   Minimum="0" Maximum="3" TickFrequency="1" IsSnapToTickEnabled="True"
                                                   Value="{Binding KeyboardBrightness}" Format="{}{0}"
                                                   PreviewMouseLeftButtonUp="KeyboardBrightnessSlider_Commit"
@@ -594,7 +593,7 @@
                         </Grid.ColumnDefinitions>
                         <ui:Button Icon="{ui:SymbolIcon ArrowLeft24}" Command="{Binding CloseDetailCommand}"
                                    Appearance="Secondary" Width="34" Height="34" Padding="0"
-                                   Margin="0,0,10,0" ToolTip="{loc:Loc QuickPanelBackToQuickSettings}"/>
+                                   Margin="0,0,10,0" ToolTip="Back to quick settings"/>
                         <TextBlock Grid.Column="1" Text="{Binding DetailTitle}" VerticalAlignment="Center"
                                    FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
                     </Grid>
@@ -676,24 +675,24 @@
                                 BorderThickness="1" CornerRadius="{StaticResource RadiusCard}" Padding="12" Margin="0,0,0,12">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="Edit24" FontSize="16" Margin="0,1,9,0" Foreground="{DynamicResource AccentPrimary}"/>
-                                <TextBlock Text="{loc:Loc QuickPanelChooseShortcutsDescription}" TextWrapping="Wrap" FontSize="11.5"
+                                <TextBlock Text="Pick three different plans for the quick panel. Custom plans appear here as soon as you create them." TextWrapping="Wrap" FontSize="11.5"
                                            Foreground="{DynamicResource TextSecondary}" MaxWidth="340"/>
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Text="{loc:Loc QuickPanelShortcut1}" Style="{StaticResource PanelSectionLabel}" Margin="2,0,0,5"/>
+                        <TextBlock Text="First shortcut" Style="{StaticResource PanelSectionLabel}" Margin="2,0,0,5"/>
                         <ComboBox x:Name="QuickPlanSelector1" ItemsSource="{Binding PerformancePlans}" DisplayMemberPath="Name"
                                   SelectedItem="{Binding QuickPlan1, Mode=TwoWay}" Margin="0,0,0,12"/>
 
-                        <TextBlock Text="{loc:Loc QuickPanelShortcut2}" Style="{StaticResource PanelSectionLabel}" Margin="2,0,0,5"/>
+                        <TextBlock Text="Second shortcut" Style="{StaticResource PanelSectionLabel}" Margin="2,0,0,5"/>
                         <ComboBox x:Name="QuickPlanSelector2" ItemsSource="{Binding PerformancePlans}" DisplayMemberPath="Name"
                                   SelectedItem="{Binding QuickPlan2, Mode=TwoWay}" Margin="0,0,0,12"/>
 
-                        <TextBlock Text="{loc:Loc QuickPanelShortcut3}" Style="{StaticResource PanelSectionLabel}" Margin="2,0,0,5"/>
+                        <TextBlock Text="Third shortcut" Style="{StaticResource PanelSectionLabel}" Margin="2,0,0,5"/>
                         <ComboBox x:Name="QuickPlanSelector3" ItemsSource="{Binding PerformancePlans}" DisplayMemberPath="Name"
                                   SelectedItem="{Binding QuickPlan3, Mode=TwoWay}" Margin="0,0,0,16"/>
 
-                        <ui:Button Content="{loc:Loc QuickPanelRestoreDefaultShortcuts}"
+                        <ui:Button Content="Restore Silent, Balanced, and Turbo"
                                    Command="{Binding ResetPerformanceShortcutsCommand}"
                                    Appearance="Secondary" Icon="{ui:SymbolIcon ArrowReset24}"
                                    HorizontalAlignment="Left"/>

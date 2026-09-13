@@ -119,13 +119,13 @@ internal static class CompanionCatalog
             // The phone used to offer the first three and call the second one "On".
             Choice("performance.cpuBoost", "cpuBoost", "Boost policy", new[]
             {
-                AppStrings.Get("DisplayDisabled"),
-                AppStrings.Get("PerformanceEnabled"),
-                AppStrings.Get("PerformanceAggressive"),
-                AppStrings.Get("PerformanceEfficientEnabled"),
-                AppStrings.Get("PerformanceEfficientAggressive"),
-                AppStrings.Get("PerformanceAggressiveAtGuaranteed"),
-                AppStrings.Get("PerformanceEfficientAtGuaranteed"),
+                "Disabled",
+                "Enabled",
+                "Aggressive",
+                "Efficient enabled",
+                "Efficient aggressive",
+                "Aggressive at guaranteed",
+                "Efficient at guaranteed",
             }.Select((name, index) => (index, name))),
         };
 
@@ -305,7 +305,7 @@ internal static class CompanionCatalog
         {
             Choice("peripherals.sleep", null, "Sleep timeout", new[]
             {
-                (0, AppStrings.Get("Never")), (1, "1 min"), (2, "2 min"),
+                (0, "Never"), (1, "1 min"), (2, "2 min"),
                 (3, "3 min"), (5, "5 min"), (10, "10 min"),
             }),
             Action("peripherals.refresh", "Scan again"),
@@ -340,8 +340,8 @@ internal static class CompanionCatalog
         ? Arsenal.AnimeMatrix.SlashDevice.Modes.Select(pair => ((int)pair.Key, pair.Value))
         : new[]
         {
-            AppStrings.Get("FeatureBanner"), AppStrings.Get("AuraZoneLogo"), AppStrings.Get("MatrixPicture"),
-            AppStrings.Get("MatrixClock"), AppStrings.Get("MatrixAudio"), AppStrings.Get("MatrixText"),
+            "Banner", "Logo", "Picture",
+            "Clock", "Audio", "Text",
         }.Select((name, index) => (index, name));
 
     private static IEnumerable<(int, string)> GpuModes(IGpuService gpu)

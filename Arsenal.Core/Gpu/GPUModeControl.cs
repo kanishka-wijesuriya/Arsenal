@@ -229,8 +229,8 @@ namespace Arsenal.Gpu
                     {
                         if (AppConfig.IsNVPlatform() || nvRestartPending)
                         {
-                            OnLockGPUModes?.Invoke(Properties.Strings.RestartingNVServices);
-                            OnGPUBusyChanged?.Invoke(true, Properties.Strings.RestartingNVServices);
+                            OnLockGPUModes?.Invoke("Restarting NV Services...");
+                            OnGPUBusyChanged?.Invoke(true, "Restarting NV Services...");
                             await Task.Delay(TimeSpan.FromMilliseconds(AppConfig.Get("nv_delay", 5000)));
                             if (AppConfig.IsNVPlatform()) NvidiaGpuControl.RestartNVService();
                             else NvidiaGpuControl.RestartNvContainer();

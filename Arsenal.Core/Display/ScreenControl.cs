@@ -162,7 +162,7 @@ namespace Arsenal.Display
             int fhd = Program.acpi.DeviceGet(AsusACPI.ScreenFHD);
             Logger.WriteLine($"FHD Toggle: {fhd}");
 
-            DialogResult dialogResult = MessageBox.Show("Changing display mode requires reboot", Properties.Strings.AlertUltimateTitle, MessageBoxButtons.YesNo);
+            DialogResult dialogResult = MessageBox.Show("Changing display mode requires reboot", "Reboot now?", MessageBoxButtons.YesNo);
             if (dialogResult == DialogResult.Yes)
             {
                 Program.acpi.DeviceSet(AsusACPI.ScreenFHD, (fhd == 1) ? 0 : 1, "FHD");
@@ -204,11 +204,11 @@ namespace Arsenal.Display
                 {
                     case 1: 
                         miniled = 0;
-                        name = Properties.Strings.OneZone;
+                        name = "One Zone";
                         break;
                     default:
                         miniled = 1;
-                        name = Properties.Strings.Multizone;
+                        name = "Multi Zone";
                         break;
                 }
             }
@@ -218,15 +218,15 @@ namespace Arsenal.Display
                 {
                     case 1: 
                         miniled = 2;
-                        name = Properties.Strings.OneZone;
+                        name = "One Zone";
                         break;
                     case 2: 
                         miniled = 0;
-                        name = Properties.Strings.Multizone;
+                        name = "Multi Zone";
                         break;
                     default: 
                         miniled = 1;
-                        name = Properties.Strings.MultizoneStrong;
+                        name = "Multi Zone Strong";
                         break;
                 }
             }

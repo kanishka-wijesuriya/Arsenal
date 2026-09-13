@@ -62,7 +62,7 @@ namespace Arsenal.UI.Controls
 
         public static readonly DependencyProperty DetailProperty =
             DependencyProperty.Register(nameof(Detail), typeof(string), typeof(BusyOverlay),
-                new PropertyMetadata(AppStrings.Get("BusyOverlayThisCanTakeAFew")));
+                new PropertyMetadata("This can take a few seconds. Please wait."));
 
         public string? Detail
         {

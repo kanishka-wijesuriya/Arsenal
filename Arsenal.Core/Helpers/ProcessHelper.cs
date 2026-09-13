@@ -166,7 +166,7 @@ namespace Arsenal.Helpers
 
                             if (stillAlive)
                             {
-                                MessageBox.Show(Properties.Strings.AppAlreadyRunningText, Properties.Strings.AppAlreadyRunning, MessageBoxButtons.OK);
+                                MessageBox.Show("Arsenal is already running. Check system tray for an icon.", "App already running", MessageBoxButtons.OK);
                                 Application.Exit();
                                 return;
                             }
