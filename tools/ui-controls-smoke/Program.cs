@@ -8,6 +8,7 @@ using Arsenal.UI.Views.Pages;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using Ui = Wpf.Ui.Controls;
 
@@ -38,6 +39,7 @@ internal static class Program
             CheckResponsivePane();
             CheckResizeUncoversTheGroundNotWhite();
             CheckAltTabDoesNotRingAnElement();
+            CheckSliderShowsItsValueWhileDragging();
 
             Console.WriteLine("UI controls smoke: OK");
             return 0;
@@ -580,6 +582,128 @@ internal static class Program
 
         Console.WriteLine("  Alt+Tab: focus ring suppressed on activation, restored on the next Tab");
         host.Close();
+    }
+
+    /// <summary>
+    /// Dragging a slider has to say what it is setting. The quick panel's sliders drop
+    /// the readout column to buy track length, so while a drag was in progress the value
+    /// was written nowhere on screen - and the pointer is on the thumb, which is the one
+    /// part of the row that never carried it on any surface.
+    /// </summary>
+    /// <remarks>
+    /// Driven through the thumb's own drag events rather than by asserting that the
+    /// handlers are attached: the bubble has to open, word itself from the slider's
+    /// format, follow the thumb, and close again, and only the first of those is
+    /// visible from the wiring.
+    /// </remarks>
+    private static void CheckSliderShowsItsValueWhileDragging()
+    {
+        var slider = new ValueSlider
+        {
+            Minimum = 0,
+            Maximum = 100,
+            Value = 20,
+            Format = "{0}%",
+            ShowScale = false
+        };
+
+        var host = OffscreenHost(slider);
+
+        var track = Descendants(slider).OfType<Track>().FirstOrDefault();
+        Assert(track?.Thumb is not null, "The slider has no track and thumb, so there is nothing to drag.");
+        Thumb thumb = track!.Thumb;
+
+        var inner = Descendants(slider).OfType<System.Windows.Controls.Slider>().First();
+
+        Assert(slider.ValueTooltip is null, "A slider nobody is touching already has a bubble.");
+
+        thumb.RaiseEvent(new DragStartedEventArgs(0, 0) { RoutedEvent = Thumb.DragStartedEvent });
+
+        Popup? bubble = slider.ValueTooltip;
+        Assert(bubble is { IsOpen: true }, "Dragging the thumb raised no bubble.");
+
+        var chrome = (System.Windows.Controls.Border)bubble!.Child;
+        var text = (System.Windows.Controls.TextBlock)chrome.Child;
+        Assert(text.Text == "20%",
+            $"The bubble ignores the slider's format (showing \"{text.Text}\", expected \"20%\").");
+        Assert(bubble.VerticalOffset < 0, "The bubble sits on the track rather than above it.");
+
+        double atTwenty = bubble.HorizontalOffset;
+
+        // A step of the drag, delivered the way a real one is: as a DragDelta bubbling
+        // up from the thumb, which is what the slider works the new value out from. The
+        // held slider has to let this through - and the hold, as first written, did not,
+        // which would have shipped a brightness slider that could not be moved at all.
+        thumb.RaiseEvent(new DragDeltaEventArgs(140, 0) { RoutedEvent = Thumb.DragDeltaEvent });
+        host.UpdateLayout();
+
+        double dragged = slider.Value;
+        Assert(dragged > 20, $"The drag's own step did not move the slider (Value is {dragged}).");
+        Assert(inner.Value == dragged, $"The thumb and the slider disagree ({inner.Value} against {dragged}).");
+        Assert(text.Text == $"{Math.Round(dragged)}%", $"The bubble did not follow the drag (\"{text.Text}\").");
+        Assert(bubble.HorizontalOffset > atTwenty, "The bubble did not move along the track with the thumb.");
+
+        // The bubble is placed from the value, before the layout pass that moves the
+        // thumb. This is that arithmetic checked against where the thumb actually
+        // landed - the one thing a wrong assumption about the track would show up in.
+        System.Windows.Point thumbOrigin = thumb.TransformToAncestor(track).Transform(new System.Windows.Point(0, 0));
+        double thumbCentre = thumbOrigin.X + (thumb.ActualWidth / 2);
+        double bubbleCentre = bubble.HorizontalOffset + (chrome.DesiredSize.Width / 2);
+        Assert(Math.Abs(bubbleCentre - thumbCentre) < 1,
+            $"The bubble is not over the thumb: centred at {bubbleCentre:0.##}, thumb at {thumbCentre:0.##}.");
+
+        // The twitch: a slider bound to hardware hears its own writes come back, late
+        // and stale, and applying one drags the thumb back to where the pointer was two
+        // steps ago. Mid-drag, an outside write must not move anything.
+        slider.Value = 12;
+        host.UpdateLayout();
+        Assert(slider.Value == dragged, $"A stale hardware report moved a thumb being dragged (to {slider.Value}).");
+        Assert(inner.Value == dragged, $"The thumb itself was dragged back (to {inner.Value}).");
+        Assert(text.Text == $"{Math.Round(dragged)}%", $"The bubble followed a stale report (\"{text.Text}\").");
+
+        thumb.RaiseEvent(new DragCompletedEventArgs(0, 0, false) { RoutedEvent = Thumb.DragCompletedEvent });
+        Assert(!bubble.IsOpen, "The bubble outlived the drag.");
+
+        // The reports do not stop when the button comes up, so the hold outlasts the
+        // drag - and then has to let go again, or the slider would stop answering the
+        // brightness keys.
+        slider.Value = 12;
+        Assert(slider.Value == dragged, $"The hold ended with the drag (Value is {slider.Value}).");
+
+        Pump(TimeSpan.FromMilliseconds(1100));
+        slider.Value = 12;
+        host.UpdateLayout();
+        Assert(slider.Value == 12, $"The hold never let go: an outside write still reads {slider.Value}.");
+        Assert(inner.Value == 12, $"The thumb did not follow the outside write (at {inner.Value}).");
+
+        // A surface that has its own readout can turn the bubble off, and turning it off
+        // while one is up has to take it down with it.
+        thumb.RaiseEvent(new DragStartedEventArgs(0, 0) { RoutedEvent = Thumb.DragStartedEvent });
+        Assert(bubble.IsOpen, "The bubble does not come back for a second drag.");
+        slider.ShowValueTooltip = false;
+        Assert(!bubble.IsOpen, "ShowValueTooltip=false left a bubble on screen.");
+
+        thumb.RaiseEvent(new DragCompletedEventArgs(0, 0, false) { RoutedEvent = Thumb.DragCompletedEvent });
+        Console.WriteLine("  Slider: a drag raises a formatted value bubble over the thumb, " +
+                          "and holds the thumb against stale hardware reports");
+        host.Close();
+    }
+
+    /// <summary>
+    /// Runs the dispatcher for a while, so that a DispatcherTimer gets to tick. Nothing
+    /// here pumps messages on its own - the windows are shown but never run.
+    /// </summary>
+    private static void Pump(TimeSpan span)
+    {
+        var frame = new System.Windows.Threading.DispatcherFrame();
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = span };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            frame.Continue = false;
+        };
+        timer.Start();
+        System.Windows.Threading.Dispatcher.PushFrame(frame);
     }
 
     private static Window OffscreenHost(UIElement content)
