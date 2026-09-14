@@ -43,10 +43,11 @@ that does not have it. Say so in your pull request when that is the case. See
 - `AssemblyVersion` and `FileVersion` stay numeric (`1.0.0.0`). A pre-release label lives
   only in `InformationalVersion`, which is what the About page reads and what
   `ReleaseVersion.CurrentString` parses.
-- Bump on **every** build, not only on release. Five different binaries were once all
-  stamped `1.0.1`, which made it impossible to say which file was which.
+- Test builds keep the latest stable numeric version. The test folder adds `t` and a
+  descriptive slug (for example `1.1.4t-monitor-hotplug`); the binary remains `1.1.4`.
+- Only an explicitly requested stable release advances `Directory.Build.props`.
 - A folder name is not evidence of the version inside it. Read the stamped version with
-  `(Get-Item Arsenal.exe).VersionInfo.ProductVersion`, then go one past it.
+  `(Get-Item Arsenal.exe).VersionInfo.ProductVersion`.
 - Keep the project version, the release JSON, the package filename and the executable's
   `ProductVersion` identical. **Never rename an older binary as a newer release.**
 
@@ -129,6 +130,9 @@ tested costs more to review than one that admits the gap.
 ## Pull requests
 
 - One concern per pull request.
+- Commit each verified change locally, but do not push without explicit approval.
+- Keep version numbers out of ordinary commit subjects. A subject may name a version only
+  when that commit creates the corresponding stable release.
 - Write the change into the commit message: what changed and why, not what file you
   touched. `git log` is the project's only record of reasoning.
 - Match the surrounding code: its naming, its comment density, its idiom. Arsenal's

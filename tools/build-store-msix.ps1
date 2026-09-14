@@ -17,7 +17,7 @@ if ($version -notmatch '^\d+\.\d+\.\d+$') {
 }
 
 $packageVersion = "$version.0"
-$releaseDirectory = Join-Path $repositoryRoot "releases\test\$version-store-msix"
+$releaseDirectory = Join-Path $repositoryRoot "releases\test\${version}t-store-msix"
 $packagePath = Join-Path $releaseDirectory "Arsenal-$version-x64.msix"
 if (Test-Path -LiteralPath $releaseDirectory) {
     throw "The release folder already exists and will not be overwritten: $releaseDirectory"
