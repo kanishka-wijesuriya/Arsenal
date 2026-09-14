@@ -277,9 +277,9 @@ display-library interop definitions, and every bundled package.
 ## Contributing
 
 See [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md). The short version: the licence
-obligations in [`NOTICE.md`](NOTICE.md) are not negotiable, the version gets bumped on
-every build, a clean build means zero warnings, and no test gets deleted to make a build
-pass.
+obligations in [`NOTICE.md`](NOTICE.md) are not negotiable, tests keep the latest stable
+numeric version, only stable releases advance it, a clean build means zero warnings, and
+no test gets deleted to make a build pass.
 
 Security issues go to [`docs/SECURITY.md`](docs/SECURITY.md), not the public issue
 tracker. Behaviour in project spaces is covered by the
