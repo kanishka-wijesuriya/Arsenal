@@ -17,6 +17,19 @@ namespace Arsenal.Display
             else return ScreenNative.GetMaxRefreshRate(laptopScreen);
         }
 
+        /// <summary>
+        /// Keeps the display stack's temporary "not available" sentinel out of
+        /// persisted state and UI snapshots. Windows can briefly stop enumerating the
+        /// internal panel while a monitor is being attached or removed; the last real
+        /// reading is a better representation until enumeration settles again.
+        /// </summary>
+        public static int ResolveReportedRefreshRate(int detectedFrequency, int lastKnownFrequency)
+        {
+            if (detectedFrequency > 0) return detectedFrequency;
+            if (lastKnownFrequency > 0) return lastKnownFrequency;
+            return MIN_RATE > 0 ? MIN_RATE : 60;
+        }
+
         public static void AutoScreen(bool force = false)
         {
             if (force || AppConfig.Is("screen_auto"))
@@ -240,7 +253,11 @@ namespace Arsenal.Display
         public static void InitScreen()
         {
             var laptopScreen = ScreenNative.FindLaptopScreen();
-            int frequency = ScreenNative.GetRefreshRate(laptopScreen);
+            int detectedFrequency = ScreenNative.GetRefreshRate(laptopScreen);
+            bool screenEnabled = detectedFrequency > 0;
+            int frequency = ResolveReportedRefreshRate(
+                detectedFrequency,
+                AppConfig.Get("frequency", MIN_RATE));
             int maxFrequency = GetMaxRate(laptopScreen);
 
             if (maxFrequency > 0) AppConfig.Set("max_frequency", maxFrequency);
@@ -272,8 +289,6 @@ namespace Arsenal.Display
                 Logger.WriteLine(ex.Message);
             }
 
-            bool screenEnabled = (frequency >= 0);
-
             int fhd = -1;
             if (AppConfig.IsDUO())
             {
@@ -287,6 +302,8 @@ namespace Arsenal.Display
             // panel firmware. Without this, the UI can continue to report a stale
             // overdrive-on state after disabling it and the next enable action uses
             // the wrong cached refresh/OD combination.
+            // Never replace a real cached rate with EnumDisplaySettingsEx's -1
+            // failure sentinel. This also repairs a cache written by older builds.
             AppConfig.Set("frequency", frequency);
             AppConfig.Set("overdrive", overdrive);
 

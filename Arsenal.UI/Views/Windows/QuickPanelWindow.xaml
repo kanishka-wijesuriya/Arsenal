@@ -253,11 +253,15 @@
                      Deliberately uncached because live telemetry changes it. The tile
                      strip inside carries its own retained cache, so paging remains a
                      compositor-only transform without freezing the readouts. -->
-                <StackPanel x:Name="MainView"
-                            VerticalAlignment="Top">
-                    <StackPanel.RenderTransform>
+                <ScrollViewer x:Name="MainView"
+                              VerticalAlignment="Top"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              PanningMode="VerticalOnly">
+                    <ScrollViewer.RenderTransform>
                         <TranslateTransform x:Name="MainViewShift"/>
-                    </StackPanel.RenderTransform>
+                    </ScrollViewer.RenderTransform>
+                    <StackPanel x:Name="MainContent">
 
                     <Grid Margin="0,0,0,14">
                         <Grid.ColumnDefinitions>
@@ -572,7 +576,8 @@
                                                   KeyUp="KeyboardBrightnessSlider_KeyUp"/>
                         </StackPanel>
                     </Border>
-                </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
 
                 <!-- ================= Detail view ================= -->
                 <!-- No BitmapCache here, unlike the tile page. The option list scrolls, and
