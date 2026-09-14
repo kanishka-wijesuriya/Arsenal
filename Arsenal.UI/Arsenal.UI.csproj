@@ -18,6 +18,11 @@
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     <UseWPF>True</UseWPF>
     <UseWindowsForms>True</UseWindowsForms>
+    <!-- The app mixes WPF windows with a Windows Forms tray icon. Configure DPI
+         through the modern desktop SDK and apply it in DpiAwareEntryPoint before
+         either UI stack is initialized. -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <StartupObject>Arsenal.UI.DpiAwareEntryPoint</StartupObject>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>arsenal.ico</ApplicationIcon>

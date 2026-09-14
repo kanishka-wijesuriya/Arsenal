@@ -6,13 +6,23 @@ namespace Arsenal.Helpers
 {
     public class ClamshellModeControl
     {
+        private const double DisplaySettleDelayMilliseconds = 750;
+        private const int MaxDisplaySettleAttempts = 4;
+
         private readonly System.Timers.Timer lidSettleTimer = new() { AutoReset = false };
+        private readonly System.Timers.Timer displaySettleTimer = new()
+        {
+            AutoReset = false,
+            Interval = DisplaySettleDelayMilliseconds
+        };
+        private int displaySettleAttempt;
 
         public ClamshellModeControl()
         {
             //Save current setting if hibernate or shutdown to prevent reverting the user set option.
             CheckAndSaveLidAction();
             lidSettleTimer.Elapsed += OnLidSettled;
+            displaySettleTimer.Elapsed += OnDisplaySettled;
         }
 
 
@@ -77,6 +87,8 @@ namespace Arsenal.Helpers
         public void UnregisterDisplayEvents()
         {
             SystemEvents.DisplaySettingsChanged -= SystemEvents_DisplaySettingsChanged;
+            lidSettleTimer.Stop();
+            displaySettleTimer.Stop();
         }
 
         public void RegisterDisplayEvents()
@@ -91,14 +103,33 @@ namespace Arsenal.Helpers
             if (IsClamshellEnabled())
                 ScheduleLidToggle();
 
+            // DisplaySettingsChanged is raised while Windows is still rebuilding the
+            // topology. Querying immediately can return -1 for the internal panel and
+            // leave that sentinel on screen until another event happens. Collapse the
+            // event burst, then give slower dock transitions a few bounded retries.
+            Interlocked.Exchange(ref displaySettleAttempt, 0);
+            displaySettleTimer.Stop();
+            displaySettleTimer.Start();
+        }
+
+        private void OnDisplaySettled(object? sender, System.Timers.ElapsedEventArgs e)
+        {
+            string? laptopScreen = ScreenNative.FindLaptopScreen();
+            bool panelReady = ScreenNative.GetRefreshRate(laptopScreen) > 0;
+            int attempt = Interlocked.Increment(ref displaySettleAttempt);
+            if (!panelReady && attempt < MaxDisplaySettleAttempts)
+            {
+                displaySettleTimer.Start();
+                return;
+            }
+
             if (AppConfig.Is("screen_force"))
                 ScreenControl.AutoScreen();
-            else 
+            else
                 ScreenControl.InitScreen();
 
             if (AppConfig.IsForceMiniled())
                 ScreenControl.InitMiniled();
-
         }
 
         private static int CheckAndSaveLidAction()

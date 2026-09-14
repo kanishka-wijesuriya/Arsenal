@@ -190,6 +190,13 @@ internal static class Program
             "Quick Panel GPU row does not expose all four GPU modes.");
         Assert(panel.FindName("CustomPerformanceButton") is System.Windows.Controls.Button,
             "Quick Panel is missing the Custom entry point.");
+        Assert(panel.FindName("MainView") is ScrollViewer
+            {
+                VerticalScrollBarVisibility: ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility: ScrollBarVisibility.Disabled
+            },
+            "Quick Panel main view cannot scroll when a monitor has a short work area.");
+        AssertQuickPanelShortWorkArea(panel);
         Assert(QuickPanelViewModel.TilesPerPage == 6,
             "Quick Panel quick settings are not limited to three two-column rows per page.");
         Assert(Descendants((DependencyObject)panel.FindName("PerformanceModeRow")).OfType<SymbolIcon>().Count() == 4,
@@ -221,6 +228,28 @@ internal static class Program
             "OLED dimming still cannot fit on one line without trimming.");
 
         panel.Close();
+    }
+
+    private static void AssertQuickPanelShortWorkArea(QuickPanelWindow panel)
+    {
+        const double workAreaHeight = 577;
+        FrameworkElement root = (FrameworkElement)panel.Content;
+        root.Measure(new System.Windows.Size(452, 940));
+        root.Arrange(new System.Windows.Rect(0, 0, 452, Math.Max(1, root.DesiredSize.Height)));
+        root.UpdateLayout();
+
+        typeof(QuickPanelWindow).GetField("_anchorHeight", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(panel, workAreaHeight);
+        typeof(QuickPanelWindow).GetMethod("LockNativeViewport", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(panel, null);
+
+        var main = (ScrollViewer)panel.FindName("MainView");
+        Assert(panel.Height < workAreaHeight,
+            $"Quick Panel viewport remained {panel.Height:F0}px tall in a {workAreaHeight:F0}px work area.");
+        Assert(!double.IsInfinity(main.MaxHeight) && main.MaxHeight < workAreaHeight,
+            "Quick Panel main view was not capped for a short work area.");
+        Assert(main.VerticalOffset == 0,
+            "Quick Panel opened a short viewport below its header.");
     }
 
     /// <summary>

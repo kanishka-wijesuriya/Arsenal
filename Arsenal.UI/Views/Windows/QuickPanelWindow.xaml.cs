@@ -34,6 +34,12 @@ namespace Arsenal.UI.Views.Windows
             _tilePageWheelIdleTimer.Tick += TilePageWheelIdleTimer_Tick;
             Closed += (_, _) => _tilePageWheelIdleTimer.Stop();
 
+            // A monitor can disappear while the panel is open. Per-monitor DPI then
+            // moves the layered HWND to the remaining screen and may resize its native
+            // viewport before WPF has remeasured the card. Re-fit after that transaction
+            // so a bottom-aligned card cannot lose its header above the work area.
+            DpiChanged += (_, _) => QueueViewportRefit();
+
             if (viewModel is not null)
             {
                 viewModel.PropertyChanged += (_, args) =>
@@ -619,7 +625,11 @@ namespace Arsenal.UI.Views.Windows
             if (_mainChromeHeight > 0) PanelChrome.Height = _mainChromeHeight;
             if (_mainHostHeight > 0) TransitionHost.Height = _mainHostHeight;
 
-            foreach (var (view, shift) in new[] { (MainView, MainViewShift), (DetailView, DetailViewShift) })
+            foreach (var (view, shift) in new (FrameworkElement View, TranslateTransform Shift)[]
+            {
+                (MainView, MainViewShift),
+                (DetailView, DetailViewShift)
+            })
             {
                 SetTransitionCache(view, false);
                 view.BeginAnimation(OpacityProperty, null);
@@ -726,7 +736,7 @@ namespace Arsenal.UI.Views.Windows
             var workingArea = screen.WorkingArea;
             _anchorWorkingAreaPixels = workingArea;
             IntPtr hwnd = new WindowInteropHelper(this).EnsureHandle();
-            uint dpi = GetDpiForWindow(hwnd);
+            uint dpi = GetDpiForScreenPoint(point, hwnd);
             double scale = dpi > 0 ? dpi / 96d : 1d;
             _anchorWorkArea = new FlyoutBounds(
                 workingArea.Left / scale,
@@ -741,6 +751,24 @@ namespace Arsenal.UI.Views.Windows
             // taller than it is, and which edge that is changes what a detail page does
             // to the layout it grows into.
             ApplyCardAlignment();
+        }
+
+        /// <summary>
+        /// Uses the destination monitor's scale, not the hidden window's previous one.
+        /// After a hot-plug those can differ until the HWND has actually moved.
+        /// </summary>
+        private static uint GetDpiForScreenPoint(System.Drawing.Point point, IntPtr hwnd)
+        {
+            var nativePoint = new PointI { X = point.X, Y = point.Y };
+            IntPtr monitor = MonitorFromPoint(nativePoint, MonitorDefaultToNearest);
+            if (monitor != IntPtr.Zero
+                && GetDpiForMonitor(monitor, MonitorDpiTypeEffective, out uint dpiX, out _) == 0
+                && dpiX > 0)
+            {
+                return dpiX;
+            }
+
+            return GetDpiForWindow(hwnd);
         }
 
         /// <summary>
@@ -897,6 +925,12 @@ namespace Arsenal.UI.Views.Windows
             double topGap = topLeft.Y - _anchorWorkingAreaPixels.Top;
             double bottomGap = _anchorWorkingAreaPixels.Bottom - bottomRight.Y;
 
+            // Placement already keeps an oversized window's origin on screen. Do not
+            // undo that safety by pulling the bottom-aligned card towards the taskbar.
+            // The responsive viewport normally prevents this case; the guard also
+            // protects the first layout frame and any unexpected oversized content.
+            if (leftGap < 0 || rightGap < 0 || topGap < 0 || bottomGap < 0) return;
+
             int horizontal = 0;
             int vertical = 0;
             switch (_anchorEdge)
@@ -936,17 +970,16 @@ namespace Arsenal.UI.Views.Windows
         }
 
         /// <summary>
-        /// Captures the natural tile-page size once and keeps the transparent HWND at
-        /// that size for its lifetime. Detail pages remain compact because their visible
+        /// Fits the tile page to the current monitor and locks the transparent HWND to
+        /// that size for this open. Detail pages remain compact because their visible
         /// card is bottom-aligned inside these stable transparent bounds.
         /// </summary>
         private void LockNativeViewport()
         {
-            if (_nativeViewportHeight > 0) return;
-
             // Before the height is read: a second page of tiles must be clipped away
             // first, or the locked window would be sized to hold every one of them.
             FitTilePageViewport();
+            FitMainView();
             UpdateLayout();
 
             // Build the tile surface while the panel is settling after its first layout,
@@ -954,15 +987,53 @@ namespace Arsenal.UI.Views.Windows
             // warm turns every later page transition into one compositor translation.
             SetTileBitmapCache(true);
 
-            _nativeViewportHeight = Math.Max(1, ActualHeight);
-            _mainChromeHeight = Math.Max(1, PanelChrome.ActualHeight);
-            _mainHostHeight = Math.Max(1, TransitionHost.ActualHeight);
+            double chrome = PanelChrome.Padding.Top + PanelChrome.Padding.Bottom
+                + PanelChrome.BorderThickness.Top + PanelChrome.BorderThickness.Bottom;
+            _mainHostHeight = Math.Max(1, MainView.DesiredSize.Height);
+            _mainChromeHeight = _mainHostHeight + chrome;
+            _nativeViewportHeight = _mainChromeHeight
+                + MotionRoot.Margin.Top + MotionRoot.Margin.Bottom;
 
             SizeToContent = System.Windows.SizeToContent.Manual;
             Height = _nativeViewportHeight;
             PanelChrome.Height = _mainChromeHeight;
             TransitionHost.Height = _mainHostHeight;
             UpdateLayout();
+        }
+
+        /// <summary>
+        /// Lets the normal layout stand on roomy displays. On a short work area it caps
+        /// the main surface and gives it a scrollbar, keeping the header and every
+        /// control reachable instead of clipping the top of the bottom-aligned card.
+        /// </summary>
+        private void FitMainView()
+        {
+            double width = Math.Max(1, TransitionHost.ActualWidth);
+            double chrome = PanelChrome.Padding.Top + PanelChrome.Padding.Bottom
+                + PanelChrome.BorderThickness.Top + PanelChrome.BorderThickness.Bottom;
+
+            MainView.MaxHeight = double.PositiveInfinity;
+            MainContent.InvalidateMeasure();
+            MainContent.Measure(new System.Windows.Size(width, double.PositiveInfinity));
+
+            MainView.MaxHeight = Math.Max(160, MaxCardHeight() - chrome);
+            MainView.InvalidateMeasure();
+            MainView.Measure(new System.Windows.Size(width, double.PositiveInfinity));
+        }
+
+        private int _viewportRefitVersion;
+
+        private void QueueViewportRefit()
+        {
+            int version = ++_viewportRefitVersion;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (version != _viewportRefitVersion || !IsVisible || _nativeViewportHeight <= 0) return;
+
+                CaptureTrayAnchor();
+                LockNativeViewport();
+                PositionNearTray();
+            }), DispatcherPriority.Loaded);
         }
 
         #region Tile pages and dragging
@@ -1540,6 +1611,7 @@ namespace Arsenal.UI.Views.Windows
 
             double padding = Math.Max(0, PanelChrome.ActualHeight - TransitionHost.ActualHeight);
 
+            FitMainView();
             MainView.InvalidateMeasure();
             MainView.Measure(new System.Windows.Size(TransitionHost.ActualWidth, double.PositiveInfinity));
             _mainHostHeight = Math.Max(1, MainView.DesiredSize.Height);
@@ -1598,10 +1670,11 @@ namespace Arsenal.UI.Views.Windows
             // window the card is glued to, and that has to be settled before the
             // viewport below is measured and pinned.
             CaptureTrayAnchor();
+            MainView.ScrollToTop();
 
-            // The window sizes itself to its content and is anchored to the tray corner
-            // only on its first show. Lock that measured viewport before the first
-            // visible frame; later opens reuse it and cannot tremble from relayout.
+            // Re-fit on every open because the monitor or its scale may have changed
+            // while the panel was hidden. The resulting viewport remains fixed for the
+            // visible session, so transitions cannot make the tray anchor tremble.
             UpdateLayout();
             LockNativeViewport();
             PositionNearTray();
@@ -1677,6 +1750,19 @@ namespace Arsenal.UI.Views.Windows
 
         [DllImport("user32.dll")]
         private static extern uint GetDpiForWindow(IntPtr hwnd);
+
+        private const uint MonitorDefaultToNearest = 2;
+        private const int MonitorDpiTypeEffective = 0;
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromPoint(PointI point, uint flags);
+
+        [DllImport("shcore.dll")]
+        private static extern int GetDpiForMonitor(
+            IntPtr monitor,
+            int dpiType,
+            out uint dpiX,
+            out uint dpiY);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
