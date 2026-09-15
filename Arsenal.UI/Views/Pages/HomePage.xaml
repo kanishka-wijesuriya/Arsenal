@@ -84,9 +84,13 @@
         </DataTemplate>
 
         <DataTemplate x:Key="HomeRefreshTemplate">
-            <controls:SettingsRow Icon="Desktop24" Header="Refresh rate" Description="Choose the panel rate without leaving Home.">
+            <controls:SettingsRow Icon="Desktop24" Header="Refresh rate"
+                                  Description="{Binding DataContext.RefreshRateNote, RelativeSource={RelativeSource AncestorType=UserControl}}">
                 <StackPanel Orientation="Horizontal">
-                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
+                    <!-- Only the choice group is disabled: the edit and remove controls
+                         beside it belong to the Home layout, not to the panel. -->
+                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}"
+                               IsEnabled="{Binding DataContext.IsInternalPanelActive, RelativeSource={RelativeSource AncestorType=UserControl}}">
                         <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MinimumRefreshRate, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat={}{0} Hz}"
                                      IsChecked="{Binding DataContext.IsAtMinimumRefreshRate, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
                                      Command="{Binding DataContext.SelectRefreshRateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="60"/>

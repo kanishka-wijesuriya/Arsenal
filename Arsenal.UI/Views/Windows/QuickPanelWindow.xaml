@@ -535,7 +535,17 @@
                                                     ExpandCommandParameter="{Binding}"
                                                     IsEditing="{Binding DataContext.IsEditingTiles, RelativeSource={RelativeSource AncestorType=Window}}"
                                                     RemoveCommand="{Binding DataContext.RemoveTileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    RemoveCommandParameter="{Binding}"/>
+                                                    RemoveCommandParameter="{Binding}">
+                                    <!-- A tile whose hardware is unavailable is dimmed and
+                                         inert, but it must still take clicks while the grid
+                                         is being rearranged or it could not be removed. -->
+                                    <controls:QuickTile.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource AnyTrueConverter}">
+                                            <Binding Path="IsActionable"/>
+                                            <Binding Path="DataContext.IsEditingTiles" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                        </MultiBinding>
+                                    </controls:QuickTile.IsEnabled>
+                                </controls:QuickTile>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                         </ItemsControl>
