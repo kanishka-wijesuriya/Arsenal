@@ -71,6 +71,20 @@ namespace Arsenal.UI.ViewModels
         private bool _isAdded;
     }
 
+    /// <summary>
+    /// Shared wording for the charge tiles on Home and Battery. Keeping the decision
+    /// here prevents the two pages from drifting into different battery states.
+    /// </summary>
+    internal static class BatteryPresentation
+    {
+        public static string ChargeStopsAtText(int batteryPercent, int effectiveChargeLimit)
+            => batteryPercent >= 100
+                ? "Fully charged"
+                : effectiveChargeLimit >= 100
+                    ? "Charging to full"
+                    : $"Charging stops at {effectiveChargeLimit}%";
+    }
+
     public partial class HomeViewModel : ObservableObject
     {
         private readonly IDeviceStateService _deviceStateService;
@@ -113,9 +127,6 @@ namespace Arsenal.UI.ViewModels
 
         [ObservableProperty]
         private int _batteryPercent = 80;
-
-        [ObservableProperty]
-        private float _batteryDischarge = 0;
 
         [ObservableProperty]
         private int _refreshRate = 60;
@@ -183,6 +194,25 @@ namespace Arsenal.UI.ViewModels
         public string ChargeLimitNote => HasSteppedChargeLimit
             ? "Charging stops at the set level. This model allows 60-80%, or 100%."
             : "Charging stops at the set level, protecting the battery on mains power.";
+
+        /// <summary>
+        /// The Home charge tile uses the same limit presentation as the first tile on
+        /// the Battery page, including a temporary one-time charge to 100%.
+        /// </summary>
+        public int EffectiveChargeLimit => IsFullChargeOverride ? 100 : ChargeLimit;
+
+        public string ChargeStopsAtText
+            => BatteryPresentation.ChargeStopsAtText(BatteryPercent, EffectiveChargeLimit);
+
+        partial void OnChargeLimitChanged(int value) => RaiseChargeLimitDependents();
+        partial void OnIsFullChargeOverrideChanged(bool value) => RaiseChargeLimitDependents();
+        partial void OnBatteryPercentChanged(int value) => OnPropertyChanged(nameof(ChargeStopsAtText));
+
+        private void RaiseChargeLimitDependents()
+        {
+            OnPropertyChanged(nameof(EffectiveChargeLimit));
+            OnPropertyChanged(nameof(ChargeStopsAtText));
+        }
 
         /// <summary>
         /// What the selected GPU mode means, under the row's own label - the same shape
@@ -259,7 +289,6 @@ namespace Arsenal.UI.ViewModels
                 {
                     Telemetry = t;
                     BatteryPercent = t.BatteryPercentage;
-                    BatteryDischarge = t.BatteryDischargeRate;
                 });
             };
 
@@ -1421,6 +1450,7 @@ namespace Arsenal.UI.ViewModels
             OnPropertyChanged(nameof(PowerFlowIcon));
             OnPropertyChanged(nameof(TimeToFullText));
             OnPropertyChanged(nameof(TimeToEmptyText));
+            OnPropertyChanged(nameof(ChargeStopsAtText));
         }
 
         /// <summary>Watt-hours in the battery now, or null if it will not say.</summary>
@@ -1509,9 +1539,8 @@ namespace Arsenal.UI.ViewModels
         /// </summary>
         public int EffectiveChargeLimit => IsFullChargeOverride ? 100 : ChargeLimit;
 
-        public string ChargeStopsAtText => EffectiveChargeLimit >= 100
-            ? "Charging to full"
-            : $"Charging stops at {EffectiveChargeLimit}%";
+        public string ChargeStopsAtText
+            => BatteryPresentation.ChargeStopsAtText(BatteryPercent, EffectiveChargeLimit);
 
         partial void OnChargeLimitChanged(int value) => RaiseChargeLimitDependents();
         partial void OnIsFullChargeOverrideChanged(bool value) => RaiseChargeLimitDependents();
