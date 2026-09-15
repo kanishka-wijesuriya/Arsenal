@@ -1,4 +1,4 @@
-<div align="center">
+<div align="left">
 
 <img src="Arsenal.UI/Assets/arsenal-mark.png" alt="Arsenal" width="110">
 
@@ -298,7 +298,7 @@ that exact version, that is a bug. Please report it.
 
 <br>
 
-<div align="center">
+<div align="left">
 
 ASUS, ROG, TUF, Armoury Crate, Aura and AniMe Matrix are trademarks of ASUSTeK Computer
 Inc.<br>Arsenal is an independent project, and is not affiliated with, endorsed by or
