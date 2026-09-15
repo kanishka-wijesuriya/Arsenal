@@ -1141,6 +1141,12 @@ namespace Arsenal.UI.ViewModels
         private const string LicenseUrl = "https://get-arsenal.com/license";
         private const string UpstreamUrl = "https://github.com/seerge/g-helper";
 
+        /// <summary>
+        /// The same destination the website's support dialog offers, so a person who
+        /// donates from the app lands where they would from get-arsenal.com.
+        /// </summary>
+        private const string SupportUrl = "https://www.paypal.com/donate/?hosted_button_id=JHYS3YF2FNS4J";
+
         private readonly IUpdateService _updateService;
 
         [ObservableProperty]
@@ -1221,6 +1227,13 @@ namespace Arsenal.UI.ViewModels
 
         [RelayCommand]
         private void OpenUpstream() => OpenExternal(UpstreamUrl);
+
+        /// <summary>
+        /// Opens the donation page in the default browser. Arsenal never handles the
+        /// payment itself: PayPal does, in the browser, where the address bar is visible.
+        /// </summary>
+        [RelayCommand]
+        private void OpenSupport() => OpenExternal(SupportUrl);
 
         private static void OpenExternal(string url)
         {

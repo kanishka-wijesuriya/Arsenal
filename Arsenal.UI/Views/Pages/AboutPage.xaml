@@ -112,6 +112,22 @@
 
             </controls:SettingsGroup>
 
+            <!-- Arsenal is free and stays free. The ask sits here rather than anywhere
+                 the app is actually being used, and it is a single row with one button
+                 that hands the URL to the default browser. Nothing is collected in the
+                 app, and no feature is withheld from anyone who scrolls past it. -->
+            <controls:SettingsGroup Header="Support" Icon="Heart24"
+                                    Description="Arsenal is developed independently and given away. Donations are optional and change nothing about the app.">
+
+                <controls:SettingsRow Header="Support the developer"
+                                      Icon="Heart24"
+                                      Description="Opens PayPal in your browser. Arsenal never handles the payment and asks for nothing in return.">
+                    <ui:Button Content="Donate" Command="{Binding OpenSupportCommand}"
+                               Appearance="Primary" Icon="{ui:SymbolIcon Heart24}"/>
+                </controls:SettingsRow>
+
+            </controls:SettingsGroup>
+
             <!-- Arsenal is GPL-3.0, and the licence asks that recipients be told so and
                  be able to reach the source. This group is that notice, and the credit
                  to G-Helper belongs beside it rather than tucked away: the hardware
