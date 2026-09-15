@@ -29,7 +29,7 @@ namespace Arsenal
         void FansInit();
         void GPUInit();
         void LabelFansResult(string result);
-        bool ConfirmGpuModeRestart(int currentMode, int targetMode);
+        bool ConfirmGpuModeChange(int currentMode, int targetMode, GpuModeChangeConfirmation confirmation);
         void RunOnUi(Action action);
     }
 

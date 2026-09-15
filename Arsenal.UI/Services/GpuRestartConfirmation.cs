@@ -1,4 +1,5 @@
 using Arsenal.Helpers;
+using Arsenal.Gpu;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -9,14 +10,50 @@ using Ui = Wpf.Ui.Controls;
 
 namespace Arsenal.UI.Services;
 
-internal static class GpuRestartConfirmation
+internal sealed record GpuModeConfirmationContent(string Title, string Body, string Confirm);
+
+internal static class GpuModeConfirmation
 {
-    public static bool Show(Window? owner, bool enablingUltimate)
+    public static GpuModeConfirmationContent CreateContent(
+        int targetMode,
+        GpuModeChangeConfirmation confirmation)
+    {
+        bool enablingUltimate = targetMode == AsusACPI.GPUModeUltimate;
+
+        if (confirmation.WarnsExternalDisplays && confirmation.RequiresRestart)
+        {
+            return new GpuModeConfirmationContent(
+                "Restart and switch to Eco?",
+                "Eco mode powers down the NVIDIA GPU, so external displays connected through NVIDIA-driven HDMI, DisplayPort, or USB-C ports may disconnect. Windows must restart to leave Ultimate. Save your work before continuing.",
+                "Restart and switch");
+        }
+
+        if (confirmation.WarnsExternalDisplays)
+        {
+            return new GpuModeConfirmationContent(
+                "Switch to Eco mode?",
+                "Eco mode powers down the NVIDIA GPU. External displays connected through NVIDIA-driven HDMI, DisplayPort, or USB-C ports may disconnect. Save anything open on those displays before continuing.",
+                "Switch to Eco");
+        }
+
+        return new GpuModeConfirmationContent(
+            "Restart required",
+            enablingUltimate
+                ? "Switching to Ultimate connects the dedicated GPU directly to the display and restarts Windows immediately. Save your work before continuing."
+                : "Leaving Ultimate reconnects the hybrid graphics path and restarts Windows immediately. Save your work before continuing.",
+            "Restart and apply");
+    }
+
+    public static bool Show(
+        Window? owner,
+        int targetMode,
+        GpuModeChangeConfirmation confirmation)
     {
         bool accepted = false;
+        GpuModeConfirmationContent content = CreateContent(targetMode, confirmation);
         var dialog = new Window
         {
-            Title = "Restart required",
+            Title = content.Title,
             Width = 430,
             // Deliberately not SizeToContent: on a WindowStyle.None + AllowsTransparency
             // window it measures before the body text has wrapped at the real width and
@@ -50,14 +87,12 @@ internal static class GpuRestartConfirmation
 
         var heading = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
         heading.Children.Add(new Ui.SymbolIcon { Symbol = Ui.SymbolRegular.Warning24, FontSize = 24, Foreground = (MediaBrush)System.Windows.Application.Current.FindResource("StatusWarning"), Margin = new Thickness(0, 0, 12, 0) });
-        heading.Children.Add(new System.Windows.Controls.TextBlock { Text = "Restart required", FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = (MediaBrush)System.Windows.Application.Current.FindResource("TextPrimary"), VerticalAlignment = VerticalAlignment.Center });
+        heading.Children.Add(new System.Windows.Controls.TextBlock { Text = content.Title, FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = (MediaBrush)System.Windows.Application.Current.FindResource("TextPrimary"), VerticalAlignment = VerticalAlignment.Center });
         layout.Children.Add(heading);
 
         var body = new System.Windows.Controls.TextBlock
         {
-            Text = enablingUltimate
-                ? "Switching to Ultimate connects the dedicated GPU directly to the display and restarts Windows immediately. Save your work before continuing."
-                : "Leaving Ultimate reconnects the hybrid graphics path and restarts Windows immediately. Save your work before continuing.",
+            Text = content.Body,
             TextWrapping = TextWrapping.Wrap,
             FontSize = 14,
             LineHeight = 21,
@@ -72,7 +107,7 @@ internal static class GpuRestartConfirmation
 
         var actions = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
         var cancel = new Ui.Button { Content = "Cancel", Appearance = Ui.ControlAppearance.Secondary, MinWidth = 92, Margin = new Thickness(0, 0, 8, 0) };
-        var confirm = new Ui.Button { Content = "Restart and apply", Appearance = Ui.ControlAppearance.Primary, MinWidth = 132 };
+        var confirm = new Ui.Button { Content = content.Confirm, Appearance = Ui.ControlAppearance.Primary, MinWidth = 132 };
         cancel.Click += (_, _) => dialog.Close();
         confirm.Click += (_, _) => { accepted = true; dialog.Close(); };
         actions.Children.Add(cancel);

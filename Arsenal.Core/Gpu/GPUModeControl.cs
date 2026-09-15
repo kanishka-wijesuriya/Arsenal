@@ -89,8 +89,15 @@ namespace Arsenal.Gpu
             int CurrentGPU = AppConfig.Get("gpu_mode");
 
             bool crossesUltimate = (CurrentGPU == AsusACPI.GPUModeUltimate) != (GPUMode == AsusACPI.GPUModeUltimate);
-            if (auto == 0 && crossesUltimate && Program.Bridge is not null &&
-                !Program.Bridge.ConfirmGpuModeRestart(CurrentGPU, GPUMode))
+            bool externalDisplayConnected = auto == 0 &&
+                CurrentGPU != GPUMode &&
+                GPUMode == AsusACPI.GPUModeEco &&
+                ScreenNative.IsExternalDisplayConnected(log: true);
+            var confirmation = GpuModeChangeConfirmation.Evaluate(
+                CurrentGPU, GPUMode, auto, externalDisplayConnected);
+
+            if (confirmation.IsRequired && Program.Bridge is not null &&
+                !Program.Bridge.ConfirmGpuModeChange(CurrentGPU, GPUMode, confirmation))
             {
                 OnGPUModeChanged?.Invoke(CurrentGPU);
                 Program.Bridge.VisualiseGPUMode();

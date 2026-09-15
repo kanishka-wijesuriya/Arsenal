@@ -1187,32 +1187,36 @@ namespace Arsenal.UI
                     performance.CalibrationStatus = label;
             });
         }
-        public bool ConfirmGpuModeRestart(int currentMode, int targetMode)
+        public bool ConfirmGpuModeChange(
+            int currentMode,
+            int targetMode,
+            GpuModeChangeConfirmation confirmation)
         {
+            GpuModeConfirmationContent content = GpuModeConfirmation.CreateContent(targetMode, confirmation);
+
             // When the phone asked for the switch, the phone is what must answer. A modal
             // on the PC would be invisible to whoever pressed the button, and would hold
             // the request open until somebody walked over to the machine.
             if (RemoteRestartPrompt.IsCompanionCommand)
             {
-                bool toUltimate = targetMode == AsusACPI.GPUModeUltimate;
                 return RemoteRestartPrompt.Ask(
-                    toUltimate ? "Restart to enable Ultimate?" : "Restart to leave Ultimate?",
-                    toUltimate
-                        ? "Ultimate routes the display straight to the dedicated GPU. Windows has to restart to change the display path."
-                        : "Leaving Ultimate hands the display back to the integrated GPU. Windows has to restart to change the display path.");
+                    content.Title,
+                    content.Body,
+                    content.Confirm,
+                    "Cancel");
             }
 
             bool result = false;
             if (Dispatcher.CheckAccess())
             {
                 _quickPanelWindow?.HideForModal();
-                result = GpuRestartConfirmation.Show(_mainWindow, targetMode == AsusACPI.GPUModeUltimate);
+                result = GpuModeConfirmation.Show(_mainWindow, targetMode, confirmation);
             }
             else
                 Dispatcher.Invoke(() =>
                 {
                     _quickPanelWindow?.HideForModal();
-                    result = GpuRestartConfirmation.Show(_mainWindow, targetMode == AsusACPI.GPUModeUltimate);
+                    result = GpuModeConfirmation.Show(_mainWindow, targetMode, confirmation);
                 });
             return result;
         }
