@@ -1,4 +1,5 @@
 using Arsenal.Application.Extensions;
+using Arsenal.Application.Models;
 using Arsenal.Application.Services.Contracts;
 using Arsenal.AutoUpdate;
 using Arsenal.Battery;
@@ -161,8 +162,12 @@ namespace Arsenal.UI
             // the user had opened any of them. OnExplicitShutdown keeps the tray process
             // alive safely even when no native window has been created yet.
 
-            // Show main window on start unless launched with --minimized / --startup
-            bool startMinimized = e.Args.Contains("--minimized") || e.Args.Contains("--startup") || e.Args.Contains("-m");
+            // Explicit destinations still open visibly. The preference applies to an
+            // ordinary desktop/sign-in launch, while the command-line switches remain
+            // an unconditional way to start in the tray.
+            bool startMinimized = ApplicationLaunch.ShouldStartMinimized(
+                e.Args,
+                AppConfig.Is(ApplicationLaunch.StartMinimizedSetting));
             if (!startMinimized && action is not ("--quick" or "--quick-test" or "--tray-test"))
             {
                 ShowMainWindow();

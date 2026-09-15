@@ -34,7 +34,7 @@ internal static class Program
             // this smoke test a completely isolated settings store and guarantees it
             // never reads or changes the user's real Arsenal preferences.
             string configPath = Path.Combine(AppContext.BaseDirectory, "config.json");
-            File.WriteAllText(configPath, "{\"theme\":1,\"accent_source\":1,\"accent_color\":\"#D83B01\"}");
+            File.WriteAllText(configPath, "{\"theme\":1,\"accent_source\":1,\"accent_color\":\"#D83B01\",\"start_minimized\":1}");
 
             var application = new App();
             application.InitializeComponent();
@@ -46,6 +46,7 @@ internal static class Program
             Assert(darkAccent.R > darkAccent.B, "Custom orange did not replace the blue-biased accent.");
 
             var viewModel = new SettingsViewModel();
+            Assert(viewModel.StartMinimized, "Settings did not restore the start-minimised preference.");
             Assert(viewModel.SelectedAccentSource == 1, "Settings did not restore the custom accent source.");
             Assert(viewModel.CustomAccentHex == "#D83B01", "Settings did not restore the custom accent value.");
             var page = new SettingsPage(viewModel);
