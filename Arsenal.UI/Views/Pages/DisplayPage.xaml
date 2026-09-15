@@ -53,10 +53,15 @@
 
             <controls:SettingsGroup Header="Panel" Icon="Desktop24"
                                     Description="Refresh rate, resolution and the panel features this model supports.">
+                <!-- The buttons write to the ASUS panel only. With the lid shut on a
+                     dock, or on "second screen only", that panel is off and the write
+                     is a no-op, so the group is disabled and the description says why
+                     instead of leaving three live-looking buttons that do nothing. -->
                 <controls:SettingsRow Header="Refresh rate"
+                                      Description="{Binding RefreshRateDescription}"
                                       Visibility="{Binding IsRefreshRateSupported, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <controls:SettingsRow.ContentBelow>
-                        <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
+                        <WrapPanel Style="{StaticResource ChoiceGroupStyle}" IsEnabled="{Binding IsInternalPanelActive}">
                             <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="RefreshRate"
                                          IsChecked="{Binding IsLowRefreshRate, Mode=OneWay}"
                                          Command="{Binding SetRefreshRateCommand}" CommandParameter="min">
@@ -74,6 +79,34 @@
                                 <TextBlock Text="{Binding MaxRefreshRateWithOverdriveLabel}"/>
                             </RadioButton>
                         </WrapPanel>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Connected displays"
+                                      Description="What Windows is driving right now. External monitors are set from Windows display settings, not from here."
+                                      Visibility="{Binding HasConnectedDisplays, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow.ContentBelow>
+                        <ItemsControl ItemsSource="{Binding ConnectedDisplays}" Margin="0,4,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource SettingLabelStyle}"
+                                                       HorizontalAlignment="Left" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource SettingDescriptionStyle}"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding RefreshRate}"
+                                                   VerticalAlignment="Center" FontWeight="SemiBold" FontSize="14"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
 

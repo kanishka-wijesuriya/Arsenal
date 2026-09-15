@@ -255,6 +255,14 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty]
         private int _refreshRate = 60;
 
+        /// <summary>
+        /// The tile drives the built-in ASUS panel. While Windows is not driving that
+        /// panel - clamshell on a dock, or "second screen only" - the cached rate is
+        /// not what anyone is looking at, so the tile says that instead of a number.
+        /// </summary>
+        [ObservableProperty]
+        private bool _isInternalPanelActive = true;
+
         [ObservableProperty]
         private bool _isOverdrive = false;
 
@@ -376,6 +384,7 @@ namespace Arsenal.UI.ViewModels
             SelectedPerformanceMode = _performanceService.CurrentMode;
             SelectedGpuMode = _gpuService.CurrentGpuMode;
             RefreshRate = _displayService.CurrentRefreshRate;
+            IsInternalPanelActive = _displayService.IsInternalPanelActive;
             IsOverdrive = _displayService.IsOverdriveEnabled;
             IsOverdriveAvailable = _displayService.IsOverdriveAvailable;
             IsAutoRefresh = _displayService.IsAutoRefreshEnabled;
@@ -430,6 +439,7 @@ namespace Arsenal.UI.ViewModels
                 QueueUiUpdate(() =>
                 {
                     RefreshRate = snapshot.Frequency;
+                    IsInternalPanelActive = snapshot.ScreenEnabled;
                     IsOverdrive = snapshot.Overdrive > 0;
                     IsOverdriveAvailable = snapshot.OverdriveSetting;
                     IsMiniLed = snapshot.Miniled1 > 0 || snapshot.Miniled2 > 0;
@@ -703,9 +713,11 @@ namespace Arsenal.UI.ViewModels
             _ => "Optimized · automatic"
         };
 
-        public string DisplayModeName => $"{RefreshRate} Hz"
-            + (RefreshRate > Arsenal.Display.ScreenControl.MIN_RATE && IsOverdrive ? " + OD" : string.Empty)
-            + (IsAutoRefresh ? " · auto" : string.Empty);
+        public string DisplayModeName => !IsInternalPanelActive
+            ? "Built-in display off"
+            : $"{RefreshRate} Hz"
+                + (RefreshRate > Arsenal.Display.ScreenControl.MIN_RATE && IsOverdrive ? " + OD" : string.Empty)
+                + (IsAutoRefresh ? " · auto" : string.Empty);
 
         public string KeyboardBrightnessName => KeyboardBrightness switch
         {
@@ -740,6 +752,12 @@ namespace Arsenal.UI.ViewModels
         {
             OnPropertyChanged(nameof(DisplayModeName));
             SyncDetailSelection();
+            RefreshTiles();
+        }
+
+        partial void OnIsInternalPanelActiveChanged(bool value)
+        {
+            OnPropertyChanged(nameof(DisplayModeName));
             RefreshTiles();
         }
 

@@ -11,10 +11,21 @@ namespace Arsenal.Display
         public static int MIN_RATE = AppConfig.Get("min_rate", 60);
         public static int MAX_RATE = AppConfig.Get("max_rate");
 
+        /// <summary>
+        /// The panel's ceiling, never a sentinel. Callers put this straight on a button
+        /// ("240 Hz"), so a failed enumeration has to resolve to the last real reading
+        /// rather than leak -1 into the label. InitScreen already did this for its own
+        /// snapshot; doing it here covers the live query paths too.
+        /// </summary>
         public static int GetMaxRate(string? laptopScreen)
         {
             if (MAX_RATE > 0) return MAX_RATE;
-            else return ScreenNative.GetMaxRefreshRate(laptopScreen);
+
+            int detected = ScreenNative.GetMaxRefreshRate(laptopScreen);
+            if (detected > 0) return detected;
+
+            int cached = AppConfig.Get("max_frequency");
+            return cached > 0 ? cached : MIN_RATE;
         }
 
         /// <summary>
@@ -258,10 +269,11 @@ namespace Arsenal.Display
             int frequency = ResolveReportedRefreshRate(
                 detectedFrequency,
                 AppConfig.Get("frequency", MIN_RATE));
+            // Only a live enumeration is allowed to update the remembered ceiling.
+            // GetMaxRate answers from cache when the panel is off, and writing that back
+            // would let a first run in clamshell mode pin the maximum at the 60 Hz floor.
             int maxFrequency = GetMaxRate(laptopScreen);
-
-            if (maxFrequency > 0) AppConfig.Set("max_frequency", maxFrequency);
-            else maxFrequency = AppConfig.Get("max_frequency");
+            if (screenEnabled && maxFrequency > 0) AppConfig.Set("max_frequency", maxFrequency);
 
             bool screenAuto = AppConfig.Is("screen_auto");
             bool overdriveSetting = Program.acpi.IsOverdriveSupported() && !AppConfig.IsNoOverdrive();

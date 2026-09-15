@@ -981,6 +981,30 @@ namespace Arsenal.UI.ViewModels
         }
     }
 
+    /// <summary>
+    /// One row of the read-only connected-displays list.
+    /// </summary>
+    public class ConnectedDisplayItem
+    {
+        public ConnectedDisplayItem(ActiveDisplayInfo display)
+        {
+            Name = display.IsInternal ? $"{display.Name} · built-in" : display.Name;
+
+            // The maximum is only worth saying when the display is not already at it.
+            Detail = display.MaxRefreshRate > display.RefreshRate
+                ? $"{display.Width} × {display.Height} · up to {display.MaxRefreshRate} Hz"
+                : $"{display.Width} × {display.Height}";
+
+            if (display.IsPrimary) Detail += " · primary";
+
+            RefreshRate = $"{display.RefreshRate} Hz";
+        }
+
+        public string Name { get; }
+        public string Detail { get; }
+        public string RefreshRate { get; }
+    }
+
     public partial class DisplayViewModel : ObservableObject
     {
         private readonly IDisplayService _displayService;
@@ -1011,6 +1035,27 @@ namespace Arsenal.UI.ViewModels
         /// <c>maxFrequency > MIN_RATE</c> visibility test.
         /// </summary>
         public bool IsRefreshRateSupported => MaxRefreshRate > MinRefreshRate;
+
+        /// <summary>
+        /// The refresh rate and overdrive writes go to the built-in ASUS panel and
+        /// nowhere else. While that panel is off - lid shut on a dock, or "second screen
+        /// only" - SetScreen returns without doing anything, so the buttons are greyed
+        /// rather than left looking live.
+        /// </summary>
+        [ObservableProperty]
+        private bool _isInternalPanelActive = true;
+
+        public string RefreshRateDescription => IsInternalPanelActive
+            ? "Applies to the built-in panel. External monitors keep their own rate."
+            : "The built-in panel is off, so there is nothing to apply this to. Open the lid or turn the laptop display back on in Windows.";
+
+        /// <summary>
+        /// Read-only: what Windows is driving right now, so the page answers "what is my
+        /// external monitor running at" without sending the user to Windows settings.
+        /// </summary>
+        public ObservableCollection<ConnectedDisplayItem> ConnectedDisplays { get; } = new();
+
+        public bool HasConnectedDisplays => ConnectedDisplays.Count > 0;
 
         public string MinRefreshRateLabel => $"{MinRefreshRate} Hz";
 
@@ -1135,6 +1180,8 @@ namespace Arsenal.UI.ViewModels
             CurrentRefreshRate = _displayService.CurrentRefreshRate;
             MinRefreshRate = ScreenControl.MIN_RATE;
             MaxRefreshRate = _displayService.MaxRefreshRate;
+            IsInternalPanelActive = _displayService.IsInternalPanelActive;
+            RefreshConnectedDisplays();
             IsOverdrive = _displayService.IsOverdriveEnabled;
             IsOverdriveAvailable = _displayService.IsOverdriveAvailable;
             IsResolutionToggleSupported = _displayService.IsResolutionToggleSupported;
@@ -1173,6 +1220,10 @@ namespace Arsenal.UI.ViewModels
             {
                 CurrentRefreshRate = snapshot.Frequency;
                 MaxRefreshRate = snapshot.MaxFrequency;
+                IsInternalPanelActive = snapshot.ScreenEnabled;
+                // InitScreen fires this on every display topology change, which is
+                // exactly when the attached monitors and their rates have moved.
+                RefreshConnectedDisplays();
                 IsOverdrive = snapshot.Overdrive > 0;
                 IsOverdriveAvailable = snapshot.OverdriveSetting;
                 IsAutoRefresh = snapshot.ScreenAuto;
@@ -1331,6 +1382,16 @@ namespace Arsenal.UI.ViewModels
 
         partial void OnIsOverdriveAvailableChanged(bool value) => NotifyRefreshRateSelection();
         partial void OnIsOverdriveChanged(bool value) => NotifyRefreshRateSelection();
+        partial void OnIsInternalPanelActiveChanged(bool value) => OnPropertyChanged(nameof(RefreshRateDescription));
+
+        private void RefreshConnectedDisplays()
+        {
+            ConnectedDisplays.Clear();
+            foreach (var display in _displayService.GetConnectedDisplays())
+                ConnectedDisplays.Add(new ConnectedDisplayItem(display));
+
+            OnPropertyChanged(nameof(HasConnectedDisplays));
+        }
 
         private void NotifyRefreshRateSelection()
         {

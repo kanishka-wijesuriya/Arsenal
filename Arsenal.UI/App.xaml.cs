@@ -1146,6 +1146,7 @@ namespace Arsenal.UI
             {
                 display.CurrentRefreshRate = frequency;
                 display.MaxRefreshRate = maxFrequency;
+                display.IsInternalPanelActive = screenEnabled;
                 display.IsAutoRefresh = screenAuto;
                 display.IsOverdrive = overdrive > 0;
                 display.IsOverdriveAvailable = overdriveSetting;

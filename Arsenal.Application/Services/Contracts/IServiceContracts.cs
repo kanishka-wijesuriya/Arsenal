@@ -123,6 +123,19 @@ namespace Arsenal.Application.Services.Contracts
     {
         int CurrentRefreshRate { get; }
         int MaxRefreshRate { get; }
+        /// <summary>
+        /// False while Windows is not driving the built-in panel - clamshell, "second
+        /// screen only", or a topology still settling after a hotplug. The refresh and
+        /// overdrive controls write to that panel and nothing else, so they have no
+        /// effect while this is false.
+        /// </summary>
+        bool IsInternalPanelActive { get; }
+
+        /// <summary>
+        /// Every display Windows is currently driving and the mode it is running, for
+        /// reporting only. Ordered with the built-in panel first.
+        /// </summary>
+        IReadOnlyList<Arsenal.Display.ActiveDisplayInfo> GetConnectedDisplays();
         bool IsOverdriveEnabled { get; }
         bool IsAutoRefreshEnabled { get; }
         bool IsHdrEnabled { get; }

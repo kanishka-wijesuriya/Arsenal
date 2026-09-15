@@ -133,21 +133,31 @@ namespace Arsenal.Application.Services
 
         private static string? ReadDisplay()
         {
-            var screen = System.Windows.Forms.Screen.PrimaryScreen;
-            if (screen is null) return null;
+            var displays = Display.ScreenNative.GetActiveDisplays();
+            if (displays.Count == 0) return null;
 
-            var text = new StringBuilder($"{screen.Bounds.Width} × {screen.Bounds.Height}");
+            // The internal panel specifically, not whichever monitor Windows calls
+            // primary - on a dock that is usually the external one, and describing it
+            // as the laptop panel made this row wrong in exactly the case it mattered.
+            var panel = displays.FirstOrDefault(display => display.IsInternal);
 
-            // The internal panel specifically, not whichever monitor Windows calls primary.
-            string? laptopScreen = Display.ScreenNative.FindLaptopScreen(true);
-            int refresh = Display.ScreenNative.GetRefreshRate(laptopScreen);
-            int maximum = Display.ScreenControl.GetMaxRate(laptopScreen);
+            var text = new StringBuilder();
 
-            if (refresh > 0) text.Append($" · {refresh} Hz");
-            if (maximum > refresh) text.Append($" (up to {maximum} Hz)");
+            if (panel is not null)
+            {
+                text.Append($"{panel.Width} × {panel.Height} · {panel.RefreshRate} Hz");
+                if (panel.MaxRefreshRate > panel.RefreshRate) text.Append($" (up to {panel.MaxRefreshRate} Hz)");
+            }
+            else
+            {
+                text.Append("Built-in panel off");
+            }
 
             if (AppConfig.IsOLED()) text.Append(" · OLED");
             else if (AppConfig.IsForceMiniled()) text.Append(" · Mini-LED");
+
+            foreach (var external in displays.Where(display => !display.IsInternal))
+                text.Append($"  ·  {external.Name} {external.Width} × {external.Height} · {external.RefreshRate} Hz");
 
             return text.ToString();
         }

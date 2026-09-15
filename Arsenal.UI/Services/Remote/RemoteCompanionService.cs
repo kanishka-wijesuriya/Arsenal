@@ -915,7 +915,9 @@ public sealed class RemoteCompanionService : IDisposable
         bool hdr = display.IsHdrEnabled;
 
         return new ScreenStatusSnapshot(
-            ScreenEnabled: display.CurrentRefreshRate >= 0,
+            // CurrentRefreshRate reads the cached rate and is always >= 0, so it can
+            // never report the panel as off. Ask the display stack instead.
+            ScreenEnabled: display.IsInternalPanelActive,
             ScreenAuto: display.IsAutoRefreshEnabled,
             Frequency: display.CurrentRefreshRate,
             MaxFrequency: display.MaxRefreshRate,
