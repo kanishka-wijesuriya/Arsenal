@@ -268,7 +268,10 @@ namespace Arsenal.Application.Services.Implementations
             {
                 int physicalMode = AppConfig.Get("gpu_mode", AsusACPI.GPUModeStandard);
                 if (physicalMode == AsusACPI.GPUModeUltimate && Program.Bridge is not null &&
-                    !Program.Bridge.ConfirmGpuModeRestart(physicalMode, AsusACPI.GPUModeStandard))
+                    !Program.Bridge.ConfirmGpuModeChange(
+                        physicalMode,
+                        AsusACPI.GPUModeStandard,
+                        new GpuModeChangeConfirmation(RequiresRestart: true, WarnsExternalDisplays: false)))
                 {
                     GpuModeChanged?.Invoke(CurrentGpuMode);
                     return;
