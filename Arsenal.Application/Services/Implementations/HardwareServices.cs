@@ -19,7 +19,12 @@ namespace Arsenal.Application.Services.Implementations
         public int CurrentRefreshRate => AppConfig.Get("frequency", 60);
         // Keep the maximum-rate source identical to the legacy implementation.
         // It honours the optional max_rate override before querying the panel.
+        // GetMaxRate resolves a failed enumeration from cache, so this never answers
+        // the -1 that used to reach the refresh-rate buttons as "-1 Hz" whenever the
+        // internal panel was off behind an external monitor.
         public int MaxRefreshRate => ScreenControl.GetMaxRate(ScreenNative.FindLaptopScreen(true));
+        public bool IsInternalPanelActive => ScreenNative.GetRefreshRate(ScreenNative.FindLaptopScreen()) > 0;
+        public IReadOnlyList<ActiveDisplayInfo> GetConnectedDisplays() => ScreenNative.GetActiveDisplays();
         public bool IsOverdriveEnabled => AppConfig.Is("overdrive");
         public bool IsAutoRefreshEnabled => AppConfig.Is("screen_auto");
         public bool IsHdrEnabled => ScreenCCD.GetHDRStatus(out _, true);
