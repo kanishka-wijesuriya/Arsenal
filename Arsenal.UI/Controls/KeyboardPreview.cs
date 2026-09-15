@@ -119,6 +119,20 @@ namespace Arsenal.UI.Controls
         /// <summary>The detected <see cref="AuraBacklightType"/>, which limits what is drawn.</summary>
         public int BacklightType { get => (int)GetValue(BacklightTypeProperty); set => SetValue(BacklightTypeProperty, value); }
 
+        public static readonly DependencyProperty ShowKeyEdgeLightingProperty = DependencyProperty.Register(
+            nameof(ShowKeyEdgeLighting), typeof(bool), typeof(KeyboardPreview),
+            new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        /// <summary>
+        /// Whether the preview shows coloured light escaping around each keycap. Some
+        /// keyboards, including the GU605, illuminate only the printed legends.
+        /// </summary>
+        public bool ShowKeyEdgeLighting
+        {
+            get => (bool)GetValue(ShowKeyEdgeLightingProperty);
+            set => SetValue(ShowKeyEdgeLightingProperty, value);
+        }
+
         public static readonly DependencyProperty LayoutProperty = DependencyProperty.Register(
             nameof(Layout), typeof(LaptopKeyboardOptions), typeof(KeyboardPreview),
             new FrameworkPropertyMetadata(default(LaptopKeyboardOptions), OnLayoutChanged));
@@ -394,24 +408,28 @@ namespace Arsenal.UI.Controls
 
             double radius = Math.Min(CornerRadius, _unit * 0.16);
 
-            // A tight bleed, not a halo. The first version inflated this far enough
-            // that neighbouring keys washed into each other and the whole board looked
-            // out of focus; the light escaping around a keycap does not travel that far.
-            if (strength > 0.01)
+            // A tight bleed, not a halo. Legend-only keyboards leave this out entirely:
+            // their keycaps stay neutral while the printed character carries the light.
+            if (ShowKeyEdgeLighting && strength > 0.01)
             {
                 context.DrawRoundedRectangle(
                     new SolidColorBrush(WithAlpha(glow, 0.26 * Math.Min(1, strength * 2.2))), null,
                     Inflate(rect, Snap(_unit * 0.055)), radius + 1, radius + 1);
             }
 
-            // The cap stays dark: on a real keyboard the light escapes around the edge
-            // and through the legend rather than lighting the plastic itself.
-            var fill = new SolidColorBrush(Mix(CapColor, glow, 0.20));
+            // The cap stays completely neutral on legend-only keyboards. Edge-lit
+            // models retain the subtle colour reflected into the keycap surface.
+            var fill = new SolidColorBrush(ShowKeyEdgeLighting
+                ? Mix(CapColor, glow, 0.20)
+                : CapColor);
 
             // One whole device pixel, placed on the half-pixel so the stroke covers a
             // pixel exactly instead of straddling two.
             double thickness = Math.Max(_pixel, Math.Round(_unit * 0.045 * _dpiScale) / _dpiScale);
-            var edge = new Pen(new SolidColorBrush(Mix(CapColor, glow, 0.78)), thickness);
+            MediaColor edgeColor = ShowKeyEdgeLighting
+                ? Mix(CapColor, glow, 0.78)
+                : MediaColor.FromRgb(0x2B, 0x2E, 0x33);
+            var edge = new Pen(new SolidColorBrush(edgeColor), thickness);
             var stroked = Deflate(rect, thickness / 2);
 
             context.DrawRoundedRectangle(fill, edge, stroked, radius, radius);
