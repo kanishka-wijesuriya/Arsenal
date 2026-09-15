@@ -21,7 +21,8 @@ namespace Arsenal.Peripherals.Keyboard
     public readonly record struct LaptopKeyboardMatch(
         LaptopKeyboardOptions Options,
         string ChassisName,
-        LaptopKeyboardConfidence Confidence);
+        LaptopKeyboardConfidence Confidence,
+        bool KeyEdgeLightingByDefault);
 
     /// <summary>
     /// Which keyboard each ASUS laptop chassis has.
@@ -55,7 +56,8 @@ namespace Arsenal.Peripherals.Keyboard
             LaptopHotkeyStyle Hotkeys,
             LaptopArrowStyle Arrows,
             bool PowerButton = false,
-            bool CopilotKey = false);
+            bool CopilotKey = false,
+            bool KeyEdgeLighting = true);
 
         /// <summary>
         /// Ordered longest-prefix-first at lookup, so a chassis whose number is a
@@ -75,7 +77,14 @@ namespace Arsenal.Peripherals.Keyboard
                 Numpad: false, Hotkeys: LaptopHotkeyStyle.MacroKeys, Arrows: LaptopArrowStyle.HalfHeightCluster,
                 PowerButton: true),
 
-            new("ROG Zephyrus G16", new[] { "GU603", "GU604", "GU605", "GA605" },
+            // The 2024 GU605 keycaps illuminate their legends without a coloured
+            // outline or glow around the cap. Keep it separate so the preview starts
+            // in the representative mode while still allowing a user override.
+            new("ROG Zephyrus G16", new[] { "GU605" },
+                Numpad: false, Hotkeys: LaptopHotkeyStyle.MacroKeys, Arrows: LaptopArrowStyle.HalfHeightCluster,
+                PowerButton: true, CopilotKey: true, KeyEdgeLighting: false),
+
+            new("ROG Zephyrus G16", new[] { "GU603", "GU604", "GA605" },
                 Numpad: false, Hotkeys: LaptopHotkeyStyle.MacroKeys, Arrows: LaptopArrowStyle.HalfHeightCluster,
                 PowerButton: true, CopilotKey: true),
 
@@ -145,7 +154,8 @@ namespace Arsenal.Peripherals.Keyboard
                             ? LaptopHotkeyStyle.MediaKeys
                             : LaptopHotkeyStyle.None),
                     string.Empty,
-                    LaptopKeyboardConfidence.Generic);
+                    LaptopKeyboardConfidence.Generic,
+                    KeyEdgeLightingByDefault: true);
             }
 
             return new LaptopKeyboardMatch(
@@ -154,7 +164,8 @@ namespace Arsenal.Peripherals.Keyboard
                     Hotkeys: match.Hotkeys, Arrows: match.Arrows,
                     PowerButton: match.PowerButton, CopilotKey: match.CopilotKey),
                 match.Name,
-                LaptopKeyboardConfidence.Chassis);
+                LaptopKeyboardConfidence.Chassis,
+                match.KeyEdgeLighting);
         }
 
         /// <summary>

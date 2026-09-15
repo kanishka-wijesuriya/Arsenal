@@ -1787,6 +1787,12 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty] private bool _previewNumpad;
         [ObservableProperty] private bool _previewIso;
 
+        /// <summary>
+        /// Preview-only appearance switch. It never changes the hardware command: it
+        /// describes whether light is visible around the physical keycaps.
+        /// </summary>
+        [ObservableProperty] private bool _previewKeyEdgeLighting = true;
+
         /// <summary>The chassis the layout was matched to, empty when nothing matched.</summary>
         [ObservableProperty] private string _previewChassis = string.Empty;
 
@@ -1837,6 +1843,9 @@ namespace Arsenal.UI.ViewModels
             PreviewChassis = match.ChassisName;
             PreviewNumpad = AppConfig.Get("keyboard_numpad", _chassisLayout.Numpad ? 1 : 0) == 1;
             PreviewIso = AppConfig.Get("keyboard_iso", _chassisLayout.Iso ? 1 : 0) == 1;
+            PreviewKeyEdgeLighting = AppConfig.Get(
+                "keyboard_preview_key_edge_lighting",
+                match.KeyEdgeLightingByDefault ? 1 : 0) == 1;
             ApplyPreviewLayout();
             SecondaryColor = FromArgbInt(AppConfig.Get("aura_color2", 0));
         }
@@ -1857,6 +1866,11 @@ namespace Arsenal.UI.ViewModels
         {
             ApplyPreviewLayout();
             if (_isReady) AppConfig.Set("keyboard_iso", value ? 1 : 0);
+        }
+
+        partial void OnPreviewKeyEdgeLightingChanged(bool value)
+        {
+            if (_isReady) AppConfig.Set("keyboard_preview_key_edge_lighting", value ? 1 : 0);
         }
         public ObservableCollection<SelectableIntOption> AuraModes { get; } = new();
         public ObservableCollection<SelectableIntOption> MatrixModes { get; } = new();

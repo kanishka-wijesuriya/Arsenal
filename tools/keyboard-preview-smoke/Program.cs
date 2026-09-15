@@ -59,6 +59,11 @@ internal static class Program
             // than only at the flattering one.
             Render(directory, "11-rainbow-actual-size", AuraMode.AuraRainbow, AuraBacklightType.PerKey, pink, numpad: false, scale: 1.0);
 
+            // GU605-style legend-only lighting: the keys stay neutral while the
+            // characters still show the selected backlight colour.
+            Render(directory, "12-static-legends-only", AuraMode.AuraStatic, AuraBacklightType.PerKey,
+                cyan, numpad: false, showKeyEdgeLighting: false);
+
             RenderThisMachine(directory);
 
             Console.WriteLine("keyboard preview frames written to " + Path.GetFullPath(directory));
@@ -151,7 +156,8 @@ internal static class Program
 
     private static void Render(
         string directory, string name, AuraMode mode, AuraBacklightType backlight, Color color,
-        bool numpad, bool iso = false, bool lightbar = false, int brightness = 3, double scale = 2.0)
+        bool numpad, bool iso = false, bool lightbar = false, int brightness = 3, double scale = 2.0,
+        bool showKeyEdgeLighting = true)
     {
         var preview = new KeyboardPreview
         {
@@ -161,6 +167,7 @@ internal static class Program
             SecondaryColor = Color.FromRgb(0, 0, 0),
             Brightness = brightness,
             BacklightType = (int)backlight,
+            ShowKeyEdgeLighting = showKeyEdgeLighting,
             Layout = new LaptopKeyboardOptions(Numpad: numpad, Iso: iso, Lightbar: lightbar,
                 Hotkeys: LaptopHotkeyStyle.MediaKeys),
         };
@@ -247,6 +254,8 @@ internal static class Program
             throw new InvalidOperationException($"Backlight type binding did not arrive: {preview.BacklightType} vs {viewModel.BacklightZoneType}.");
         if (preview.Layout != viewModel.PreviewLayout)
             throw new InvalidOperationException("The layout binding did not arrive.");
+        if (preview.ShowKeyEdgeLighting != viewModel.PreviewKeyEdgeLighting)
+            throw new InvalidOperationException("The key-edge lighting binding did not arrive.");
 
         // Changing the view model has to move the preview, which is the whole point of
         // the row sitting above the effect list.
@@ -254,6 +263,11 @@ internal static class Program
         page.UpdateLayout();
         if (preview.Mode != (int)AuraMode.AuraRainbow)
             throw new InvalidOperationException("Selecting an effect did not reach the preview.");
+
+        viewModel.PreviewKeyEdgeLighting = !viewModel.PreviewKeyEdgeLighting;
+        page.UpdateLayout();
+        if (preview.ShowKeyEdgeLighting != viewModel.PreviewKeyEdgeLighting)
+            throw new InvalidOperationException("Changing key-edge lighting did not reach the preview.");
 
         var bitmap = new RenderTargetBitmap(1080, 1200, 96, 96, PixelFormats.Pbgra32);
         bitmap.Render(page);
@@ -368,13 +382,14 @@ internal static class Program
             SecondaryColor = Color.FromRgb(0, 0, 0),
             Brightness = 3,
             BacklightType = (int)AuraBacklightType.PerKey,
+            ShowKeyEdgeLighting = match.KeyEdgeLightingByDefault,
             Layout = match.Options,
         };
 
         RenderTargetBitmap bitmap = Capture(preview, match.Options.Numpad ? 1000 : 800, 100);
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using (FileStream stream = File.Create(Path.Combine(directory, "12-this-machine.png"))) encoder.Save(stream);
+        using (FileStream stream = File.Create(Path.Combine(directory, "13-this-machine.png"))) encoder.Save(stream);
         preview.Dispose();
 
         Console.WriteLine($"this machine drawn as: {(match.ChassisName.Length > 0 ? match.ChassisName : "generic")}");
@@ -382,21 +397,21 @@ internal static class Program
 
     private static void AssertCatalog()
     {
-        (string Model, bool Numpad, LaptopHotkeyStyle Hotkeys, LaptopArrowStyle Arrows, string Chassis)[] cases =
+        (string Model, bool Numpad, LaptopHotkeyStyle Hotkeys, LaptopArrowStyle Arrows, string Chassis, bool KeyEdgeLighting)[] cases =
         {
-            ("GU605MI", false, LaptopHotkeyStyle.MacroKeys, LaptopArrowStyle.HalfHeightCluster, "ROG Zephyrus G16"),
-            ("GA403UV", false, LaptopHotkeyStyle.MacroKeys, LaptopArrowStyle.HalfHeightCluster, "ROG Zephyrus G14"),
-            ("GX650PY", true,  LaptopHotkeyStyle.MacroKeys, LaptopArrowStyle.HalfHeightCluster, "ROG Zephyrus Duo"),
-            ("G634JYR", false, LaptopHotkeyStyle.MediaKeys, LaptopArrowStyle.Tucked, "ROG Strix 15/16"),
-            ("G713PV",  true,  LaptopHotkeyStyle.MediaKeys, LaptopArrowStyle.Tucked, "ROG Strix 17/18"),
-            ("G834JZR", true,  LaptopHotkeyStyle.MediaKeys, LaptopArrowStyle.Tucked, "ROG Strix 17/18"),
-            ("FA507NV", true,  LaptopHotkeyStyle.None, LaptopArrowStyle.Tucked, "TUF Gaming 15"),
-            ("FX707VI", true,  LaptopHotkeyStyle.None, LaptopArrowStyle.Tucked, "TUF Gaming 17"),
-            ("GV301QH", false, LaptopHotkeyStyle.None, LaptopArrowStyle.HalfHeightCluster, "ROG Flow X13"),
-            ("GZ302EA", false, LaptopHotkeyStyle.None, LaptopArrowStyle.HalfHeightCluster, "ROG Flow Z13"),
+            ("GU605MI", false, LaptopHotkeyStyle.MacroKeys, LaptopArrowStyle.HalfHeightCluster, "ROG Zephyrus G16", false),
+            ("GA403UV", false, LaptopHotkeyStyle.MacroKeys, LaptopArrowStyle.HalfHeightCluster, "ROG Zephyrus G14", true),
+            ("GX650PY", true,  LaptopHotkeyStyle.MacroKeys, LaptopArrowStyle.HalfHeightCluster, "ROG Zephyrus Duo", true),
+            ("G634JYR", false, LaptopHotkeyStyle.MediaKeys, LaptopArrowStyle.Tucked, "ROG Strix 15/16", true),
+            ("G713PV",  true,  LaptopHotkeyStyle.MediaKeys, LaptopArrowStyle.Tucked, "ROG Strix 17/18", true),
+            ("G834JZR", true,  LaptopHotkeyStyle.MediaKeys, LaptopArrowStyle.Tucked, "ROG Strix 17/18", true),
+            ("FA507NV", true,  LaptopHotkeyStyle.None, LaptopArrowStyle.Tucked, "TUF Gaming 15", true),
+            ("FX707VI", true,  LaptopHotkeyStyle.None, LaptopArrowStyle.Tucked, "TUF Gaming 17", true),
+            ("GV301QH", false, LaptopHotkeyStyle.None, LaptopArrowStyle.HalfHeightCluster, "ROG Flow X13", true),
+            ("GZ302EA", false, LaptopHotkeyStyle.None, LaptopArrowStyle.HalfHeightCluster, "ROG Flow Z13", true),
         };
 
-        foreach ((string model, bool numpad, LaptopHotkeyStyle hotkeys, LaptopArrowStyle arrows, string chassis) in cases)
+        foreach ((string model, bool numpad, LaptopHotkeyStyle hotkeys, LaptopArrowStyle arrows, string chassis, bool keyEdgeLighting) in cases)
         {
             LaptopKeyboardMatch match = LaptopKeyboardCatalog.Resolve(model, iso: false, lightbar: false);
 
@@ -410,6 +425,8 @@ internal static class Program
                 throw new InvalidOperationException($"{model} arrows are {match.Options.Arrows}, expected {arrows}.");
             if (match.Confidence != LaptopKeyboardConfidence.Chassis)
                 throw new InvalidOperationException($"{model} resolved with confidence {match.Confidence}.");
+            if (match.KeyEdgeLightingByDefault != keyEdgeLighting)
+                throw new InvalidOperationException($"{model} key-edge lighting default is {match.KeyEdgeLightingByDefault}, expected {keyEdgeLighting}.");
         }
 
         // Something ASUS has not made: it must fall back rather than pick a neighbour.
@@ -429,7 +446,7 @@ internal static class Program
         LaptopKeyboardMatch here = LaptopKeyboardLayout.Detect();
         Console.WriteLine($"resolved here: chassis={(here.ChassisName.Length > 0 ? here.ChassisName : "(none)")} "
             + $"numpad={here.Options.Numpad} hotkeys={here.Options.Hotkeys} arrows={here.Options.Arrows} "
-            + $"iso={here.Options.Iso} lightbar={here.Options.Lightbar}");
+            + $"iso={here.Options.Iso} lightbar={here.Options.Lightbar} key-edge-lighting={here.KeyEdgeLightingByDefault}");
     }
 
     private static byte[] PixelsOf(RenderTargetBitmap bitmap)
