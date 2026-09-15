@@ -11,6 +11,7 @@
                 <ResourceDictionary Source="Styles/DesignTokens.xaml" />
                 <ResourceDictionary Source="Styles/Controls.xaml" />
                 <ResourceDictionary Source="Styles/Components.xaml" />
+                <ResourceDictionary Source="Styles/Navigation.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <Style TargetType="TextBlock">

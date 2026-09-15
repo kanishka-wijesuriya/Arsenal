@@ -166,6 +166,7 @@
                            IsFooterSeparatorVisible="False"
                            CompactPaneLength="48"
                            OpenPaneLength="220"
+                           ItemTemplate="{StaticResource CompactSidebarNavigationItemTemplate}"
                            PreviewMouseLeftButtonUp="RootNavigationView_PreviewMouseLeftButtonUp"
                            PreviewKeyDown="RootNavigationView_PreviewKeyDown"
                            SelectionChanged="NavigationView_SelectionChanged">
