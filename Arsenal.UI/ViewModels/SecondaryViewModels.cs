@@ -886,6 +886,9 @@ namespace Arsenal.UI.ViewModels
         private bool _runOnStartup = false;
 
         [ObservableProperty]
+        private bool _startMinimized;
+
+        [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(AdministratorDescription))]
         private bool _runAsAdministrator;
 
@@ -956,6 +959,7 @@ namespace Arsenal.UI.ViewModels
         {
             RunAsAdministrator = AppConfig.Is("run_as_admin");
             RunOnStartup = Startup.IsScheduled();
+            StartMinimized = AppConfig.Is(ApplicationLaunch.StartMinimizedSetting);
             MinimizeToTray = AppConfig.IsNotFalse("minimize_to_tray");
             SelectedTheme = AppConfig.Get("theme", 0);
             DisableTransparency = Arsenal.UI.App.IsOpaqueWindow;
@@ -987,6 +991,7 @@ namespace Arsenal.UI.ViewModels
         [RelayCommand]
         public void SavePreferences()
         {
+            AppConfig.Set(ApplicationLaunch.StartMinimizedSetting, StartMinimized ? 1 : 0);
             AppConfig.Set("minimize_to_tray", MinimizeToTray ? 1 : 0);
             AppConfig.Set("theme", SelectedTheme);
             AppConfig.Set("check_updates", CanSelfUpdate && CheckUpdatesOnStartup ? 1 : 0);
@@ -1087,6 +1092,7 @@ namespace Arsenal.UI.ViewModels
         }
 
         partial void OnMinimizeToTrayChanged(bool value) { if (_isReady) SavePreferences(); }
+        partial void OnStartMinimizedChanged(bool value) { if (_isReady) SavePreferences(); }
 
         partial void OnDisableTransparencyChanged(bool value)
         {

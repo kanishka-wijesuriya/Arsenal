@@ -315,6 +315,7 @@ internal static class CompanionCatalog
         groups.Add(Group("app", "Windows app", "Software", new List<object>
         {
             Toggle("app.startup", "runOnStartup", "Run at Windows sign-in"),
+            Toggle("app.startMinimized", "startMinimized", "Start minimised"),
             Toggle("app.closeToTray", "minimizeToTray", "Minimise to tray on close"),
             Toggle("app.checkUpdates", "checkUpdates", "Check for updates at startup"),
             Choice("app.theme", "theme", "Theme", Pairs(("System", 0), ("Dark", 1), ("Light", 2))),

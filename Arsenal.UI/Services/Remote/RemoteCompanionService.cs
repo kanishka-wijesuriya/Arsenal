@@ -851,7 +851,8 @@ public sealed class RemoteCompanionService : IDisposable
                 slashSleepAnimation = slashSettings.SleepAnimation, slashSleepPattern = slashSettings.SleepPattern,
                 slashLowBatteryAlert = slashSettings.LowBatteryAlert, slashBatteryIndicator = slashSettings.BatteryIndicator,
                 slashPowerSaving = slashSettings.PowerSaving, slashDimLevel = slashSettings.DimLevel,
-                runOnStartup = Startup.IsScheduled(), minimizeToTray = AppConfig.IsNotFalse("minimize_to_tray"),
+                runOnStartup = Startup.IsScheduled(), startMinimized = AppConfig.Is(ApplicationLaunch.StartMinimizedSetting),
+                minimizeToTray = AppConfig.IsNotFalse("minimize_to_tray"),
                 checkUpdates = AppConfig.IsNotFalse("check_updates"), theme = AppConfig.Get("theme", 0),
                 toastEnabled = AppConfig.IsNotFalse("toast_enabled"), toastStyle = AppConfig.Get("toast_style", 0),
                 toastPosition = AppConfig.Get("toast_position", 0), toastDuration = AppConfig.Get("toast_duration", 3500), toastProgress = AppConfig.IsNotFalse("toast_progress")
@@ -1135,6 +1136,7 @@ public sealed class RemoteCompanionService : IDisposable
             case "advanced.powerOptions": _services.GetRequiredService<AdvancedViewModel>().OpenPowerPlanSettings(); break;
             case "advanced.log": _services.GetRequiredService<AdvancedViewModel>().OpenLog(); break;
             case "app.startup": SetSettings(vm => vm.RunOnStartup = Bool(value)); break;
+            case "app.startMinimized": SetSettings(vm => vm.StartMinimized = Bool(value)); break;
             case "app.closeToTray": SetSettings(vm => vm.MinimizeToTray = Bool(value)); break;
             case "app.checkUpdates": SetSettings(vm => vm.CheckUpdatesOnStartup = Bool(value)); break;
             case "app.runSetup": _services.GetRequiredService<SettingsViewModel>().RunSetup(); break;
