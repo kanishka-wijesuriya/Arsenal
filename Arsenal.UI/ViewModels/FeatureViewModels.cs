@@ -170,6 +170,20 @@ namespace Arsenal.UI.ViewModels
         public bool IsAtMinimumRefreshRate => !IsAutoRefresh && RefreshRate <= MinimumRefreshRate;
         public bool IsAtMaximumRefreshRate => !IsAutoRefresh && RefreshRate > MinimumRefreshRate;
 
+        /// <summary>
+        /// The row writes to the built-in ASUS panel. While Windows is not driving that
+        /// panel the write is a no-op, so the buttons are greyed and the row says why
+        /// rather than offering two rates that change nothing.
+        /// </summary>
+        [ObservableProperty]
+        private bool _isInternalPanelActive = true;
+
+        public string RefreshRateNote => IsInternalPanelActive
+            ? "Choose the panel rate without leaving Home."
+            : "The built-in panel is off, so there is nothing to apply this to.";
+
+        partial void OnIsInternalPanelActiveChanged(bool value) => OnPropertyChanged(nameof(RefreshRateNote));
+
         partial void OnRefreshRateChanged(int value)
         {
             OnPropertyChanged(nameof(IsAtMinimumRefreshRate));
@@ -271,6 +285,7 @@ namespace Arsenal.UI.ViewModels
             BatteryPercent = _batteryService.BatteryPercent;
             ChargeLimit = _batteryService.ChargeLimit;
             RefreshRate = _displayService.CurrentRefreshRate;
+            IsInternalPanelActive = _displayService.IsInternalPanelActive;
             KeyboardBrightness = _lightingService.Brightness;
             IsTouchpadEnabled = _inputDeviceService.IsTouchpadEnabled;
             IsFullChargeOverride = _batteryService.IsFullChargeOverride;
@@ -305,6 +320,7 @@ namespace Arsenal.UI.ViewModels
             {
                 RefreshRate = snapshot.Frequency;
                 IsAutoRefresh = snapshot.ScreenAuto;
+                IsInternalPanelActive = snapshot.ScreenEnabled;
                 OnPropertyChanged(nameof(MaximumRefreshRate));
             });
 
@@ -443,6 +459,8 @@ namespace Arsenal.UI.ViewModels
         [RelayCommand]
         public void SelectRefreshRate(object? hzParam)
         {
+            if (!IsInternalPanelActive) return;
+
             int requested = ToInt(hzParam, MinimumRefreshRate);
             bool maximum = requested > MinimumRefreshRate;
             _displayService.SetRefreshRate(maximum ? Arsenal.Display.ScreenControl.MAX_REFRESH : MinimumRefreshRate);

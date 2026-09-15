@@ -21,6 +21,7 @@
             <converters:IntEqualsConverter x:Key="IntEqualsConverter" />
             <converters:BoolToTextConverter x:Key="BoolToTextConverter" />
             <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <converters:AnyTrueConverter x:Key="AnyTrueConverter" />
             <converters:EmptyCountToVisibleConverter x:Key="EmptyCountToVisibleConverter" />
             <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
             <converters:BoolToVisibleOrHiddenConverter x:Key="BoolToVisibleOrHiddenConverter" />

@@ -183,5 +183,14 @@ namespace Arsenal.UI.ViewModels
 
         [ObservableProperty]
         private bool _isChecked;
+
+        /// <summary>
+        /// False when pressing the tile would not reach the hardware - a panel control
+        /// while Windows is not driving the built-in panel, for instance. The tile stays
+        /// on the grid so the layout does not shuffle underneath the user; it is dimmed
+        /// and inert until the hardware is back.
+        /// </summary>
+        [ObservableProperty]
+        private bool _isActionable = true;
     }
 }

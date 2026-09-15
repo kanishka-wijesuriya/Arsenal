@@ -19,4 +19,18 @@ namespace Arsenal.UI.Converters
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value is not true;
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => value is not true;
     }
+
+    /// <summary>
+    /// True when any source is true. Used where a control has more than one reason to
+    /// stay usable - a quick panel tile whose hardware is unavailable still has to
+    /// accept clicks while the grid is being rearranged.
+    /// </summary>
+    public sealed class AnyTrueConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture) =>
+            values.Any(value => value is true);
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
+            throw new NotSupportedException();
+    }
 }

@@ -979,6 +979,7 @@ namespace Arsenal.UI.ViewModels
             {
                 tile.State = TileState(tile.Key);
                 tile.IsChecked = TileIsOn(tile.Key);
+                tile.IsActionable = TileIsActionable(tile.Key);
             }
         }
 
@@ -998,6 +999,10 @@ namespace Arsenal.UI.ViewModels
                 return;
             }
 
+            // The tile is dimmed in this state, but a keyboard activation or a stale
+            // binding must not get through either.
+            if (!slot.IsActionable) return;
+
             TileActivate(slot.Key);
         }
 
@@ -1007,6 +1012,7 @@ namespace Arsenal.UI.ViewModels
         {
             if (slotParam is not QuickTileSlot slot) return;
             if (IsEditingTiles) { ActivateTile(slot); return; }
+            if (!slot.IsActionable) return;
             if (slot.Definition.Detail != QuickDetailPage.None) OpenDetail(slot.Definition.Detail);
         }
 
@@ -1128,6 +1134,21 @@ namespace Arsenal.UI.ViewModels
             "always_on_top" => OnOff(AppConfig.Is("topmost")),
             "power_options" => "Open",
             _ => string.Empty
+        };
+
+        /// <summary>
+        /// Whether pressing the tile would actually reach the hardware right now. This
+        /// is transient state, unlike TileIsSupported, which is about what the machine
+        /// can do at all - a tile the machine supports stays on the grid either way.
+        /// </summary>
+        private bool TileIsActionable(string key) => key switch
+        {
+            // All three write to the built-in ASUS panel, and ScreenControl.SetScreen
+            // returns without doing anything while Windows is not driving it. Automatic
+            // refresh is deliberately absent: it is a stored preference that takes
+            // effect when the panel comes back, so setting it now is not a dead write.
+            "refresh" or "overdrive" or "miniled" => IsInternalPanelActive,
+            _ => true
         };
 
         /// <summary>Whether the tile draws itself lit.</summary>
