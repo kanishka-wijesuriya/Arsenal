@@ -252,11 +252,13 @@
                                      Detail="{Binding Telemetry.FanGpuRpm, StringFormat='{}GPU fan {0} rpm'}"/>
 
                 <controls:MetricTile Icon="BatteryCharge24"
-                                     Label="Battery"
+                                     Label="Charge"
                                      Value="{Binding BatteryPercent, StringFormat='{}{0}%'}"
                                      Progress="{Binding BatteryPercent}"
+                                     ProgressCap="{Binding EffectiveChargeLimit}"
                                      ShowProgress="True"
-                                     Detail="{Binding BatteryDischarge, StringFormat='{}Discharge {0:F1} W'}"/>
+                                     Detail="{Binding ChargeStopsAtText}"
+                                     DetailIcon="ShieldCheckmark24"/>
             </controls:ResponsiveGrid>
 
             <controls:SettingsGroup x:Name="HomeControlsGroup" Header="Controls" Icon="Flash24"
