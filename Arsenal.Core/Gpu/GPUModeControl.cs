@@ -191,7 +191,7 @@ namespace Arsenal.Gpu
                 // Deliberately left busy: Windows is going down, and clearing the
                 // overlay here would flash the UI back for the last second.
                 OnGPUBusyChanged?.Invoke(true, "Restarting Windows");
-                Process.Start("shutdown", "/r /t 1");
+                Process.Start(ProcessHelper.SystemPath("shutdown"), "/r /t 1");
             }
             catch (Exception ex)
             {

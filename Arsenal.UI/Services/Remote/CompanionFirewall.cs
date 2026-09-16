@@ -132,7 +132,7 @@ public static class CompanionFirewall
         {
             using var process = Process.Start(new ProcessStartInfo
             {
-                FileName = "netsh.exe",
+                FileName = ProcessHelper.SystemPath("netsh.exe"),
                 Arguments = arguments,
                 UseShellExecute = false,
                 CreateNoWindow = true,

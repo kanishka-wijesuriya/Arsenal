@@ -612,7 +612,7 @@ namespace Arsenal.Input
                 if ((User32.GetAsyncKeyState(0x11) & User32.GetAsyncKeyState(0x10) & User32.GetAsyncKeyState(0x12) & 0x8000) != 0)
                 {
                     Program.acpi.DeviceSet(AsusACPI.GPUMux, 1, "MUX hybrid recovery");
-                    Process.Start(new ProcessStartInfo("shutdown", "/r /t 1") { CreateNoWindow = true, UseShellExecute = false });
+                    Process.Start(new ProcessStartInfo(ProcessHelper.SystemPath("shutdown"), "/r /t 1") { CreateNoWindow = true, UseShellExecute = false });
                 }
                 return;
             }

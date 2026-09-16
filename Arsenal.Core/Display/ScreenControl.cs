@@ -190,7 +190,7 @@ namespace Arsenal.Display
             if (dialogResult == DialogResult.Yes)
             {
                 Program.acpi.DeviceSet(AsusACPI.ScreenFHD, (fhd == 1) ? 0 : 1, "FHD");
-                Process.Start("shutdown", "/r /t 1");
+                Process.Start(ProcessHelper.SystemPath("shutdown"), "/r /t 1");
             }
         }
 

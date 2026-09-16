@@ -60,7 +60,7 @@ namespace Arsenal.AnimeMatrix
                 string msi = Directory.GetFiles(temp, "*.msi", SearchOption.AllDirectories)[0];
 
                 // administrative install just unpacks the font, without registering it in the system
-                using (var process = Process.Start(new ProcessStartInfo("msiexec", $"/a \"{msi}\" /qn TARGETDIR=\"{temp}\"") { CreateNoWindow = true }))
+                using (var process = Process.Start(new ProcessStartInfo(Arsenal.Helpers.ProcessHelper.SystemPath("msiexec"), $"/a \"{msi}\" /qn TARGETDIR=\"{temp}\"") { CreateNoWindow = true }))
                     if (process is not null) await process.WaitForExitAsync();
 
                 Directory.CreateDirectory(Path.GetDirectoryName(fontFile)!);

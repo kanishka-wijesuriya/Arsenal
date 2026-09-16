@@ -84,7 +84,7 @@ public static class AmdDisplay
         if (Directory.Exists(uwpPackageFolder))
         {
             string aumid = @"shell:AppsFolder\AdvancedMicroDevicesInc-2.AMDRadeonSoftware_0a9344xs7nr4m!App";
-            Process.Start(new ProcessStartInfo("explorer.exe", aumid)
+            Process.Start(new ProcessStartInfo(Arsenal.Helpers.ProcessHelper.SystemPath("explorer.exe"), aumid)
             {
                 UseShellExecute = true
             });

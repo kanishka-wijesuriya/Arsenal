@@ -51,6 +51,12 @@ public static class AppConfig
 
         if (!TryLoadConfig(configFile) && !TryRecoverConfig(configFile) && !TryLoadConfig(configFile + ".bak") && !TryLoadConfig(fallbackConfigFile)) Init();
 
+        // Rewrite the shared copy once on the way in, rather than waiting for the next
+        // settings change. An installation upgraded from an earlier build has one sitting
+        // in ProgramData with the companion tokens still in it, and every account on the
+        // machine can read it until this runs.
+        SyncFallbackConfig();
+
         timer.Elapsed += Timer_Elapsed;
     }
 
@@ -140,6 +146,23 @@ public static class AppConfig
             File.Move(tmp, path);
     }
 
+    /// <summary>
+    /// Settings that must not reach the shared copy of the configuration.
+    /// </summary>
+    /// <remarks>
+    /// The fallback lives in <c>C:\ProgramData</c>, which every account on the machine can
+    /// read, and it exists for one reader: the charge-limit task, which runs as SYSTEM and
+    /// wants a charge percentage. It was a plain copy of the whole file, so it also handed
+    /// every local account the companion bearer tokens - the credentials that authorize
+    /// commands from a phone. Nothing that reads this copy has any use for them.
+    /// </remarks>
+    private static readonly HashSet<string> PrivateKeys = new(StringComparer.Ordinal)
+    {
+        "companion_token",
+        "companion_devices",
+        "companion_last_device",
+    };
+
     private static void SyncFallbackConfig()
     {
         if (fallbackConfigFile is null || fallbackConfigFile == configFile) return;
@@ -151,8 +174,16 @@ public static class AppConfig
             string? directory = Path.GetDirectoryName(fallbackConfigFile);
             if (directory is null) return;
 
+            // Serialised rather than copied, so the private keys are dropped on the way
+            // out instead of being written and deleted.
+            string shared;
+            lock (configLock)
+                shared = JsonSerializer.Serialize(
+                    config.Where(entry => !PrivateKeys.Contains(entry.Key)).ToDictionary(entry => entry.Key, entry => entry.Value),
+                    new JsonSerializerOptions { WriteIndented = true });
+
             Directory.CreateDirectory(directory);
-            File.Copy(configFile, fallbackConfigFile, overwrite: true);
+            File.WriteAllText(fallbackConfigFile, shared);
         }
         catch (Exception)
         {

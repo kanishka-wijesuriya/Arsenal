@@ -173,9 +173,16 @@ public class Startup
                     Logger.WriteLine($"Can't check startup task: {ex.Message}");
                 }
 
-                if (ProcessHelper.IsUserAdministrator() &&
-                    taskService.RootFolder.AllTasks.FirstOrDefault(t => t.Name == chargeTaskName) == null)
-                    ScheduleCharge();
+                if (ProcessHelper.IsUserAdministrator())
+                {
+                    // Both directions, every start: register the boot task when it is
+                    // missing, and take it away again once the executable it names stops
+                    // being somewhere only administrators can write.
+                    if (taskService.RootFolder.AllTasks.FirstOrDefault(t => t.Name == chargeTaskName) == null)
+                        ScheduleCharge();
+                    else
+                        DropChargeTaskIfUnsafe(taskService);
+                }
 
             }
         }
@@ -197,10 +204,55 @@ public class Startup
         }
     }
 
+    /// <summary>
+    /// The executable a registered task will actually run.
+    /// </summary>
+    /// <remarks>
+    /// Read from the task rather than from <see cref="strExeFilePath"/>, because the two
+    /// differ exactly when it matters: a task registered while Arsenal lived in Program
+    /// Files still points there after the executable has been moved somewhere writable,
+    /// and it is the registered path that Windows will run as SYSTEM.
+    /// </remarks>
+    static string? RegisteredExecutable(Microsoft.Win32.TaskScheduler.Task task)
+    {
+        try { return (task.Definition.Actions.FirstOrDefault() as ExecAction)?.Path?.Trim().Trim('"'); }
+        catch (Exception e) { Logger.WriteLine("Can't read the task's executable: " + e.Message); return null; }
+    }
+
+    /// <summary>
+    /// Removes a charge task that would run an executable a standard user can replace.
+    /// </summary>
+    static void DropChargeTaskIfUnsafe(TaskService taskService)
+    {
+        var charge = taskService.RootFolder.AllTasks.FirstOrDefault(t => t.Name == chargeTaskName);
+        if (charge is null) return;
+
+        string? registered = RegisteredExecutable(charge);
+        if (PathSecurity.IsProtectedFile(registered)) return;
+
+        Logger.WriteLine($"Removing the charge limit task: it runs {registered} as SYSTEM, and that file is not in an administrator-only location");
+        UnscheduleCharge();
+    }
+
     public static void ScheduleCharge()
     {
 
         if (strExeFilePath is null) return;
+
+        // This task runs as SYSTEM, at boot, with nobody watching, so it is worth no more
+        // than the file it points at. Arsenal is a portable executable and normally sits
+        // in Downloads or a folder made at the root of a drive - both writable by the
+        // user, and so by anything running as the user. Registering it there would let
+        // whoever can replace that file run as SYSTEM on the next boot.
+        //
+        // The charge limit itself is not lost: Arsenal applies it when it starts at
+        // logon. Only the boot-time task, which is what needs SYSTEM, is refused.
+        if (!PathSecurity.IsProtectedFile(strExeFilePath))
+        {
+            Logger.WriteLine($"Charge limit task refused: {strExeFilePath} is in a location a standard user can write to. Move Arsenal to Program Files to schedule it at boot.");
+            UnscheduleCharge();
+            return;
+        }
 
         using (TaskDefinition td = TaskService.Instance.NewTask())
         {
@@ -247,7 +299,16 @@ public class Startup
 
             td.Principal.LogonType = TaskLogonType.InteractiveToken;
             if (AppConfig.Is("run_as_admin") && ProcessHelper.IsUserAdministrator())
+            {
                 td.Principal.RunLevel = TaskRunLevel.Highest;
+
+                // Not refused the way the SYSTEM task is: this one runs as the person who
+                // asked for it, and they can already run this executable by hand. What is
+                // new is that it runs elevated at logon without a prompt, so it is worth
+                // saying where that file lives when anyone could have replaced it.
+                if (!PathSecurity.IsProtectedFile(strExeFilePath))
+                    Logger.WriteLine($"Startup task runs elevated from {strExeFilePath}, which a standard user can write to");
+            }
 
             td.Settings.StopIfGoingOnBatteries = false;
             td.Settings.DisallowStartIfOnBatteries = false;

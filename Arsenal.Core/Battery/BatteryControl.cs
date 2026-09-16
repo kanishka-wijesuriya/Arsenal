@@ -115,7 +115,7 @@ namespace Arsenal.Battery
                 cmd.StartInfo.WorkingDirectory = reportDir;
                 cmd.StartInfo.UseShellExecute = false;
                 cmd.StartInfo.CreateNoWindow = true;
-                cmd.StartInfo.FileName = "powershell";
+                cmd.StartInfo.FileName = ProcessHelper.SystemPath("powershell");
                 cmd.StartInfo.Arguments = "powercfg /batteryreport; explorer battery-report.html";
                 cmd.Start();
             }

@@ -45,6 +45,7 @@ public sealed class RemoteCompanionService : IDisposable
     private bool _subscribedToChanges;
     private bool _subscribedToNetwork;
     private IReadOnlyList<string> _addresses = Array.Empty<string>();
+    private IReadOnlyList<(IPAddress Address, int PrefixLength)> _localNetworks = Array.Empty<(IPAddress, int)>();
     private IReadOnlyList<string> _hostNames = Array.Empty<string>();
     private UdpClient? _discoverySocket;
     private X509Certificate2? _certificate;
@@ -292,6 +293,7 @@ public sealed class RemoteCompanionService : IDisposable
     private void RefreshAddresses()
     {
         _addresses = LocalAddresses();
+        _localNetworks = LocalNetworks();
         _hostNames = LocalHostNames();
         Address = (_addresses.FirstOrDefault() ?? "127.0.0.1") + ":" + DefaultPort;
     }
@@ -324,7 +326,7 @@ public sealed class RemoteCompanionService : IDisposable
             try
             {
                 UdpReceiveResult request = await _discoverySocket.ReceiveAsync(cancellationToken);
-                if (!IsPrivateAddress(request.RemoteEndPoint.Address)) continue;
+                if (!IsReachablePeer(request.RemoteEndPoint.Address)) continue;
                 if (!Encoding.UTF8.GetString(request.Buffer).Equals("ARSENAL_DISCOVER_V1", StringComparison.Ordinal)) continue;
 
                 byte[] response = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
@@ -351,23 +353,36 @@ public sealed class RemoteCompanionService : IDisposable
         }
     }
 
-    private static bool IsPrivateAddress(IPAddress address)
+    /// <summary>
+    /// Whether a peer is near enough to be served at all.
+    /// </summary>
+    /// <remarks>
+    /// The rule itself is <see cref="NetworkScope"/>, so it can be tested without a
+    /// socket. What lives here is the machine's current answer to "which networks am I
+    /// on", refreshed alongside the advertised addresses whenever the laptop moves.
+    ///
+    /// <para>Note that this cannot be the private-ranges test on its own:
+    /// <see cref="IsAdvertisableAddress"/> hands out global IPv6 addresses, because on an
+    /// IPv6 network that is what the phone in the next room has to dial.</para>
+    /// </remarks>
+    private bool IsReachablePeer(IPAddress? address) => NetworkScope.IsReachablePeer(address, _localNetworks);
+
+    private static IReadOnlyList<(IPAddress Address, int PrefixLength)> LocalNetworks()
     {
-        if (IPAddress.IsLoopback(address)) return true;
-        if (address.IsIPv4MappedToIPv6) address = address.MapToIPv4();
-        if (address.AddressFamily == AddressFamily.InterNetworkV6)
+        try
         {
-            // Link-local and unique-local only: an address a phone can hold on the same
-            // network, never one that reached us from the internet.
-            return address.IsIPv6LinkLocal || (address.GetAddressBytes()[0] & 0xFE) == 0xFC;
+            return NetworkInterface.GetAllNetworkInterfaces()
+                .Where(adapter => adapter.OperationalStatus == OperationalStatus.Up && adapter.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                .SelectMany(adapter => adapter.GetIPProperties().UnicastAddresses)
+                .Where(unicast => unicast.PrefixLength > 0 && !IPAddress.IsLoopback(unicast.Address))
+                .Select(unicast => (unicast.Address, unicast.PrefixLength))
+                .ToArray();
         }
-        if (address.AddressFamily != AddressFamily.InterNetwork) return false;
-        byte[] bytes = address.GetAddressBytes();
-        return bytes[0] == 10
-            || bytes[0] == 172 && bytes[1] is >= 16 and <= 31
-            || bytes[0] == 192 && bytes[1] == 168
-            || bytes[0] == 169 && bytes[1] == 254
-            || bytes[0] == 100 && bytes[1] is >= 64 and <= 127;
+        catch (Exception ex)
+        {
+            Logger.WriteLine("Companion local networks: " + ex.Message);
+            return Array.Empty<(IPAddress, int)>();
+        }
     }
 
     /// <summary>
@@ -392,7 +407,7 @@ public sealed class RemoteCompanionService : IDisposable
             _devices.Clear();
             SaveDevices();
         }
-        AppConfig.Set("companion_token", Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)));
+        WriteToken(NewToken());
 
         // Revoking is a security action, so it closes pairing rather than opening a
         // fresh window: whoever is re-pairing should have to ask for that deliberately.
@@ -410,6 +425,28 @@ public sealed class RemoteCompanionService : IDisposable
         DevicesChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// How many connections may be in flight at once, and how long one gets to say what
+    /// it wants before it is dropped.
+    /// </summary>
+    /// <remarks>
+    /// Neither existed. A connection was accepted, handed to a task, and then waited on
+    /// forever: the only cancellation reaching the handshake and the header read was the
+    /// one raised when Arsenal shuts down. Anything on the network could open sockets,
+    /// send nothing, and keep a TcpClient, an SslStream and a task alive in a process that
+    /// already holds a quarter of a gigabyte - no credential and no handshake required.
+    ///
+    /// <para>The deadline covers the handshake and the request only. Routing is excluded
+    /// on purpose: a snapshot request parks for <see cref="LongPollTimeout"/> by design,
+    /// and that is a phone waiting to be told something, not a phone failing to speak.</para>
+    /// </remarks>
+    private const int MaxConnectionsInFlight = 32;
+    private static readonly TimeSpan RequestDeadline = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan ResponseDeadline = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan ConnectionSlotWait = TimeSpan.FromSeconds(2);
+    private readonly SemaphoreSlim _connections = new(MaxConnectionsInFlight, MaxConnectionsInFlight);
+    private long _lastRefusalLoggedAt;
+
     private async Task AcceptLoopAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested && _listener is not null)
@@ -418,45 +455,101 @@ public sealed class RemoteCompanionService : IDisposable
             {
                 TcpClient client = await _listener.AcceptTcpClientAsync(cancellationToken);
                 client.NoDelay = true;
+
+                // Address first: refusing here costs one accept, where refusing after the
+                // handshake costs a certificate operation per attempt.
+                IPAddress? remote = RemoteAddress(client);
+                if (remote is null || !IsReachablePeer(remote))
+                {
+                    LogRefusal($"Companion bridge refused a connection from {remote?.ToString() ?? "an unknown address"}");
+                    client.Dispose();
+                    continue;
+                }
+
+                // A burst of realtime slider requests is allowed to queue briefly; a flood
+                // that does not drain is turned away rather than accumulating.
+                if (!await _connections.WaitAsync(ConnectionSlotWait, cancellationToken))
+                {
+                    LogRefusal($"Companion bridge refused a connection from {remote}: {MaxConnectionsInFlight} already in flight");
+                    client.Dispose();
+                    continue;
+                }
+
                 // The full connection path is asynchronous already. Avoid scheduling
                 // another thread-pool work item for every phone poll and slider point.
-                _ = HandleClientAsync(client, cancellationToken);
+                _ = HandleClientAsync(client, remote, cancellationToken);
             }
             catch (OperationCanceledException) { break; }
             catch (Exception ex) { Logger.WriteLine("Companion accept: " + ex.Message); }
         }
     }
 
-    private async Task HandleClientAsync(TcpClient client, CancellationToken cancellationToken)
+    /// <summary>The peer's address, as the phone would recognise its own.</summary>
+    /// <remarks>A dual-stack socket reports IPv4 clients as ::ffff:a.b.c.d.</remarks>
+    private static IPAddress? RemoteAddress(TcpClient client)
+    {
+        try
+        {
+            IPAddress? remote = (client.Client.RemoteEndPoint as IPEndPoint)?.Address;
+            return remote is not null && remote.IsIPv4MappedToIPv6 ? remote.MapToIPv4() : remote;
+        }
+        catch (Exception ex)
+        {
+            Logger.WriteLine("Companion peer address: " + ex.Message);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Logs a refused connection at most once a minute.
+    /// </summary>
+    /// <remarks>
+    /// A port scanner, or anything else knocking repeatedly, would otherwise be able to
+    /// fill the log file through an endpoint that answers nobody.
+    /// </remarks>
+    private void LogRefusal(string message)
+    {
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        long last = Interlocked.Read(ref _lastRefusalLoggedAt);
+        if (now - last < 60) return;
+        if (Interlocked.CompareExchange(ref _lastRefusalLoggedAt, now, last) != last) return;
+        Logger.WriteLine(message);
+    }
+
+    private async Task HandleClientAsync(TcpClient client, IPAddress remote, CancellationToken cancellationToken)
     {
         using (client)
         using (var ssl = new SslStream(client.GetStream(), false))
         {
             try
             {
-                await ssl.AuthenticateAsServerAsync(new SslServerAuthenticationOptions
+                HttpRequest request;
+                using (var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
                 {
-                    ServerCertificate = _certificate,
-                    EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13,
-                    ClientCertificateRequired = false
-                }, cancellationToken);
-                HttpRequest request = await ReadRequestAsync(ssl, cancellationToken);
-                // A dual-stack socket reports IPv4 clients as ::ffff:a.b.c.d. Record what
-                // the phone would recognise as its own address instead.
-                IPAddress? remote = (client.Client.RemoteEndPoint as IPEndPoint)?.Address;
-                if (remote is not null && remote.IsIPv4MappedToIPv6) remote = remote.MapToIPv4();
-                request = request with { RemoteAddress = remote?.ToString() ?? string.Empty };
+                    deadline.CancelAfter(RequestDeadline);
+                    await ssl.AuthenticateAsServerAsync(new SslServerAuthenticationOptions
+                    {
+                        ServerCertificate = _certificate,
+                        EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13,
+                        ClientCertificateRequired = false
+                    }, deadline.Token);
+                    request = await ReadRequestAsync(ssl, deadline.Token);
+                }
+
+                request = request with { RemoteAddress = remote.ToString() };
                 HttpResponse response = await RouteAsync(request);
-                await WriteResponseAsync(ssl, response, cancellationToken);
+                await WriteWithDeadlineAsync(ssl, response, cancellationToken);
             }
             catch (Exception ex)
             {
                 Logger.WriteLine("Companion request: " + ex.Message);
-                try { await WriteResponseAsync(ssl, Error(500, "The Windows companion could not complete this request."), cancellationToken); }
+                try { await WriteWithDeadlineAsync(ssl, Error(500, "The Windows companion could not complete this request."), cancellationToken); }
                 catch { }
             }
             finally
             {
+                _connections.Release();
+
                 // The phone reaches most of the application from here - view models get
                 // built, hardware gets read, snapshots get serialised - and it does all of
                 // that with no window open, so nothing else was ever going to collect it.
@@ -465,6 +558,16 @@ public sealed class RemoteCompanionService : IDisposable
                 Services.BackgroundMemoryRelease.Schedule();
             }
         }
+    }
+
+    /// <summary>
+    /// Writes a response, giving up on a client that has stopped reading.
+    /// </summary>
+    private static async Task WriteWithDeadlineAsync(Stream stream, HttpResponse response, CancellationToken cancellationToken)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(ResponseDeadline);
+        await WriteResponseAsync(stream, response, deadline.Token);
     }
 
     /// <summary>
@@ -1159,7 +1262,7 @@ public sealed class RemoteCompanionService : IDisposable
                     values.ValueKind == JsonValueKind.Object ? Bool(values.GetProperty("accepted")) : Bool(value));
                 break;
             case "system.restart":
-                System.Diagnostics.Process.Start("shutdown", "/r /t 3");
+                System.Diagnostics.Process.Start(ProcessHelper.SystemPath("shutdown"), "/r /t 3");
                 break;
             case "updates.check": await _services.GetRequiredService<IUpdateService>().CheckForUpdatesAsync(true); break;
             case "updates.asus": await _services.GetRequiredService<IUpdateService>().CheckAsusUpdatesAsync(); break;
@@ -1405,9 +1508,34 @@ public sealed class RemoteCompanionService : IDisposable
     private void EnsureServerIdentity()
     {
         if (string.IsNullOrWhiteSpace(AppConfig.GetString("companion_server_id"))) AppConfig.Set("companion_server_id", Guid.NewGuid().ToString("N"));
-        if (string.IsNullOrWhiteSpace(AppConfig.GetString("companion_token"))) AppConfig.Set("companion_token", Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)));
+        if (string.IsNullOrWhiteSpace(ReadToken())) WriteToken(NewToken());
     }
-    private string GetToken() { EnsureServerIdentity(); return AppConfig.GetString("companion_token"); }
+    private string GetToken() { EnsureServerIdentity(); return ReadToken(); }
+
+    private static string NewToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+    /// <summary>
+    /// The stored server token, or an empty string when there is not a readable one.
+    /// </summary>
+    /// <remarks>
+    /// A token that cannot be unwrapped belongs to another Windows account - a copied or
+    /// roamed profile - and is reported as absent, so a fresh one is minted rather than
+    /// the bridge refusing every request with a credential nobody holds.
+    /// </remarks>
+    private static string ReadToken()
+    {
+        string stored = AppConfig.GetString("companion_token") ?? string.Empty;
+        if (stored.Length == 0) return string.Empty;
+
+        string? token = CompanionSecret.Unprotect(stored);
+        if (token is null) return string.Empty;
+
+        // Written by a build that stored it in the clear. Re-store it wrapped.
+        if (!CompanionSecret.IsProtected(stored)) WriteToken(token);
+        return token;
+    }
+
+    private static void WriteToken(string token) => AppConfig.Set("companion_token", CompanionSecret.Protect(token));
 
     private static bool SecureEquals(string presented, string expected)
     {
@@ -1420,10 +1548,22 @@ public sealed class RemoteCompanionService : IDisposable
     {
         try
         {
-            string json = AppConfig.GetString("companion_devices");
-            return string.IsNullOrWhiteSpace(json)
-                ? new List<CompanionDeviceRecord>()
-                : JsonSerializer.Deserialize<List<CompanionDeviceRecord>>(json, JsonOptions) ?? new List<CompanionDeviceRecord>();
+            string stored = AppConfig.GetString("companion_devices") ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(stored)) return new List<CompanionDeviceRecord>();
+
+            string? json = CompanionSecret.Unprotect(stored);
+            if (json is null)
+            {
+                // Another account's records. Starting empty means every phone pairs
+                // again, which is the same outcome as any other identity change here.
+                Logger.WriteLine("Companion devices belong to another Windows account; starting with none paired");
+                return new List<CompanionDeviceRecord>();
+            }
+
+            if (!CompanionSecret.IsProtected(stored))
+                AppConfig.Set("companion_devices", CompanionSecret.Protect(json));
+
+            return JsonSerializer.Deserialize<List<CompanionDeviceRecord>>(json, JsonOptions) ?? new List<CompanionDeviceRecord>();
         }
         catch (Exception ex)
         {
@@ -1432,7 +1572,8 @@ public sealed class RemoteCompanionService : IDisposable
         }
     }
 
-    private void SaveDevices() => AppConfig.Set("companion_devices", JsonSerializer.Serialize(_devices, JsonOptions));
+    private void SaveDevices() =>
+        AppConfig.Set("companion_devices", CompanionSecret.Protect(JsonSerializer.Serialize(_devices, JsonOptions)));
 
     private static X509Certificate2 LoadOrCreateCertificate()
     {
@@ -1672,6 +1813,12 @@ public sealed class RemoteCompanionService : IDisposable
         _discoverySocket = null;
         _certificate?.Dispose();
         _stopping.Dispose();
+
+        // _connections and _snapshotGate are deliberately not disposed. Handlers are
+        // still in flight at this point and each one releases in a finally; releasing a
+        // disposed SemaphoreSlim throws, so disposing here would turn shutdown into a
+        // handful of unobserved exceptions. Neither semaphore ever hands out a wait
+        // handle, which is the only thing that would need collecting.
     }
 
     private sealed record HttpRequest(string Method, string Path, Dictionary<string, string> Headers, string Body, string RemoteAddress = "");

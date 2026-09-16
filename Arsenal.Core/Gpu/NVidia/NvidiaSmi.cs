@@ -31,7 +31,7 @@ public static class NvidiaSmi
     {
         ProcessStartInfo startInfo = new ProcessStartInfo
         {
-            FileName = "nvidia-smi",
+            FileName = Arsenal.Helpers.ProcessHelper.SystemPath("nvidia-smi"),
             Arguments = arguments,
             RedirectStandardOutput = true,
             UseShellExecute = false,

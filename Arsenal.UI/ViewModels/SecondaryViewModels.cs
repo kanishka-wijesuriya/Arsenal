@@ -561,7 +561,7 @@ namespace Arsenal.UI.ViewModels
             try
             {
                 if (File.Exists(path))
-                    Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = true });
+                    Process.Start(new ProcessStartInfo(ProcessHelper.SystemPath("explorer.exe"), $"/select,\"{path}\"") { UseShellExecute = true });
                 else if (Directory.Exists(_updateService.DownloadFolder))
                     Process.Start(new ProcessStartInfo(_updateService.DownloadFolder) { UseShellExecute = true });
             }
@@ -790,7 +790,7 @@ namespace Arsenal.UI.ViewModels
         [RelayCommand]
         public void OpenPowerPlanSettings()
         {
-            Process.Start(new ProcessStartInfo("control.exe", "powercfg.cpl") { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(ProcessHelper.SystemPath("control.exe"), "powercfg.cpl") { UseShellExecute = true });
         }
 
         [RelayCommand]

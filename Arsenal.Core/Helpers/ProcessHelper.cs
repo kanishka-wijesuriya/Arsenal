@@ -330,6 +330,53 @@ namespace Arsenal.Helpers
             }
         }
 
+        /// <summary>
+        /// The full path of a Windows tool, given its bare name.
+        /// </summary>
+        /// <remarks>
+        /// Starting a process by bare name searches the calling executable's own folder
+        /// before System32. Arsenal is portable and usually runs from Downloads or a
+        /// folder made at the root of a drive, so "powershell" or "netsh" there means
+        /// whatever sits next to Arsenal.exe - and some of these calls are made by the
+        /// elevated helper, where that would be an administrator running a stranger's
+        /// binary. Naming the file outright removes the search.
+        ///
+        /// <para>A name that is not a known Windows tool is returned unchanged: callers
+        /// also pass full paths to ASUS executables through here.</para>
+        /// </remarks>
+        public static string SystemPath(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name) || Path.IsPathRooted(name)) return name;
+
+            string bare = Path.GetFileNameWithoutExtension(name);
+            string system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+
+            return bare.ToLowerInvariant() switch
+            {
+                "powershell" => Path.Combine(system32, "WindowsPowerShell", "v1.0", "powershell.exe"),
+                "cmd" => Path.Combine(system32, "cmd.exe"),
+                "netsh" => Path.Combine(system32, "netsh.exe"),
+                "shutdown" => Path.Combine(system32, "shutdown.exe"),
+                "powercfg" => Path.Combine(system32, "powercfg.exe"),
+                "msiexec" => Path.Combine(system32, "msiexec.exe"),
+                "control" => Path.Combine(system32, "control.exe"),
+                "explorer" => Path.Combine(windows, "explorer.exe"),
+
+                // Shipped into System32 by current drivers, but older ones put it under
+                // Program Files and left it to PATH. Take the known-good copy when it is
+                // there and fall back to the search rather than breaking those machines.
+                "nvidia-smi" => Existing(Path.Combine(system32, "nvidia-smi.exe")) ?? name,
+                _ => name,
+            };
+        }
+
+        private static string? Existing(string path)
+        {
+            try { return File.Exists(path) ? path : null; }
+            catch { return null; }
+        }
+
         public static string RunCMD(string name, string args, string? directory = null, int timeoutMs = 0)
         {
             using var cmd = new Process();
@@ -337,7 +384,7 @@ namespace Arsenal.Helpers
             cmd.StartInfo.CreateNoWindow = true;
             cmd.StartInfo.RedirectStandardOutput = true;
             cmd.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            cmd.StartInfo.FileName = name;
+            cmd.StartInfo.FileName = SystemPath(name);
             cmd.StartInfo.Arguments = args;
             if (directory != null) cmd.StartInfo.WorkingDirectory = directory;
             cmd.Start();

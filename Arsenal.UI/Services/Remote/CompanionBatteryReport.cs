@@ -57,7 +57,7 @@ internal static class CompanionBatteryReport
         {
             using var process = Process.Start(new ProcessStartInfo
             {
-                FileName = "powercfg",
+                FileName = ProcessHelper.SystemPath("powercfg"),
                 Arguments = "/batteryreport /xml /output \"" + path + "\"",
                 UseShellExecute = false,
                 CreateNoWindow = true,
