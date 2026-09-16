@@ -735,9 +735,8 @@ namespace Arsenal.UI.Views.Windows
             var screen = System.Windows.Forms.Screen.FromPoint(point);
             var workingArea = screen.WorkingArea;
             _anchorWorkingAreaPixels = workingArea;
-            IntPtr hwnd = new WindowInteropHelper(this).EnsureHandle();
-            uint dpi = GetDpiForScreenPoint(point, hwnd);
-            double scale = dpi > 0 ? dpi / 96d : 1d;
+            new WindowInteropHelper(this).EnsureHandle();
+            double scale = PlacementScale();
             _anchorWorkArea = new FlyoutBounds(
                 workingArea.Left / scale,
                 workingArea.Top / scale,
@@ -754,21 +753,26 @@ namespace Arsenal.UI.Views.Windows
         }
 
         /// <summary>
-        /// Uses the destination monitor's scale, not the hidden window's previous one.
-        /// After a hot-plug those can differ until the HWND has actually moved.
+        /// The scale that turns the screen coordinates WinForms reports into the units
+        /// <see cref="Window.Left"/> and <see cref="Window.Top"/> are set in.
         /// </summary>
-        private static uint GetDpiForScreenPoint(System.Drawing.Point point, IntPtr hwnd)
+        /// <remarks>
+        /// This has to be the window's own scale - the one WPF will use to convert the
+        /// placement back into pixels - and not the destination monitor's real one.
+        /// Arsenal is PROCESS_SYSTEM_DPI_AWARE, so it has a single scale fixed at
+        /// launch, and on a display at any other scale Windows DPI-virtualises it:
+        /// <c>Screen</c> and <c>Cursor.Position</c> come back in that one space, while
+        /// <c>GetDpiForMonitor</c> keeps answering with the display's true scale.
+        /// Dividing the first by the second left the work area wrong by the ratio
+        /// between the two, which is how the panel came to open off the side of an
+        /// external monitor after a session that started on the laptop panel.
+        /// Under PerMonitorV2 this would have to become the destination monitor's
+        /// scale again, read after the HWND has moved there.
+        /// </remarks>
+        private double PlacementScale()
         {
-            var nativePoint = new PointI { X = point.X, Y = point.Y };
-            IntPtr monitor = MonitorFromPoint(nativePoint, MonitorDefaultToNearest);
-            if (monitor != IntPtr.Zero
-                && GetDpiForMonitor(monitor, MonitorDpiTypeEffective, out uint dpiX, out _) == 0
-                && dpiX > 0)
-            {
-                return dpiX;
-            }
-
-            return GetDpiForWindow(hwnd);
+            double scale = System.Windows.Media.VisualTreeHelper.GetDpi(this).DpiScaleX;
+            return scale > 0 ? scale : 1d;
         }
 
         /// <summary>
@@ -1752,22 +1756,6 @@ namespace Arsenal.UI.Views.Windows
             fallback.Start();
             Dispatcher.PushFrame(frame);
         }
-
-        [DllImport("user32.dll")]
-        private static extern uint GetDpiForWindow(IntPtr hwnd);
-
-        private const uint MonitorDefaultToNearest = 2;
-        private const int MonitorDpiTypeEffective = 0;
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr MonitorFromPoint(PointI point, uint flags);
-
-        [DllImport("shcore.dll")]
-        private static extern int GetDpiForMonitor(
-            IntPtr monitor,
-            int dpiType,
-            out uint dpiX,
-            out uint dpiY);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
