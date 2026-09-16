@@ -356,6 +356,55 @@ namespace Arsenal.Application.Services.Implementations
             (uri.Host.Equals("asus.com", StringComparison.OrdinalIgnoreCase) ||
              uri.Host.EndsWith(".asus.com", StringComparison.OrdinalIgnoreCase));
 
+        /// <summary>
+        /// The local name a package is stored under.
+        /// </summary>
+        /// <remarks>
+        /// Shared by the download and by the check that finds an earlier one, because a
+        /// detector that derived the name even slightly differently would silently stop
+        /// recognising finished downloads.
+        ///
+        /// The query carries a ?model= tag that is not part of the file name, and the
+        /// path segment is the only thing ASUS names the package by.
+        /// </remarks>
+        private static string PackageFileName(Uri uri)
+        {
+            string name = Path.GetFileName(uri.AbsolutePath);
+            if (string.IsNullOrWhiteSpace(name)) name = "asus-driver.exe";
+            foreach (char invalid in Path.GetInvalidFileNameChars()) name = name.Replace(invalid, '_');
+            return name;
+        }
+
+        /// <summary>
+        /// The path of a package already sitting in the downloads folder, or null.
+        /// </summary>
+        /// <remarks>
+        /// Download state lives on the driver record, which is rebuilt from scratch by
+        /// every scan, so a package fetched before the application was closed was
+        /// forgotten and the card offered to fetch it again. The file on disk is the
+        /// durable part; this is how a fresh scan learns about it.
+        ///
+        /// Existence is the test, matching the check the download button already makes
+        /// during a session. A `.partial` file is an interrupted transfer and is
+        /// deliberately not accepted: only a completed download is renamed into place.
+        /// </remarks>
+        public string? FindDownloadedPackage(string downloadUrl)
+        {
+            if (string.IsNullOrWhiteSpace(downloadUrl)) return null;
+            if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out Uri? uri) || !IsAsusHost(uri)) return null;
+
+            try
+            {
+                string path = Path.Combine(DownloadFolder, PackageFileName(uri));
+                return File.Exists(path) ? path : null;
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine("Could not check for an existing driver download: " + ex.Message);
+                return null;
+            }
+        }
+
         public async Task<string?> DownloadAsusPackageAsync(
             string downloadUrl, IProgress<int>? progress, CancellationToken cancellationToken,
             string? expectedSha256 = null)
@@ -368,12 +417,7 @@ namespace Arsenal.Application.Services.Implementations
                 return null;
             }
 
-            // The query carries a ?model= tag that is not part of the file name, and the
-            // path segment is the only thing ASUS names the package by.
-            string name = Path.GetFileName(uri.AbsolutePath);
-            if (string.IsNullOrWhiteSpace(name)) name = "asus-driver.exe";
-            foreach (char invalid in Path.GetInvalidFileNameChars()) name = name.Replace(invalid, '_');
-
+            string name = PackageFileName(uri);
             string folder = DownloadFolder;
             string target = Path.Combine(folder, name);
             // Written aside and moved into place at the end: a cancelled or broken

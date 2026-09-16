@@ -385,6 +385,22 @@ namespace Arsenal.UI.ViewModels
             try
             {
                 List<UpdateInfo> drivers = await _updateService.CheckAsusUpdatesAsync();
+
+                // A scan returns fresh records, every one of them Idle, so a package
+                // fetched before the application was last closed would be offered for
+                // download again. The file in the downloads folder outlives the record,
+                // and is what the card should be reflecting.
+                foreach (UpdateInfo driver in drivers)
+                {
+                    if (string.IsNullOrWhiteSpace(driver.DownloadUrl)) continue;
+                    string? existing = _updateService.FindDownloadedPackage(driver.DownloadUrl);
+                    if (existing is null) continue;
+
+                    driver.DownloadedPath = existing;
+                    driver.DownloadProgress = 100;
+                    driver.DownloadState = DriverDownloadState.Ready;
+                }
+
                 AsusUpdates.Clear();
                 foreach (UpdateInfo driver in drivers) AsusUpdates.Add(driver);
 

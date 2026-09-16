@@ -335,6 +335,16 @@ namespace Arsenal.Application.Services.Contracts
 
         /// <summary>Folder the packages above are written to.</summary>
         string DownloadFolder { get; }
+
+        /// <summary>
+        /// The path of an already downloaded package for this URL, or null.
+        /// </summary>
+        /// <remarks>
+        /// Download state is held on the driver record, and every scan rebuilds those
+        /// from scratch, so a package fetched in an earlier run has to be rediscovered
+        /// from the folder rather than remembered.
+        /// </remarks>
+        string? FindDownloadedPackage(string downloadUrl);
     }
 
     public interface IProfileService
