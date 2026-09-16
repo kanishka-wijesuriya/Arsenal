@@ -784,6 +784,11 @@ namespace Arsenal.UI.Views.Windows
             if (PanelChrome.VerticalAlignment == alignment) return;
             PanelChrome.VerticalAlignment = alignment;
             PanelShadow.VerticalAlignment = alignment;
+
+            // The overlay layer is sized to the card, so it has to be glued to the same
+            // edge. Left behind, it sits over whatever transparent slack the window is
+            // carrying and the scrim reads as a box beside the panel instead of on it.
+            PanelOverlayLayer.VerticalAlignment = alignment;
         }
 
         /// <summary>

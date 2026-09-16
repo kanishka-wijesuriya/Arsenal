@@ -718,12 +718,15 @@
             </Grid>
         </Border>
 
-        <!-- Clipped to the panel's own rounded chrome rather than the window, so the
-             scrim does not spill into the shadow margin. -->
-        <!-- No Background and no IsHitTestVisible here: the Border is only a clip, and
+        <!-- Sized and aligned to the panel's own chrome rather than the window, so the
+             scrim does not spill into the shadow margin. ApplyCardAlignment moves this
+             with the card; a fixed alignment would strand it at the far end of a window
+             that is taller than the card. -->
+        <!-- No Background and no IsHitTestVisible here: the Border is only a frame, and
              hit testing is owned by the overlay, which blocks input while active and
-             lets it through once idle. -->
-        <Border CornerRadius="{StaticResource RadiusFlyout}" ClipToBounds="True"
+             lets it through once idle. The rounding belongs to the scrim inside it -
+             ClipToBounds here is square, and would cut the card's corners back off. -->
+        <Border x:Name="PanelOverlayLayer" ClipToBounds="True"
                 VerticalAlignment="Bottom"
                 Height="{Binding ActualHeight, ElementName=PanelChrome}">
             <!-- A lower rate than the main window's on purpose. This panel is
@@ -733,10 +736,12 @@
             <Grid>
                 <controls:BusyOverlay IsActive="{Binding IsGpuSwitching}"
                                       Message="{Binding GpuSwitchingMessage}"
+                                      CornerRadius="{StaticResource RadiusFlyout}"
                                       FrameRate="45"/>
                 <controls:BusyOverlay IsActive="{Binding IsAsusServicesChanging}"
                                       Message="{Binding AsusServicesMessage}"
                                       Detail="{Binding AsusServicesDetail}"
+                                      CornerRadius="{StaticResource RadiusFlyout}"
                                       FrameRate="45"/>
             </Grid>
         </Border>

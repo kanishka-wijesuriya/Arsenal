@@ -60,6 +60,22 @@ namespace Arsenal.UI.Controls
             set => SetValue(MessageProperty, value);
         }
 
+        /// <summary>
+        /// Rounding for the scrim, which has to match the card it covers. A Border's
+        /// CornerRadius rounds only what that Border paints itself - it does not clip
+        /// its child - so a scrim placed inside a rounded card is square unless it is
+        /// told the same radius. Square by default, which is right for a whole window.
+        /// </summary>
+        public static readonly DependencyProperty CornerRadiusProperty =
+            DependencyProperty.Register(nameof(CornerRadius), typeof(CornerRadius), typeof(BusyOverlay),
+                new PropertyMetadata(default(CornerRadius)));
+
+        public CornerRadius CornerRadius
+        {
+            get => (CornerRadius)GetValue(CornerRadiusProperty);
+            set => SetValue(CornerRadiusProperty, value);
+        }
+
         public static readonly DependencyProperty DetailProperty =
             DependencyProperty.Register(nameof(Detail), typeof(string), typeof(BusyOverlay),
                 new PropertyMetadata("This can take a few seconds. Please wait."));
