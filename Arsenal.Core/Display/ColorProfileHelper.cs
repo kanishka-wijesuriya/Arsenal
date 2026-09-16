@@ -684,123 +684,28 @@ namespace Arsenal.Display
             await DownloadAndExtractZip(profileUrl, VisualControl.GetGameVisualPath());
         }
 
-        /// <summary>Nothing about an ICC profile needs more room than this.</summary>
-        private const long MaxArchiveBytes = 64L * 1024 * 1024;
-        private const long MaxProfileBytes = 8L * 1024 * 1024;
-        private const int MaxProfiles = 128;
-
-        /// <summary>
-        /// Fetches an ASUS colour profile archive and writes the profiles out of it.
-        /// </summary>
-        /// <remarks>
-        /// This runs elevated - installing into <c>ProgramData\ASUS</c> needs it - so what
-        /// the archive is allowed to become matters more than it would anywhere else.
-        ///
-        /// <para>Three things are bounded that were not. The download is streamed against a
-        /// ceiling instead of being pulled into memory whole, so a response that never ends
-        /// cannot exhaust the process. The archive is staged in the temp folder rather than
-        /// inside the directory being installed into, so a failure part-way through does
-        /// not leave a <c>temp.zip</c> sitting in ProgramData. And entries are written out
-        /// one at a time, by file name only and only when they are <c>.icm</c> profiles -
-        /// which is all VisualControl ever reads - rather than handing the whole archive to
-        /// ExtractToDirectory with overwrite on. A colour profile download can now leave
-        /// colour profiles, and nothing else.</para>
-        /// </remarks>
         static async Task DownloadAndExtractZip(string zipUrl, string extractPath)
         {
-            if (!Uri.TryCreate(zipUrl, UriKind.Absolute, out Uri? uri) || uri.Scheme != Uri.UriSchemeHttps)
-            {
-                Logger.WriteLine("Refusing a colour profile download that is not HTTPS: " + zipUrl);
-                return;
-            }
-
-            string tempZipPath = Path.Combine(Path.GetTempPath(), "arsenal-color-profiles-" + Guid.NewGuid().ToString("N") + ".zip");
-
             using (HttpClient client = new HttpClient())
             {
                 try
                 {
                     Logger.WriteLine($"Getting: {zipUrl}");
-
-                    using (HttpResponseMessage response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead))
-                    {
-                        response.EnsureSuccessStatusCode();
-                        if (response.Content.Headers.ContentLength is long declared && declared > MaxArchiveBytes)
-                            throw new InvalidDataException($"The colour profile archive declares {declared} bytes.");
-
-                        using Stream source = await response.Content.ReadAsStreamAsync();
-                        using FileStream target = new(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                        await CopyCappedAsync(source, target, MaxArchiveBytes, "colour profile archive");
-                    }
+                    byte[] zipData = await client.GetByteArrayAsync(zipUrl);
 
                     Directory.CreateDirectory(extractPath);
-                    ExtractProfiles(tempZipPath, extractPath);
+
+                    string tempZipPath = Path.Combine(extractPath, "temp.zip");
+                    await File.WriteAllBytesAsync(tempZipPath, zipData);
+
+                    ZipFile.ExtractToDirectory(tempZipPath, extractPath, true);
+
+                    File.Delete(tempZipPath);
                 }
                 catch (Exception ex)
                 {
                     Logger.WriteLine($"Error: {ex.Message}");
                 }
-                finally
-                {
-                    try { if (File.Exists(tempZipPath)) File.Delete(tempZipPath); }
-                    catch (Exception ex) { Logger.WriteLine("Colour profile cleanup: " + ex.Message); }
-                }
-            }
-        }
-
-        static void ExtractProfiles(string archivePath, string extractPath)
-        {
-            using ZipArchive archive = ZipFile.OpenRead(archivePath);
-            int written = 0;
-
-            foreach (ZipArchiveEntry entry in archive.Entries)
-            {
-                if (written >= MaxProfiles)
-                {
-                    Logger.WriteLine($"Stopped after {MaxProfiles} colour profiles");
-                    break;
-                }
-
-                // GetFileName, not FullName: a flattened name cannot address a directory,
-                // so there is no path for an entry to traverse out along.
-                string name = Path.GetFileName(entry.FullName);
-                if (name.Length == 0) continue;
-                if (!name.EndsWith(".icm", StringComparison.OrdinalIgnoreCase))
-                {
-                    Logger.WriteLine("Skipping a non-profile archive entry: " + entry.FullName);
-                    continue;
-                }
-                if (entry.Length > MaxProfileBytes)
-                {
-                    Logger.WriteLine($"Skipping oversized colour profile {name} ({entry.Length} bytes)");
-                    continue;
-                }
-
-                string destination = Path.Combine(extractPath, name);
-                using Stream source = entry.Open();
-                using FileStream file = new(destination, FileMode.Create, FileAccess.Write, FileShare.None);
-                CopyCappedAsync(source, file, MaxProfileBytes, name).GetAwaiter().GetResult();
-                written++;
-            }
-
-            Logger.WriteLine($"Installed {written} colour profiles to {extractPath}");
-        }
-
-        /// <summary>
-        /// Copies until the source ends or the ceiling is reached, and throws at the
-        /// ceiling rather than writing a truncated file and calling it done.
-        /// </summary>
-        static async Task CopyCappedAsync(Stream source, Stream destination, long limit, string what)
-        {
-            byte[] buffer = new byte[81920];
-            long total = 0;
-            int read;
-
-            while ((read = await source.ReadAsync(buffer)) > 0)
-            {
-                total += read;
-                if (total > limit) throw new InvalidDataException($"The {what} is larger than {limit} bytes.");
-                await destination.WriteAsync(buffer.AsMemory(0, read));
             }
         }
 
