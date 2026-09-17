@@ -331,7 +331,7 @@ namespace Arsenal.UI
                     Current.Resources["StatusCritical"] = Brush(light ? "#C42B1C" : "#FF6B6B");
 
                     Current.Resources["DividerBrush"] = FadedLine(light ? "#24000000" : "#26FFFFFF");
-                    ApplyNavigationForeground();
+                    ApplyNavigationForeground(light);
                     ApplyAccentResources(light);
                     ApplyWindowSurfaces(light);
                 }
@@ -399,14 +399,24 @@ namespace Arsenal.UI
         /// pill and its indicator, so recolouring its text as well would say the same
         /// thing twice; hover and press keep their wash behind the item.
         ///
-        /// The same ink in both themes, which is what was asked for. It is a light
-        /// warm grey, so it is quiet against the light theme's pane.
+        /// One ink per theme. The warm grey is the dark theme's, and it was written
+        /// into both: on the light pane it is a pale grey on a pale ground, which is
+        /// how the destinations and the title-bar icons came to be barely legible
+        /// there. Light mode gets the same hue turned dark instead - the warmth is the
+        /// part that was wanted, not the lightness.
+        ///
+        /// How dark is not a taste call: the light ink is the one that reads against
+        /// its pane the way the dark ink reads against its own. #B1B1A9 on the dark
+        /// pane is 8.75:1, and #45453D on the light pane is 8.72:1, so the column
+        /// carries the same weight relative to the page in both themes. Landing it at
+        /// the secondary ink instead, which is where a quiet column would sit, measured
+        /// 6.17:1 and still read as washed out next to #1A1A1A page text.
         /// </remarks>
-        private static void ApplyNavigationForeground()
+        private static void ApplyNavigationForeground(bool light)
         {
             if (Current is null) return;
 
-            SolidColorBrush ink = Brush("#B1B1A9");
+            SolidColorBrush ink = Brush(light ? "#45453D" : "#B1B1A9");
             Current.Resources["NavigationForeground"] = ink;
             foreach (string key in NavigationForegroundKeys)
                 Current.Resources[key] = ink;
