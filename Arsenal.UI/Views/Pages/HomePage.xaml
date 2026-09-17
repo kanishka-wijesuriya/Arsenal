@@ -91,12 +91,21 @@
                          beside it belong to the Home layout, not to the panel. -->
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}"
                                IsEnabled="{Binding DataContext.IsInternalPanelActive, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MinimumRefreshRate, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat={}{0} Hz}"
+                        <!-- The same three chips the Display page offers, on the same
+                             rules: the label properties rather than a StringFormat over
+                             the number, and the same min/max/max_od parameters, so one
+                             panel cannot be described two ways by the two pages. The
+                             overdrive chip appears only where the panel has overdrive. -->
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MinimumRefreshRateLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                      IsChecked="{Binding DataContext.IsAtMinimumRefreshRate, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
-                                     Command="{Binding DataContext.SelectRefreshRateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="60"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MaximumRefreshRate, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat={}{0} Hz}"
+                                     Command="{Binding DataContext.SelectRefreshRateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="min"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MaximumRefreshRateLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                      IsChecked="{Binding DataContext.IsAtMaximumRefreshRate, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
-                                     Command="{Binding DataContext.SelectRefreshRateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="999"/>
+                                     Command="{Binding DataContext.SelectRefreshRateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="max"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MaximumRefreshRateWithOverdriveLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                     Visibility="{Binding DataContext.IsOverdriveAvailable, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                     IsChecked="{Binding DataContext.IsAtMaximumRefreshRateWithOverdrive, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
+                                     Command="{Binding DataContext.SelectRefreshRateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="max_od"/>
                     </WrapPanel>
                     <ContentControl Content="{Binding}" ContentTemplate="{StaticResource HomeEditButtons}"/>
                 </StackPanel>

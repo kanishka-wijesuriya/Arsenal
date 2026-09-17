@@ -101,7 +101,7 @@ namespace Arsenal.UI.ViewModels
             new HomeControlDefinition("performance", "Performance mode", "Silent, Balanced and Turbo BIOS and Windows power modes", SymbolRegular.Gauge24),
             new HomeControlDefinition("gpu", "GPU mode", "Eco, Standard, Ultimate and Optimized graphics modes", SymbolRegular.DeveloperBoard24),
             new HomeControlDefinition("charge_limit", "Charge limit", "Protect the battery by choosing where charging stops", SymbolRegular.BatteryCharge24),
-            new HomeControlDefinition("refresh", "Refresh rate", "Switch between the panel's minimum and maximum refresh rate", SymbolRegular.Desktop24),
+            new HomeControlDefinition("refresh", "Refresh rate", "Switch between the refresh rates this panel offers, overdrive included", SymbolRegular.Desktop24),
             new HomeControlDefinition("auto_refresh", "Automatic refresh", "Let refresh rate follow the current power source", SymbolRegular.Sparkle24),
             new HomeControlDefinition("keyboard", "Keyboard light", "Choose the keyboard backlight level", SymbolRegular.Keyboard24),
             new HomeControlDefinition("touchpad", "Touchpad", "Enable or disable the built-in touchpad", SymbolRegular.CursorClick24),
@@ -165,10 +165,85 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty]
         private bool _isAutoRefresh;
 
-        public int MaximumRefreshRate => _displayService.MaxRefreshRate;
+        /// <summary>
+        /// Held, and refreshed from the display snapshot, rather than read from the
+        /// service on each notification.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="IDisplayService.MaxRefreshRate"/> asks the panel again every time
+        /// it is read, and it cannot answer while Windows is not driving that panel -
+        /// so the Home row could offer a different top rate from the one the Display
+        /// page was showing for the same machine. The Display page reads
+        /// <c>snapshot.MaxFrequency</c>, which carries the panel's real maximum across
+        /// the panel being off, and this now follows the same value. The service is
+        /// still the seed, for the window opened before the first snapshot arrives.
+        /// </remarks>
+        [ObservableProperty]
+        private int _maximumRefreshRate;
+
         public int MinimumRefreshRate => Arsenal.Display.ScreenControl.MIN_RATE;
-        public bool IsAtMinimumRefreshRate => !IsAutoRefresh && RefreshRate <= MinimumRefreshRate;
-        public bool IsAtMaximumRefreshRate => !IsAutoRefresh && RefreshRate > MinimumRefreshRate;
+
+        /// <summary>
+        /// Written the same way the Display page writes them, so one machine does not
+        /// describe its own panel differently on two pages.
+        /// </summary>
+        public string MinimumRefreshRateLabel => $"{MinimumRefreshRate} Hz";
+
+        public string MaximumRefreshRateLabel => $"{MaximumRefreshRate} Hz";
+
+        /// <summary>Offered only where the panel has overdrive, as on the Display page.</summary>
+        public string MaximumRefreshRateWithOverdriveLabel => $"{MaximumRefreshRate} Hz + OD";
+
+        partial void OnMaximumRefreshRateChanged(int value)
+        {
+            OnPropertyChanged(nameof(MaximumRefreshRateLabel));
+            OnPropertyChanged(nameof(MaximumRefreshRateWithOverdriveLabel));
+            OnPropertyChanged(nameof(IsRefreshRateSupported));
+        }
+
+        /// <summary>
+        /// Whether this panel has overdrive at all, which is what decides between two
+        /// rate choices and three.
+        /// </summary>
+        [ObservableProperty]
+        private bool _isOverdriveAvailable;
+
+        [ObservableProperty]
+        private bool _isOverdrive;
+
+        partial void OnIsOverdriveAvailableChanged(bool value) => NotifyRefreshRateSelection();
+
+        partial void OnIsOverdriveChanged(bool value) => NotifyRefreshRateSelection();
+
+        /// <summary>A single-rate panel has nothing to choose between.</summary>
+        public bool IsRefreshRateSupported => MaximumRefreshRate > MinimumRefreshRate;
+
+        /// <remarks>
+        /// The three selection rules below are the Display page's, property for
+        /// property. Home offering a different set of chips - or lighting a different
+        /// one of them - for the same panel state is the bug this mirrors away.
+        /// </remarks>
+        private bool IsAtMaximumRate => !IsAutoRefresh && RefreshRate > MinimumRefreshRate;
+
+        public bool IsAtMinimumRefreshRate =>
+            !IsAutoRefresh && RefreshRate > 0 && RefreshRate <= MinimumRefreshRate;
+
+        /// <summary>
+        /// The plain maximum. Where overdrive cannot be chosen there is only one
+        /// maximum chip, so it stays lit whatever the overdrive register reads.
+        /// </summary>
+        public bool IsAtMaximumRefreshRate =>
+            IsAtMaximumRate && (!IsOverdriveAvailable || !IsOverdrive);
+
+        public bool IsAtMaximumRefreshRateWithOverdrive =>
+            IsOverdriveAvailable && IsAtMaximumRate && IsOverdrive;
+
+        private void NotifyRefreshRateSelection()
+        {
+            OnPropertyChanged(nameof(IsAtMinimumRefreshRate));
+            OnPropertyChanged(nameof(IsAtMaximumRefreshRate));
+            OnPropertyChanged(nameof(IsAtMaximumRefreshRateWithOverdrive));
+        }
 
         /// <summary>
         /// The row writes to the built-in ASUS panel. While Windows is not driving that
@@ -184,11 +259,7 @@ namespace Arsenal.UI.ViewModels
 
         partial void OnIsInternalPanelActiveChanged(bool value) => OnPropertyChanged(nameof(RefreshRateNote));
 
-        partial void OnRefreshRateChanged(int value)
-        {
-            OnPropertyChanged(nameof(IsAtMinimumRefreshRate));
-            OnPropertyChanged(nameof(IsAtMaximumRefreshRate));
-        }
+        partial void OnRefreshRateChanged(int value) => NotifyRefreshRateSelection();
 
         /// <summary>
         /// Home carries the charge limit as well as the two mode switches, so the three
@@ -285,6 +356,9 @@ namespace Arsenal.UI.ViewModels
             BatteryPercent = _batteryService.BatteryPercent;
             ChargeLimit = _batteryService.ChargeLimit;
             RefreshRate = _displayService.CurrentRefreshRate;
+            MaximumRefreshRate = _displayService.MaxRefreshRate;
+            IsOverdrive = _displayService.IsOverdriveEnabled;
+            IsOverdriveAvailable = _displayService.IsOverdriveAvailable;
             IsInternalPanelActive = _displayService.IsInternalPanelActive;
             KeyboardBrightness = _lightingService.Brightness;
             IsTouchpadEnabled = _inputDeviceService.IsTouchpadEnabled;
@@ -321,7 +395,9 @@ namespace Arsenal.UI.ViewModels
                 RefreshRate = snapshot.Frequency;
                 IsAutoRefresh = snapshot.ScreenAuto;
                 IsInternalPanelActive = snapshot.ScreenEnabled;
-                OnPropertyChanged(nameof(MaximumRefreshRate));
+                MaximumRefreshRate = snapshot.MaxFrequency;
+                IsOverdrive = snapshot.Overdrive > 0;
+                IsOverdriveAvailable = snapshot.OverdriveSetting;
             });
 
             LoadHomeControls();
@@ -456,16 +532,36 @@ namespace Arsenal.UI.ViewModels
             _batteryService.SetChargeLimit(limit);
         }
 
+        /// <summary>
+        /// Accepts the Display page's vocabulary - <c>min</c>, <c>max</c>, <c>max_od</c>
+        /// - and writes the same way it does, so the same chip means the same thing on
+        /// both pages. A bare number is still understood, for a saved layout written
+        /// before the chips carried names.
+        /// </summary>
         [RelayCommand]
         public void SelectRefreshRate(object? hzParam)
         {
             if (!IsInternalPanelActive) return;
 
-            int requested = ToInt(hzParam, MinimumRefreshRate);
-            bool maximum = requested > MinimumRefreshRate;
-            _displayService.SetRefreshRate(maximum ? Arsenal.Display.ScreenControl.MAX_REFRESH : MinimumRefreshRate);
-            RefreshRate = maximum ? MaximumRefreshRate : MinimumRefreshRate;
+            string mode = hzParam?.ToString() ?? string.Empty;
+            bool withOverdrive = mode.Equals("max_od", StringComparison.OrdinalIgnoreCase);
+            bool maximum = withOverdrive
+                || mode.StartsWith("max", StringComparison.OrdinalIgnoreCase)
+                || ToInt(hzParam, MinimumRefreshRate) > MinimumRefreshRate;
+
+            // MAX_REFRESH is a sentinel resolved against the live panel at write time,
+            // so a stale cached maximum cannot send the display to a mode it lacks.
+            int hz = maximum ? Arsenal.Display.ScreenControl.MAX_REFRESH : Arsenal.Display.ScreenControl.MIN_RATE;
+
+            // Overdrive is on only for the explicit "+ OD" chip. Where the panel has
+            // none there is a single maximum chip and the write is a harmless no-op.
+            bool overdrive = withOverdrive || (maximum && !IsOverdriveAvailable);
+
+            // Optimistic only: the snapshot that follows the write settles both values.
             IsAutoRefresh = false;
+            RefreshRate = maximum ? MaximumRefreshRate : MinimumRefreshRate;
+            IsOverdrive = withOverdrive;
+            _displayService.SetRefreshRate(hz, overdrive);
         }
 
         [RelayCommand]
@@ -492,8 +588,7 @@ namespace Arsenal.UI.ViewModels
 
         partial void OnIsAutoRefreshChanged(bool value)
         {
-            OnPropertyChanged(nameof(IsAtMinimumRefreshRate));
-            OnPropertyChanged(nameof(IsAtMaximumRefreshRate));
+            NotifyRefreshRateSelection();
             if (_isReady) _displayService.SetAutoRefresh(value);
         }
 

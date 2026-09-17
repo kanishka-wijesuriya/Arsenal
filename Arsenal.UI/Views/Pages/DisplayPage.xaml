@@ -60,26 +60,29 @@
                 <controls:SettingsRow Header="Refresh rate"
                                       Description="{Binding RefreshRateDescription}"
                                       Visibility="{Binding IsRefreshRateSupported, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <controls:SettingsRow.ContentBelow>
-                        <WrapPanel Style="{StaticResource ChoiceGroupStyle}" IsEnabled="{Binding IsInternalPanelActive}">
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="RefreshRate"
-                                         IsChecked="{Binding IsLowRefreshRate, Mode=OneWay}"
-                                         Command="{Binding SetRefreshRateCommand}" CommandParameter="min">
-                                <TextBlock Text="{Binding MinRefreshRateLabel}"/>
-                            </RadioButton>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="RefreshRate"
-                                         IsChecked="{Binding IsMaximumRefreshRate, Mode=OneWay}"
-                                         Command="{Binding SetRefreshRateCommand}" CommandParameter="max">
-                                <TextBlock Text="{Binding MaxRefreshRateLabel}"/>
-                            </RadioButton>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="RefreshRate"
-                                         IsChecked="{Binding IsMaximumRefreshRateWithOverdrive, Mode=OneWay}"
-                                         Visibility="{Binding IsOverdriveAvailable, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                         Command="{Binding SetRefreshRateCommand}" CommandParameter="max_od">
-                                <TextBlock Text="{Binding MaxRefreshRateWithOverdriveLabel}"/>
-                            </RadioButton>
-                        </WrapPanel>
-                    </controls:SettingsRow.ContentBelow>
+                    <!-- In the row's control column, not under the text: three short
+                         rate chips read as the row's value, and stacking them below the
+                         description left the row looking like a heading with a toolbar
+                         under it. The Row* variants are the same chips sized for a
+                         vertically centred row. -->
+                    <WrapPanel Style="{StaticResource RowChoiceGroupStyle}" IsEnabled="{Binding IsInternalPanelActive}">
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="RefreshRate"
+                                     IsChecked="{Binding IsLowRefreshRate, Mode=OneWay}"
+                                     Command="{Binding SetRefreshRateCommand}" CommandParameter="min">
+                            <TextBlock Text="{Binding MinRefreshRateLabel}"/>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="RefreshRate"
+                                     IsChecked="{Binding IsMaximumRefreshRate, Mode=OneWay}"
+                                     Command="{Binding SetRefreshRateCommand}" CommandParameter="max">
+                            <TextBlock Text="{Binding MaxRefreshRateLabel}"/>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="RefreshRate"
+                                     IsChecked="{Binding IsMaximumRefreshRateWithOverdrive, Mode=OneWay}"
+                                     Visibility="{Binding IsOverdriveAvailable, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                     Command="{Binding SetRefreshRateCommand}" CommandParameter="max_od">
+                            <TextBlock Text="{Binding MaxRefreshRateWithOverdriveLabel}"/>
+                        </RadioButton>
+                    </WrapPanel>
                 </controls:SettingsRow>
 
                 <controls:SettingsRow Header="Connected displays"
