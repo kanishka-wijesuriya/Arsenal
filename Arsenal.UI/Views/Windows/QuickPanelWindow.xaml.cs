@@ -21,6 +21,11 @@ namespace Arsenal.UI.Views.Windows
         public QuickPanelWindow(QuickPanelViewModel viewModel, PerformanceViewModel performanceViewModel)
         {
             InitializeComponent();
+
+            // Read before the window has been shown, so this is the width XAML asked for
+            // rather than one a monitor change has already drifted. See LockNativeViewport.
+            _nativeViewportWidth = Width;
+
             DataContext = viewModel;
             _performanceViewModel = performanceViewModel;
 
@@ -421,6 +426,13 @@ namespace Arsenal.UI.Views.Windows
         private bool _viewTransitionRunning;
         private bool _remeasureWhenSettled;
         private double _nativeViewportHeight;
+
+        /// <summary>
+        /// The card's design width in DIPs, taken from XAML before the window has met a
+        /// second monitor. Nothing else restores it, so a scale change would otherwise
+        /// leave the HWND's pixel width reinterpreted at the new scale.
+        /// </summary>
+        private readonly double _nativeViewportWidth;
         private double _mainChromeHeight;
         private double _mainHostHeight;
 
@@ -1019,6 +1031,19 @@ namespace Arsenal.UI.Views.Windows
         /// </summary>
         private void LockNativeViewport()
         {
+            // The height below is recomputed from the content on every open, so it
+            // survives a scale change on its own. The width is a constant nothing ever
+            // wrote back, and WM_DPICHANGED resizes the HWND in pixels: carried from a
+            // 150% panel to a 100% monitor, the same 678 physical pixels stop being 452
+            // DIPs and become 678, and the card opens half as wide again. Restored
+            // before anything measures, because every row in it is measured against
+            // this width.
+            if (_nativeViewportWidth > 0 && Math.Abs(Width - _nativeViewportWidth) > 0.5)
+            {
+                Width = _nativeViewportWidth;
+                UpdateLayout();
+            }
+
             // Before the height is read: a second page of tiles must be clipped away
             // first, or the locked window would be sized to hold every one of them.
             FitTilePageViewport();
