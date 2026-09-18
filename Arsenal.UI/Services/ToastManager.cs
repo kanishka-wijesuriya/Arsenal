@@ -1,5 +1,6 @@
 using Arsenal.Helpers;
 using Arsenal.UI.Views.Windows;
+using System.Runtime.InteropServices;
 using System.Windows;
 
 namespace Arsenal.UI.Services;
@@ -197,15 +198,24 @@ public static class ToastManager
         if (visible.Count == 0) return;
         _stackScreen ??= System.Windows.Forms.Screen.FromPoint(System.Windows.Forms.Cursor.Position);
         var areaPx = _stackScreen.WorkingArea;
-        double scale = visible[0].VisualTreeHelperDpiScale();
-        double areaLeft = areaPx.Left / scale;
-        double areaTop = areaPx.Top / scale;
-        double areaRight = areaPx.Right / scale;
-        double areaBottom = areaPx.Bottom / scale;
+
+        // The stack's own screen decides the scale. Arsenal is PerMonitorV2, so every
+        // monitor has its own, and reading it from visible[0] answered for whichever
+        // toast happened to be first in the list - which may be sitting on the other
+        // display. A 3440-wide screen divided by the laptop panel's 1.5 became 2293,
+        // and the stack was placed as if the screen ended 1100px short of its edge.
+        // All of this is in physical pixels: the work area already is, and the cards are
+        // converted into it. Laying the stack out in DIPs only works while the window's
+        // own scale happens to equal the target screen's, which is exactly what is not
+        // true for a toast placed before it is shown, or while the stack is moving
+        // between displays of different scale.
+        double scale = ScaleOf(_stackScreen);
         int location = Math.Clamp(AppConfig.Get("toast_position", 0), 0, 3);
         bool bottom = location is 1 or 3;
         bool center = location >= 2;
-        double cursorY = bottom ? areaBottom - Edge : areaTop + Edge;
+        double edge = Edge * scale;
+        double gap = Gap * scale;
+        double cursorY = bottom ? areaPx.Bottom - edge : areaPx.Top + edge;
 
         // Every toast window carries horizontal entrance slack and a larger vertical
         // reflow area. Positioning works in terms of the visible card, so each axis'
@@ -214,22 +224,54 @@ public static class ToastManager
         foreach (var toast in ordered)
         {
             toast.UpdateLayout();
-            double cardWidth = toast.VisibleWidth;
-            double cardHeight = toast.VisibleHeight;
+            double cardWidth = toast.VisibleWidth * scale;
+            double cardHeight = toast.VisibleHeight * scale;
 
             double cardLeft = center
-                ? areaLeft + ((areaRight - areaLeft - cardWidth) / 2)
-                : areaRight - cardWidth - Edge;
+                ? areaPx.Left + ((areaPx.Right - areaPx.Left - cardWidth) / 2)
+                : areaPx.Right - cardWidth - edge;
             double cardTop = bottom ? cursorY - cardHeight : cursorY;
 
-            toast.SetPosition(cardLeft - ToastWindow.Slack, cardTop - ToastWindow.VerticalSlack);
-            cursorY += bottom ? -(cardHeight + Gap) : cardHeight + Gap;
+            toast.SetPosition(
+                cardLeft - (ToastWindow.Slack * scale),
+                cardTop - (ToastWindow.VerticalSlack * scale));
+            cursorY += bottom ? -(cardHeight + gap) : cardHeight + gap;
         }
     }
 
-    private static double VisualTreeHelperDpiScale(this Window window)
+    /// <summary>The effective scale of one monitor, independent of any window.</summary>
+    private static double ScaleOf(System.Windows.Forms.Screen screen)
     {
-        var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(window);
-        return dpi.DpiScaleX <= 0 ? 1 : dpi.DpiScaleX;
+        var middle = new PointI
+        {
+            X = screen.Bounds.Left + (screen.Bounds.Width / 2),
+            Y = screen.Bounds.Top + (screen.Bounds.Height / 2),
+        };
+
+        IntPtr monitor = MonitorFromPoint(middle, MonitorDefaultToNearest);
+        if (monitor != IntPtr.Zero
+            && GetDpiForMonitor(monitor, MonitorDpiTypeEffective, out uint dpiX, out _) == 0
+            && dpiX > 0)
+        {
+            return dpiX / 96d;
+        }
+
+        return 1;
     }
+
+    private const uint MonitorDefaultToNearest = 2;
+    private const int MonitorDpiTypeEffective = 0;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PointI
+    {
+        public int X;
+        public int Y;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromPoint(PointI point, uint flags);
+
+    [DllImport("shcore.dll")]
+    private static extern int GetDpiForMonitor(IntPtr monitor, int dpiType, out uint dpiX, out uint dpiY);
 }

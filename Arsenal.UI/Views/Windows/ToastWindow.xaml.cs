@@ -1,5 +1,6 @@
 using Arsenal.Helpers;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
@@ -41,6 +42,12 @@ public partial class ToastWindow : Window
     /// </summary>
     public const double Slack = 48;
     public const double VerticalSlack = 128;
+
+    /// <summary>
+    /// Horizontal travel beyond which a move is a change of screen rather than a reflow
+    /// within one. A stack only ever shifts a toast by its own width or so sideways.
+    /// </summary>
+    private const double ScreenChangeDistance = 600;
 
     private const int AnimationFrameRate = 120;
 
@@ -159,26 +166,44 @@ public partial class ToastWindow : Window
     /// there is no second pipeline to fall out of step with, and nothing re-uploads the
     /// layered surface frame by frame either - the compositor just moves the one it has.
     /// </remarks>
+    /// <param name="left">Physical pixels, not DIPs. See the remarks.</param>
+    /// <param name="top">Physical pixels, not DIPs.</param>
     public void SetPosition(double left, double top)
     {
-        // An unrevealed toast has nothing on screen to keep continuous, so it snaps.
-        // Its measured size only becomes exact once the HWND exists, and animating that
-        // correction would drag the card sideways into its own entrance.
+        // Pixels, and moved with SetWindowPos rather than through Left and Top. Those
+        // are DIPs, and WPF turns them into pixels with the scale of the monitor this
+        // HWND is standing on - which, for a toast placed before it is shown or while
+        // the stack is on the other display, is not the monitor being measured. The
+        // mismatch pushed a top-aligned stack off the top of the screen entirely.
         if (!_hasPosition || !_opened || !SystemParameters.ClientAreaAnimation)
         {
             StopPositionAnimation();
-            Left = left;
-            Top = top;
+            MoveToPixels(left, top);
             _hasPosition = true;
             return;
         }
 
-        // Left and Top read back the animated value mid-flight, so a reflow interrupted
-        // by another one continues from the frame currently on screen.
-        if (Math.Abs(Left - left) < 0.5 && Math.Abs(Top - top) < 0.5) return;
+        // The live pixel position, so a reflow interrupted by another one continues
+        // from the frame currently on screen.
+        if (Math.Abs(_leftPx - left) < 0.5 && Math.Abs(_topPx - top) < 0.5) return;
 
-        _leftEase.Start(Left, left, 240, Arsenal.UI.Controls.FrameEase.CubicOut, v => Left = v);
-        _topEase.Start(Top, top, 240, Arsenal.UI.Controls.FrameEase.CubicOut, v => Top = v);
+        // A reflow is a hop of about one card. Anything further is the stack changing
+        // screens, and easing that drags the toast right across the desktop - which is
+        // what "it moves to the middle" was: a 2,294px slide between two monitors,
+        // through everything in between. Only a move within the screen is animated.
+        if (Math.Abs(_leftPx - left) > ScreenChangeDistance)
+        {
+            StopPositionAnimation();
+            MoveToPixels(left, top);
+            return;
+        }
+
+        double fromLeft = _leftPx;
+        double fromTop = _topPx;
+        _leftEase.Start(fromLeft, left, 240, Arsenal.UI.Controls.FrameEase.CubicOut,
+            v => MoveToPixels(v, _topPx));
+        _topEase.Start(fromTop, top, 240, Arsenal.UI.Controls.FrameEase.CubicOut,
+            v => MoveToPixels(_leftPx, v));
     }
 
     private void StopPositionAnimation()
@@ -186,6 +211,50 @@ public partial class ToastWindow : Window
         _leftEase.Stop();
         _topEase.Stop();
     }
+
+    /// <summary>Where this toast is, in physical pixels. The stack's one unit.</summary>
+    private double _leftPx;
+    private double _topPx;
+
+    /// <summary>
+    /// Moves the window to a physical pixel. Before the HWND exists there is nothing to
+    /// move, so the pixels are converted once through this window's own scale to give
+    /// Show() somewhere close to start from; the exact move follows immediately after,
+    /// because ShowPrepared repositions the stack the moment the handles are up.
+    /// </summary>
+    private void MoveToPixels(double left, double top)
+    {
+        _leftPx = left;
+        _topPx = top;
+
+        IntPtr hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero)
+        {
+            double scale = System.Windows.Media.VisualTreeHelper.GetDpi(this).DpiScaleX;
+            if (scale <= 0) scale = 1;
+            Left = left / scale;
+            Top = top / scale;
+            return;
+        }
+
+        SetWindowPos(
+            hwnd,
+            IntPtr.Zero,
+            (int)Math.Round(left, MidpointRounding.AwayFromZero),
+            (int)Math.Round(top, MidpointRounding.AwayFromZero),
+            0,
+            0,
+            SwpNoSize | SwpNoZOrder | SwpNoActivate);
+    }
+
+    private const uint SwpNoSize = 0x0001;
+    private const uint SwpNoZOrder = 0x0004;
+    private const uint SwpNoActivate = 0x0010;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static extern bool SetWindowPos(
+        IntPtr hwnd, IntPtr insertAfter, int x, int y, int cx, int cy, uint flags);
 
     /// <summary>
     /// Reveals a toast only after its native window has reached its final position.
