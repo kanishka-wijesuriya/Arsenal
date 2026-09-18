@@ -715,6 +715,13 @@ namespace Arsenal.UI.Views.Windows
         private double _anchorHeight;
 
         /// <summary>
+        /// The destination monitor's scale, captured with the anchor. The placement is
+        /// computed in that monitor's DIPs and has to be turned back into pixels with
+        /// the same number - never with whatever scale the HWND currently carries.
+        /// </summary>
+        private double _anchorScale = 1;
+
+        /// <summary>
         /// The same work area in physical pixels. WPF can round equal DIP offsets to
         /// different pixels on the two axes, so the final visual alignment uses this
         /// unscaled rectangle as its source of truth.
@@ -735,8 +742,9 @@ namespace Arsenal.UI.Views.Windows
             var screen = System.Windows.Forms.Screen.FromPoint(point);
             var workingArea = screen.WorkingArea;
             _anchorWorkingAreaPixels = workingArea;
-            new WindowInteropHelper(this).EnsureHandle();
-            double scale = PlacementScale();
+            uint dpi = DestinationDpi(point);
+            double scale = dpi > 0 ? dpi / 96d : 1d;
+            _anchorScale = scale;
             _anchorWorkArea = new FlyoutBounds(
                 workingArea.Left / scale,
                 workingArea.Top / scale,
@@ -753,26 +761,28 @@ namespace Arsenal.UI.Views.Windows
         }
 
         /// <summary>
-        /// The scale that turns the screen coordinates WinForms reports into the units
-        /// <see cref="Window.Left"/> and <see cref="Window.Top"/> are set in.
+        /// The scale of the monitor the panel is about to open on.
         /// </summary>
         /// <remarks>
-        /// This has to be the window's own scale - the one WPF will use to convert the
-        /// placement back into pixels - and not the destination monitor's real one.
-        /// Arsenal is PROCESS_SYSTEM_DPI_AWARE, so it has a single scale fixed at
-        /// launch, and on a display at any other scale Windows DPI-virtualises it:
-        /// <c>Screen</c> and <c>Cursor.Position</c> come back in that one space, while
-        /// <c>GetDpiForMonitor</c> keeps answering with the display's true scale.
-        /// Dividing the first by the second left the work area wrong by the ratio
-        /// between the two, which is how the panel came to open off the side of an
-        /// external monitor after a session that started on the laptop panel.
-        /// Under PerMonitorV2 this would have to become the destination monitor's
-        /// scale again, read after the HWND has moved there.
+        /// Arsenal is PerMonitorV2 (<c>ApplicationHighDpiMode</c> in Arsenal.UI.csproj,
+        /// applied by DpiAwareEntryPoint), so every monitor has its own scale and the
+        /// panel has to be measured in the scale of the one it is going to. Reading it
+        /// from the window instead answers for wherever the HWND happens to be standing
+        /// - which, on the open after a display change, is still the monitor that has
+        /// just gone away.
         /// </remarks>
-        private double PlacementScale()
+        private uint DestinationDpi(System.Drawing.Point point)
         {
-            double scale = System.Windows.Media.VisualTreeHelper.GetDpi(this).DpiScaleX;
-            return scale > 0 ? scale : 1d;
+            var nativePoint = new PointI { X = point.X, Y = point.Y };
+            IntPtr monitor = MonitorFromPoint(nativePoint, MonitorDefaultToNearest);
+            if (monitor != IntPtr.Zero
+                && GetDpiForMonitor(monitor, MonitorDpiTypeEffective, out uint dpiX, out _) == 0
+                && dpiX > 0)
+            {
+                return dpiX;
+            }
+
+            return GetDpiForWindow(new WindowInteropHelper(this).EnsureHandle());
         }
 
         /// <summary>
@@ -884,10 +894,15 @@ namespace Arsenal.UI.Views.Windows
                 TrayGap,
                 new FlyoutGutter(margin.Left, margin.Top, margin.Right, margin.Bottom));
 
-            Left = placement.Left;
-            Top = placement.Top;
             _enterX = placement.EnterX;
             _enterY = placement.EnterY;
+
+            // Moved as pixels rather than through Left and Top. Those are DIPs, and WPF
+            // turns them into pixels with the scale of the monitor the HWND is standing
+            // on - which on the open after a display change is the one that has just
+            // gone away, not the one this placement was measured for. Multiplying by the
+            // anchor's own scale and moving the HWND keeps the two ends in one space.
+            MoveToPixels(placement.Left * _anchorScale, placement.Top * _anchorScale);
 
             // 11 DIPs at 150% is 16.5 physical pixels. Depending on the fractional
             // window origin, WPF can resolve that as 16px on one axis and 17px on the
@@ -896,6 +911,25 @@ namespace Arsenal.UI.Views.Windows
             // taskbar is exactly the gap against the screen edge at every DPI.
             UpdateLayout();
             MatchTaskbarGapToScreenGap();
+        }
+
+        /// <summary>
+        /// Puts the window's top-left corner on a physical pixel, whatever scale the
+        /// window currently believes it is drawn at.
+        /// </summary>
+        private void MoveToPixels(double left, double top)
+        {
+            IntPtr hwnd = new WindowInteropHelper(this).EnsureHandle();
+            if (hwnd == IntPtr.Zero) return;
+
+            SetWindowPos(
+                hwnd,
+                IntPtr.Zero,
+                (int)Math.Round(left, MidpointRounding.AwayFromZero),
+                (int)Math.Round(top, MidpointRounding.AwayFromZero),
+                0,
+                0,
+                SetWindowPositionFlags.NoSize | SetWindowPositionFlags.NoZOrder | SetWindowPositionFlags.NoActivate);
         }
 
         /// <summary>
@@ -1760,6 +1794,22 @@ namespace Arsenal.UI.Views.Windows
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool PhysicalToLogicalPointForPerMonitorDPI(IntPtr hwnd, ref PointI point);
+
+        [DllImport("user32.dll")]
+        private static extern uint GetDpiForWindow(IntPtr hwnd);
+
+        private const uint MonitorDefaultToNearest = 2;
+        private const int MonitorDpiTypeEffective = 0;
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromPoint(PointI point, uint flags);
+
+        [DllImport("shcore.dll")]
+        private static extern int GetDpiForMonitor(
+            IntPtr monitor,
+            int dpiType,
+            out uint dpiX,
+            out uint dpiY);
 
         private const uint AbmGetTaskbarPos = 0x00000005;
         private const uint AbeLeft = 0;
