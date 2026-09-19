@@ -480,14 +480,25 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
     }
 
     /// <summary>
-    /// Pushes one black frame through and waits to see something come back.
+    /// Pushes frames through until a coded picture comes back.
     /// </summary>
     /// <remarks>
-    /// The acceptance test for a candidate encoder. Costs a few milliseconds once per
-    /// session and is the difference between falling back cleanly to the next encoder
-    /// and handing the phone a session that never draws anything.
+    /// The acceptance test for a candidate encoder, and the only thing standing between
+    /// a session and a black screen. An encoder can configure perfectly and then never
+    /// ask for a frame: the NVIDIA transform does exactly that whenever the dedicated
+    /// GPU is parked, which on this class of laptop is most of the time.
     ///
-    /// <para>The frame is discarded, but the keyframe request it carries is reinstated
+    /// <para>Two things it has to get right, both learned by getting them wrong:</para>
+    /// <list type="bullet">
+    /// <item>A configuration frame is not a picture. It is produced without the encoder
+    /// being involved at all, so accepting it tests nothing. This is what let a dead
+    /// encoder through once the parameter sets became readable.</item>
+    /// <item>Each probe frame has to differ from the one before. They pass through the
+    /// same change detection as real frames, so identical frames are dropped before the
+    /// encoder sees them and every attempt after the first tests nothing.</item>
+    /// </list>
+    ///
+    /// <para>The frames are discarded, but the keyframe request is reinstated
     /// afterwards so the first real frame of the session is still self contained.</para>
     /// </remarks>
     private bool ProducesFrames(int width, int height)
@@ -498,21 +509,30 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
             Height = height,
             Stride = width * 4,
             Pixels = new byte[width * 4 * height],
-            TimestampUs = 0,
         };
         var discarded = new EncodedVideoFrame();
 
         try
         {
-            // Twice: an encoder is entitled to hold the first frame back, and doing so
-            // is not a fault.
-            bool produced = TryEncode(probe, discarded);
-            if (!produced)
+            for (int attempt = 0; attempt < ProbeFrames; attempt++)
             {
-                probe.TimestampUs = 33_333;
-                produced = TryEncode(probe, discarded);
+                // Somewhere different each time, so the change detector lets it past.
+                probe.Pixels[attempt * 4] = (byte)(40 + attempt * 50);
+                probe.TimestampUs = attempt * 33_333L;
+
+                if (TryEncode(probe, discarded)
+                    && (discarded.Flags & RemoteDesktopProtocol.VideoFlags.Configuration) == 0)
+                {
+                    return true;
+                }
+
+                // An encoder that has ignored two requests for a frame is not going to
+                // answer the next two. Giving up here keeps a dead candidate to under a
+                // second, which matters when there are several to get through before
+                // the session can fall back to tiles.
+                if (Volatile.Read(ref _inputTimeouts) >= 2) break;
             }
-            return produced;
+            return false;
         }
         catch (Exception ex)
         {
@@ -644,11 +664,42 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
     private bool WaitForNeedInput()
     {
         if (_pump is null) return false;
-        if (_pump.WaitForInput(EventTimeout)) return true;
+        if (_pump.WaitForInput(EventTimeout))
+        {
+            Volatile.Write(ref _inputTimeouts, 0);
+            return true;
+        }
 
-        Logger.WriteLine("Remote encoder did not ask for a frame within " + EventTimeout.TotalMilliseconds + " ms.");
+        // Logged once rather than per frame. An encoder in this state never recovers,
+        // and at two and a half attempts a second it wrote a thousand identical lines
+        // a minute into the log while the session showed nothing.
+        int missed = Interlocked.Increment(ref _inputTimeouts);
+        if (missed == 1)
+        {
+            Logger.WriteLine("Remote encoder did not ask for a frame within " + EventTimeout.TotalMilliseconds + " ms.");
+        }
+        else if (missed == StallThreshold)
+        {
+            Logger.WriteLine($"Remote encoder has asked for nothing in {StallThreshold} attempts and is being given up on.");
+        }
         return false;
     }
+
+    private int _inputTimeouts;
+
+    /// <summary>
+    /// True once this encoder has stopped asking for frames and is not coming back.
+    /// </summary>
+    /// <remarks>
+    /// The last line of defence behind the acceptance test. An encoder can also die
+    /// part way through a session, when the dedicated GPU it was using is switched off
+    /// underneath it, and the session's answer to both is the same: stop waiting for it
+    /// and send pictures instead.
+    /// </remarks>
+    internal bool HasStalled => Volatile.Read(ref _inputTimeouts) >= StallThreshold;
+
+    private const int ProbeFrames = 4;
+    private const int StallThreshold = 5;
 
     /// <summary>Takes one coded picture out, if there is one.</summary>
     private bool Drain(long timestampUs, EncodedVideoFrame encoded)

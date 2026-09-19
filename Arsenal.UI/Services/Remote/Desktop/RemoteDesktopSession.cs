@@ -436,6 +436,16 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
                 }
                 if (source is null || encoder is null) break;
 
+                // An encoder that has stopped asking for frames is not coming back, and
+                // waiting on it shows the phone a black screen for as long as the
+                // session lasts. Swap it for the tile encoder, which needs no hardware
+                // and cannot fail this way.
+                if (encoder is MediaFoundationVideoEncoder { HasStalled: true })
+                {
+                    encoder = SwapToTiles(source);
+                    if (encoder is null) break;
+                }
+
                 // The sign-in screen, a UAC prompt and Ctrl+Alt+Del all run on a desktop
                 // this process cannot read. Capture does not fail there, it returns
                 // black, so without asking first the phone shows a frozen picture and no
@@ -493,6 +503,39 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         catch (Exception ex)
         {
             Logger.WriteLine("Remote capture loop: " + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Replaces a dead video encoder with the tile encoder, mid session.
+    /// </summary>
+    /// <remarks>
+    /// The phone is told through a fresh "started", which is the same message it
+    /// handled when the session opened, so it tears down its decoder and goes back to
+    /// drawing pictures without anything else having to know this happened.
+    /// </remarks>
+    private IVideoEncoder? SwapToTiles(IScreenSource source)
+    {
+        try
+        {
+            var tiles = new JpegTileEncoder(source.Width, source.Height, _quality.JpegQuality);
+            IVideoEncoder? replaced;
+            lock (_videoGate)
+            {
+                replaced = _encoder;
+                _encoder = tiles;
+            }
+            replaced?.Dispose();
+
+            Logger.WriteLine("Remote session fell back to picture tiles after the video encoder stopped responding.");
+            _ = SendControlAsync(new RemoteStarted(
+                "started", tiles.Codec, source.Width, source.Height, _quality.FrameRate, _monitor.Index, _viewOnly, null));
+            return tiles;
+        }
+        catch (Exception ex)
+        {
+            Logger.WriteLine("Remote tile fallback: " + ex.Message);
+            return null;
         }
     }
 
