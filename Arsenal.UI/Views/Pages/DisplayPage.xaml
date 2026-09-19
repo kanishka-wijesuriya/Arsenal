@@ -136,12 +136,13 @@
                 </controls:SettingsRow>
 
                 <controls:SettingsRow Header="Panel brightness"
-                                      Description="The display backlight, the same level the brightness keys change.">
-                    <controls:ValueSlider Minimum="0" Maximum="100" Value="{Binding PanelBrightness}" Format="{}{0}%"/>
+                                      Description="{Binding PanelBrightnessDescription}">
+                    <controls:ValueSlider Minimum="0" Maximum="100" Value="{Binding PanelBrightness}" Format="{}{0}%"
+                                          IsEnabled="{Binding IsPanelBrightnessAvailable}"/>
                 </controls:SettingsRow>
 
                 <controls:SettingsRow Header="OLED dimming"
-                                      Description="Software dimming applied by the ASUS GameVisual engine. It is unavailable while the visual profile is Disabled, because both controls share the same color pipeline."
+                                      Description="{Binding OledDimmingDescription}"
                                       Visibility="{Binding IsOledPanel, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <controls:ValueSlider Minimum="0" Maximum="100" Value="{Binding Brightness}" Format="{}{0}%"
                                           IsEnabled="{Binding IsOledDimmingAvailable}"/>

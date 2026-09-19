@@ -1214,7 +1214,21 @@ namespace Arsenal.UI.ViewModels
 
         public bool IsColorPipelineEnabled => SelectedSplendidProfile != (int)SplendidCommand.Disabled;
 
-        public bool IsOledDimmingAvailable => IsOledPanel && IsColorPipelineEnabled;
+        /// <summary>
+        /// The backlight belongs to the built-in panel, so it goes with it. An external
+        /// monitor keeps its own brightness and is not Arsenal's to change.
+        /// </summary>
+        public bool IsPanelBrightnessAvailable => IsInternalPanelActive;
+
+        public string PanelBrightnessDescription => IsInternalPanelActive
+            ? "The display backlight, the same level the brightness keys change."
+            : "The built-in panel is off, so there is no backlight to change. An external monitor keeps its own brightness.";
+
+        public bool IsOledDimmingAvailable => IsOledPanel && IsColorPipelineEnabled && IsInternalPanelActive;
+
+        public string OledDimmingDescription => !IsInternalPanelActive
+            ? "The built-in panel is off, so there is nothing to dim. Open the lid or turn the laptop display back on in Windows."
+            : "Software dimming applied by the ASUS GameVisual engine. It is unavailable while the visual profile is Disabled, because both controls share the same color pipeline.";
 
         [ObservableProperty]
         private int _colorTemperature = 50;
@@ -1403,13 +1417,16 @@ namespace Arsenal.UI.ViewModels
         {
             OnPropertyChanged(nameof(IsColorPipelineEnabled));
             OnPropertyChanged(nameof(IsOledDimmingAvailable));
+            OnPropertyChanged(nameof(OledDimmingDescription));
         }
 
         partial void OnPanelBrightnessChanged(int value)
         {
             // A value that arrived from the hardware watcher is already applied.
-            // Writing it back would fight the brightness keys mid-press.
-            if (_isReady && !_applyingExternalBrightness) _panelBrightnessWriter.Push(Math.Clamp(value, 0, 100));
+            // Writing it back would fight the brightness keys mid-press. With the panel
+            // off there is nothing behind the write either.
+            if (_isReady && !_applyingExternalBrightness && IsPanelBrightnessAvailable)
+                _panelBrightnessWriter.Push(Math.Clamp(value, 0, 100));
         }
 
         [RelayCommand]
@@ -1495,7 +1512,14 @@ namespace Arsenal.UI.ViewModels
 
         partial void OnIsOverdriveAvailableChanged(bool value) => NotifyRefreshRateSelection();
         partial void OnIsOverdriveChanged(bool value) => NotifyRefreshRateSelection();
-        partial void OnIsInternalPanelActiveChanged(bool value) => OnPropertyChanged(nameof(RefreshRateDescription));
+        partial void OnIsInternalPanelActiveChanged(bool value)
+        {
+            OnPropertyChanged(nameof(RefreshRateDescription));
+            OnPropertyChanged(nameof(IsPanelBrightnessAvailable));
+            OnPropertyChanged(nameof(PanelBrightnessDescription));
+            OnPropertyChanged(nameof(IsOledDimmingAvailable));
+            OnPropertyChanged(nameof(OledDimmingDescription));
+        }
 
         private void RefreshConnectedDisplays()
         {

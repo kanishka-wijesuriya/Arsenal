@@ -327,7 +327,33 @@ namespace Arsenal.UI.ViewModels
         /// <summary>Panel software dimming, shown next to the backlight on OLED models.</summary>
         public bool IsOledPanel { get; } = AppConfig.IsOLED();
 
-        public bool IsOledDimmingAvailable => IsOledPanel && _displayService.IsColorPipelineEnabled;
+        /// <summary>
+        /// Both sliders reach the built-in panel and nothing else: the backlight through
+        /// WMI, the dimming through GameVisual. While Windows is not driving that panel
+        /// there is no backlight to set, the same reason the refresh, overdrive and
+        /// Mini-LED tiles go unavailable. An external monitor keeps its own brightness,
+        /// which is its own to change.
+        /// </summary>
+        public bool IsPanelBrightnessAvailable => IsInternalPanelActive;
+
+        public bool IsOledDimmingAvailable =>
+            IsOledPanel && _displayService.IsColorPipelineEnabled && IsInternalPanelActive;
+
+        /// <summary>
+        /// Why the slider is greyed, or null while it is usable. The panel has no room
+        /// for a description under a slider - the header is one fixed, ellipsised column
+        /// - so the reason is carried as a tooltip, which costs no layout. Null rather
+        /// than an empty string: WPF shows no tooltip at all for null, so an available
+        /// slider stays quiet under the pointer.
+        /// </summary>
+        public string? PanelBrightnessNote => IsPanelBrightnessAvailable
+            ? null
+            : "The built-in panel is off, so there is no backlight to change. An external monitor keeps its own brightness.";
+
+        public string? OledDimmingNote => IsOledDimmingAvailable ? null
+            : !IsInternalPanelActive
+                ? "The built-in panel is off, so there is nothing to dim."
+                : "GameVisual is set to Disabled, which turns off the colour pipeline this shares.";
 
         /// <summary>Covers the panel while a GPU switch runs; it can take many seconds.</summary>
         [ObservableProperty]
@@ -453,7 +479,10 @@ namespace Arsenal.UI.ViewModels
                 finally { _applyingExternalBrightness = false; }
             });
             _displayService.ColorPipelineStateChanged += _ => QueueUiUpdate(() =>
-                OnPropertyChanged(nameof(IsOledDimmingAvailable)));
+            {
+                OnPropertyChanged(nameof(IsOledDimmingAvailable));
+                OnPropertyChanged(nameof(OledDimmingNote));
+            });
             _batteryService.ChargeLimitChanged += value => QueueUiUpdate(() => ChargeLimit = value);
             _batteryService.FullChargeOverrideChanged += value => QueueUiUpdate(() => IsFullChargeOverride = value);
             _lightingService.BrightnessChanged += value => QueueUiUpdate(() => KeyboardBrightness = value);
@@ -690,8 +719,11 @@ namespace Arsenal.UI.ViewModels
         partial void OnPanelBrightnessChanged(int value)
         {
             // A value that arrived from the hardware watcher is already applied.
-            // Writing it back would fight the brightness keys mid-press.
-            if (_isReady && !_applyingExternalBrightness) _panelBrightnessWriter.Push(Math.Clamp(value, 0, 100));
+            // Writing it back would fight the brightness keys mid-press. With the panel
+            // off there is nothing behind the write either, so it is skipped the way the
+            // dimming one below is.
+            if (_isReady && !_applyingExternalBrightness && IsPanelBrightnessAvailable)
+                _panelBrightnessWriter.Push(Math.Clamp(value, 0, 100));
         }
 
         partial void OnOledDimmingChanged(int value)
@@ -758,6 +790,10 @@ namespace Arsenal.UI.ViewModels
         partial void OnIsInternalPanelActiveChanged(bool value)
         {
             OnPropertyChanged(nameof(DisplayModeName));
+            OnPropertyChanged(nameof(IsPanelBrightnessAvailable));
+            OnPropertyChanged(nameof(PanelBrightnessNote));
+            OnPropertyChanged(nameof(IsOledDimmingAvailable));
+            OnPropertyChanged(nameof(OledDimmingNote));
             RefreshTiles();
         }
 
@@ -1450,6 +1486,7 @@ namespace Arsenal.UI.ViewModels
                 case QuickDetailPage.Visual:
                     _displayService.SetVisualProfile(option.Value);
                     OnPropertyChanged(nameof(IsOledDimmingAvailable));
+                    OnPropertyChanged(nameof(OledDimmingNote));
                     break;
                 case QuickDetailPage.Gamut:
                     if (_displayService.IsColorPipelineEnabled) _displayService.SetGamut(option.Value);
