@@ -163,6 +163,15 @@
                                        Foreground="{DynamicResource TextTertiary}"
                                        VerticalAlignment="Center"/>
                         </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <!-- This template replaces the one in Components.xaml, so it
+                                 needs its own copy of the dimming: the label and the two
+                                 end numbers are fixed brushes that ignore IsEnabled. -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
