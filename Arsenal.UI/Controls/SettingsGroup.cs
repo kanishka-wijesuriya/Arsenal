@@ -70,13 +70,23 @@ namespace Arsenal.UI.Controls
             // its close - it never heard the reset, stayed dimmed, and came back
             // invisible. Leaving on foot rather than waiting for the message makes the
             // order stop mattering.
-            Unloaded += (_, _) =>
+            // Checked a beat later rather than acted on at once. An unload is not
+            // necessarily a departure: WPF raises Unloaded and Loaded as a pair whenever
+            // a subtree is detached and put straight back, which is what happens when a
+            // control inside a group shows or hides rows around it. Closing on the spot
+            // therefore threw the user out of the group they were working in the moment
+            // they touched such a toggle, and only such a toggle, which is what made it
+            // look occasional. By the time this runs, a group that was merely re-parented
+            // is loaded again and there is nothing to do.
+            Unloaded += (_, _) => Dispatcher.BeginInvoke(new Action(() =>
             {
-                if (IsOpen) Close();
+                if (IsLoaded) return;
+
                 OpenChanged -= OnOpenChanged;
+                if (IsOpen) Close();
                 IsOpen = false;
                 IsDimmed = false;
-            };
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         public static readonly DependencyProperty HeaderProperty =
