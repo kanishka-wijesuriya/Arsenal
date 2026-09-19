@@ -170,7 +170,7 @@
             </controls:SettingsGroup>
 
             <controls:SettingsGroup Header="{Binding LightingDeviceTitle}" Icon="Diversity24"
-                                    Description="Choose the running visual and when the display is allowed to run."
+                                    Description="Choose the running visual, when the display is allowed to run, and how it behaves."
                                     Visibility="{Binding HasMatrixOrSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <controls:SettingsRow Header="Visual">
                     <controls:SettingsRow.ContentBelow>
@@ -222,6 +222,53 @@
                 <controls:SettingsRow Header="Rotate 180°"
                                       Visibility="{Binding HasAnimeMatrix, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ui:ToggleSwitch IsChecked="{Binding MatrixFlip, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
+                <!-- Slash only. This group is shared with AniMe Matrix machines, which
+                     have none of the rows below, so each is gated the same way the
+                     rotation above is rather than the group being split in two. -->
+                <controls:SettingsRow Header="Animation interval"
+                                      Visibility="{Binding HasSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:ValueSlider Minimum="0" Maximum="5" TickFrequency="1" IsSnapToTickEnabled="True"
+                                          Value="{Binding SlashInterval, Mode=TwoWay}" Format="{}{0} s"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Boot animation"
+                                      Visibility="{Binding HasSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding SlashBootAnimation, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Sleep animation"
+                                      Visibility="{Binding HasSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding SlashSleepAnimation, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Sleep pattern"
+                                      Visibility="{Binding HasSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ComboBox SelectedIndex="{Binding SlashSleepPattern, Mode=TwoWay}" MinWidth="240">
+                        <ComboBoxItem Content="System default"/>
+                        <ComboBoxItem Content="Selected animation"/>
+                    </ComboBox>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Low-battery alert"
+                                      Visibility="{Binding HasSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding SlashLowBatteryAlert, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Battery-level indicator"
+                                      Visibility="{Binding HasSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding SlashBatteryIndicator, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Dim at low battery"
+                                      Visibility="{Binding HasSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding SlashPowerSaving, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Low-battery dim level"
+                                      Visibility="{Binding HasSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ComboBox ItemsSource="{Binding SlashDimLevels}" SelectedItem="{Binding SlashDimLevel, Mode=TwoWay}" MinWidth="240"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
@@ -294,45 +341,6 @@
                         </ComboBox>
                         <ui:Button Content="Apply" Command="{Binding ApplyMatrixAudioCommand}"/>
                     </StackPanel>
-                </controls:SettingsRow>
-            </controls:SettingsGroup>
-
-            <controls:SettingsGroup Header="Slash behaviour" Icon="Timer24"
-                                    Visibility="{Binding HasSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <controls:SettingsRow Header="Animation interval">
-                    <controls:ValueSlider Minimum="0" Maximum="5" TickFrequency="1" IsSnapToTickEnabled="True"
-                                          Value="{Binding SlashInterval, Mode=TwoWay}" Format="{}{0} s"/>
-                </controls:SettingsRow>
-
-                <controls:SettingsRow Header="Boot animation">
-                    <ui:ToggleSwitch IsChecked="{Binding SlashBootAnimation, Mode=TwoWay}"/>
-                </controls:SettingsRow>
-
-                <controls:SettingsRow Header="Sleep animation">
-                    <ui:ToggleSwitch IsChecked="{Binding SlashSleepAnimation, Mode=TwoWay}"/>
-                </controls:SettingsRow>
-
-                <controls:SettingsRow Header="Sleep pattern">
-                    <ComboBox SelectedIndex="{Binding SlashSleepPattern, Mode=TwoWay}" MinWidth="240">
-                        <ComboBoxItem Content="System default"/>
-                        <ComboBoxItem Content="Selected animation"/>
-                    </ComboBox>
-                </controls:SettingsRow>
-
-                <controls:SettingsRow Header="Low-battery alert">
-                    <ui:ToggleSwitch IsChecked="{Binding SlashLowBatteryAlert, Mode=TwoWay}"/>
-                </controls:SettingsRow>
-
-                <controls:SettingsRow Header="Battery-level indicator">
-                    <ui:ToggleSwitch IsChecked="{Binding SlashBatteryIndicator, Mode=TwoWay}"/>
-                </controls:SettingsRow>
-
-                <controls:SettingsRow Header="Dim at low battery">
-                    <ui:ToggleSwitch IsChecked="{Binding SlashPowerSaving, Mode=TwoWay}"/>
-                </controls:SettingsRow>
-
-                <controls:SettingsRow Header="Low-battery dim level">
-                    <ComboBox ItemsSource="{Binding SlashDimLevels}" SelectedItem="{Binding SlashDimLevel, Mode=TwoWay}" MinWidth="240"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
