@@ -24,7 +24,7 @@
                 Background="{DynamicResource SurfaceLayer}"
                 BorderBrush="{DynamicResource StrokeSubtle}"
                 BorderThickness="1"
-                CornerRadius="{StaticResource RadiusOverlay}"
+                CornerRadius="{DynamicResource RadiusOverlay}"
                 Padding="14"
                 SnapsToDevicePixels="True">
             <Border.Effect>
@@ -50,7 +50,7 @@
                     <Border x:Name="AccentBar" Width="3" CornerRadius="2" Margin="0,2,12,2"
                             Background="{DynamicResource AccentPrimary}"/>
 
-                    <Border Grid.Column="1" Width="34" Height="34" CornerRadius="{StaticResource RadiusControl}"
+                    <Border Grid.Column="1" Width="34" Height="34" CornerRadius="{DynamicResource RadiusControl}"
                             Background="{DynamicResource AccentSubtle}" VerticalAlignment="Top">
                         <ui:SymbolIcon Symbol="{Binding IconSymbol}" FontSize="18" Foreground="{DynamicResource AccentPrimary}"/>
                     </Border>

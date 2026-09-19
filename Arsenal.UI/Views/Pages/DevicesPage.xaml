@@ -137,14 +137,14 @@
                             <StackPanel>
                                 <TextBlock Text="Primary color" Style="{StaticResource SettingLabelStyle}" Margin="0,0,0,8"/>
                                 <controls:ColorSpectrumPicker SelectedColor="{Binding KeyboardPrimaryColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="170"/>
-                                <Border Height="42" Margin="0,8,0,0" CornerRadius="{StaticResource RadiusControl}" Background="{Binding KeyboardPrimaryBrush}">
+                                <Border Height="42" Margin="0,8,0,0" CornerRadius="{DynamicResource RadiusControl}" Background="{Binding KeyboardPrimaryBrush}">
                                     <TextBlock Text="{Binding KeyboardPrimaryHex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
                                 </Border>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Secondary color" Style="{StaticResource SettingLabelStyle}" Margin="0,0,0,8"/>
                                 <controls:ColorSpectrumPicker SelectedColor="{Binding KeyboardSecondaryColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="170"/>
-                                <Border Height="42" Margin="0,8,0,0" CornerRadius="{StaticResource RadiusControl}" Background="{Binding KeyboardSecondaryBrush}">
+                                <Border Height="42" Margin="0,8,0,0" CornerRadius="{DynamicResource RadiusControl}" Background="{Binding KeyboardSecondaryBrush}">
                                     <TextBlock Text="{Binding KeyboardSecondaryHex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
                                 </Border>
                             </StackPanel>

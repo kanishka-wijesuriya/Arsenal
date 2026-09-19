@@ -304,42 +304,122 @@ namespace Arsenal.UI
             }
         }
 
+        /// <summary>The palette in force. Read by anything that has to branch on it.</summary>
+        public static Theming.ThemePalette Palette { get; private set; } = Theming.ThemePalette.Dark;
+
         public static void ApplyConfiguredTheme()
         {
             try
             {
-                bool light = IsConfiguredLightTheme();
-                WpfUi.ApplicationThemeManager.Apply(light ? WpfUi.ApplicationTheme.Light : WpfUi.ApplicationTheme.Dark);
+                Theming.ThemePalette palette = ConfiguredPalette();
+                Palette = palette;
+
+                // WPF UI's control theme and the DWM title bar still know only two
+                // states, so a third palette declares which of the two it is built on.
+                WpfUi.ApplicationThemeManager.Apply(palette.IsLight
+                    ? WpfUi.ApplicationTheme.Light
+                    : WpfUi.ApplicationTheme.Dark);
 
                 if (Current != null)
                 {
-                    Current.Resources["SurfaceBase"] = Brush(light ? "#F5F5F5" : "#171819");
-                    Current.Resources["SurfaceLayer"] = Brush(light ? "#FAFAFA" : "#1D1F20");
-                    Current.Resources["SurfaceCard"] = Brush(light ? "#FFFFFFFF" : "#252728");
-                    Current.Resources["SurfaceCardHover"] = Brush(light ? "#FFF3F3F3" : "#2C2F30");
-                    Current.Resources["SurfaceSunken"] = Brush(light ? "#FFEFEFEF" : "#141516");
-                    Current.Resources["StrokeSubtle"] = Brush(light ? "#18000000" : "#2AFFFFFF");
-                    Current.Resources["StrokeDivider"] = Brush(light ? "#12000000" : "#18FFFFFF");
-                    Current.Resources["TextPrimary"] = Brush(light ? "#1A1A1A" : "#F4F4F4");
-                    Current.Resources["TextSecondary"] = Brush(light ? "#5B5B5B" : "#B6B8BA");
-                    Current.Resources["TextTertiary"] = Brush(light ? "#777777" : "#86898C");
+                    Current.Resources["SurfaceBase"] = Brush(palette.SurfaceBase);
+                    Current.Resources["SurfaceLayer"] = Brush(palette.SurfaceLayer);
+                    Current.Resources["SurfaceCard"] = Brush(palette.SurfaceCard);
+                    Current.Resources["SurfaceCardHover"] = Brush(palette.SurfaceCardHover);
+                    Current.Resources["SurfaceSunken"] = Brush(palette.SurfaceSunken);
+                    Current.Resources["StrokeSubtle"] = Brush(palette.StrokeSubtle);
+                    Current.Resources["StrokeDivider"] = Brush(palette.StrokeDivider);
+                    Current.Resources["TextPrimary"] = Brush(palette.TextPrimary);
+                    Current.Resources["TextSecondary"] = Brush(palette.TextSecondary);
+                    Current.Resources["TextTertiary"] = Brush(palette.TextTertiary);
+                    Current.Resources["StatusSuccess"] = Brush(palette.StatusSuccess);
+                    Current.Resources["StatusWarning"] = Brush(palette.StatusWarning);
+                    Current.Resources["StatusCritical"] = Brush(palette.StatusCritical);
 
-                    // Status colours are tuned for a dark ground; darken them for light
-                    // mode so warning and error text stays readable on white cards.
-                    Current.Resources["StatusSuccess"] = Brush(light ? "#1E7A26" : "#6CCB5F");
-                    Current.Resources["StatusWarning"] = Brush(light ? "#9A6700" : "#F2C94C");
-                    Current.Resources["StatusCritical"] = Brush(light ? "#C42B1C" : "#FF6B6B");
-
-                    Current.Resources["DividerBrush"] = FadedLine(light ? "#24000000" : "#26FFFFFF");
-                    ApplyNavigationForeground(light);
-                    ApplyAccentResources(light);
-                    ApplyWindowSurfaces(light);
+                    Current.Resources["DividerBrush"] = FadedLine(palette.DividerLine);
+                    ApplyThemeChrome(palette);
+                    ApplyShapeResources(palette);
+                    ApplyTypeResources(palette);
+                    ApplyNavigationForeground(palette);
+                    ApplyAccentResources(palette);
+                    ApplyWindowSurfaces(palette);
                 }
             }
             catch (Exception ex)
             {
                 Logger.WriteLine("Theme apply error: " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Corner radius and border weight, which used not to be a theme's business.
+        /// </summary>
+        /// <remarks>
+        /// Every consumer of these reads them with DynamicResource for this reason: a
+        /// StaticResource is resolved once when the tree is loaded and would keep the
+        /// radius of whichever theme happened to be in force at startup.
+        /// </remarks>
+        /// <summary>
+        /// The dictionary of replacement control templates a theme brings with it.
+        /// </summary>
+        /// <remarks>
+        /// Merged last and removed again, because the winning entry for a duplicated key
+        /// is the one merged latest: a theme's templates have to arrive after the stock
+        /// ones they replace, and have to leave when the theme does or a switch away
+        /// would keep its chrome with another theme's colours.
+        ///
+        /// <para>Colour is deliberately not in here. Every theme paints the same tokens;
+        /// this is only for what a palette cannot say - a different template, a different
+        /// shape, settings that live one level down.</para>
+        /// </remarks>
+        private static readonly Uri ArsenalChromeUri =
+            new("pack://application:,,,/Arsenal;component/Styles/ArsenalTheme.xaml");
+
+        private static ResourceDictionary? _themeChrome;
+
+        private static void ApplyThemeChrome(Theming.ThemePalette palette)
+        {
+            bool wanted = ReferenceEquals(palette, Theming.ThemePalette.Arsenal);
+
+            if (!wanted)
+            {
+                if (_themeChrome is not null)
+                {
+                    Current.Resources.MergedDictionaries.Remove(_themeChrome);
+                    _themeChrome = null;
+                }
+                return;
+            }
+
+            if (_themeChrome is not null)
+            {
+                // Already on, but another dictionary may have been merged after it.
+                // Move it back to the end so its templates still win.
+                Current.Resources.MergedDictionaries.Remove(_themeChrome);
+                Current.Resources.MergedDictionaries.Add(_themeChrome);
+                return;
+            }
+
+            _themeChrome = new ResourceDictionary { Source = ArsenalChromeUri };
+            Current.Resources.MergedDictionaries.Add(_themeChrome);
+        }
+
+        private static void ApplyShapeResources(Theming.ThemePalette palette)
+        {
+            Current.Resources["RadiusControl"] = new CornerRadius(palette.RadiusControl);
+            Current.Resources["RadiusCard"] = new CornerRadius(palette.RadiusCard);
+            Current.Resources["RadiusOverlay"] = new CornerRadius(palette.RadiusOverlay);
+            Current.Resources["RadiusFlyout"] = new CornerRadius(palette.RadiusFlyout);
+            Current.Resources["BorderWeight"] = new Thickness(palette.BorderWeight);
+        }
+
+        /// <summary>
+        /// The two type families and the treatment headings get.
+        /// </summary>
+        private static void ApplyTypeResources(Theming.ThemePalette palette)
+        {
+            Current.Resources["FontBody"] = new System.Windows.Media.FontFamily(palette.BodyFont);
+            Current.Resources["FontDisplay"] = new System.Windows.Media.FontFamily(palette.DisplayFont);
         }
 
         /// <summary>
@@ -412,24 +492,24 @@ namespace Arsenal.UI
         /// the secondary ink instead, which is where a quiet column would sit, measured
         /// 6.17:1 and still read as washed out next to #1A1A1A page text.
         /// </remarks>
-        private static void ApplyNavigationForeground(bool light)
+        private static void ApplyNavigationForeground(Theming.ThemePalette palette)
         {
             if (Current is null) return;
 
-            SolidColorBrush ink = Brush(light ? "#45453D" : "#B1B1A9");
+            SolidColorBrush ink = Brush(palette.NavigationInk);
             Current.Resources["NavigationForeground"] = ink;
             foreach (string key in NavigationForegroundKeys)
                 Current.Resources[key] = ink;
         }
 
-        private static void ApplyWindowSurfaces(bool light)
+        private static void ApplyWindowSurfaces(Theming.ThemePalette palette)
         {
             if (Current is null) return;
 
             bool opaque = IsOpaqueWindow;
 
             System.Windows.Media.Brush sidebar = opaque
-                ? Brush(light ? "#F3F3F3" : "#111111")
+                ? Brush(palette.OpaqueSidebar)
                 : System.Windows.Media.Brushes.Transparent;
 
             // With Mica on, the navigation ground stays fully transparent so the backdrop
@@ -439,8 +519,8 @@ namespace Arsenal.UI
             // point of the collapsed layout. This is the same layer-over-backdrop the
             // Windows 11 shell uses, not a solid fill.
             System.Windows.Media.Brush content = opaque
-                ? Brush(light ? "#FAFAFA" : "#151515")
-                : Brush(light ? "#5AFFFFFF" : "#12FFFFFF");
+                ? Brush(palette.OpaqueContent)
+                : Brush(palette.MicaContentWash);
 
             Current.Resources["AppSidebarBackground"] = sidebar;
             Current.Resources["AppContentBackground"] = content;
@@ -556,7 +636,7 @@ namespace Arsenal.UI
         {
             try
             {
-                if (Current != null) ApplyAccentResources(IsConfiguredLightTheme());
+                if (Current != null) ApplyAccentResources(ConfiguredPalette());
             }
             catch (Exception ex)
             {
@@ -564,19 +644,29 @@ namespace Arsenal.UI
             }
         }
 
-        private static bool IsConfiguredLightTheme()
+        /// <summary>The palette the stored setting asks for, System resolved against Windows.</summary>
+        private static Theming.ThemePalette ConfiguredPalette()
         {
-            int theme = AppConfig.Get("theme", 0);
             bool systemLight = Convert.ToInt32(Registry.GetValue(
                 @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
                 "AppsUseLightTheme", 0)) != 0;
-            return theme == 2 || (theme == 0 && systemLight);
+            return Theming.ThemePalette.Resolve(AppConfig.Get("theme", 0), systemLight);
         }
 
-        private static void ApplyAccentResources(bool light)
+        private static bool IsConfiguredLightTheme() => ConfiguredPalette().IsLight;
+
+        private static void ApplyAccentResources(Theming.ThemePalette palette)
         {
-            System.Windows.Media.Color configuredAccent = AccentColorService.GetConfiguredAccent();
-            bool followsWindows = AccentColorService.UsesWindowsAccent;
+            bool light = palette.IsLight;
+
+            // A designed theme brings its own signal colour and ignores the desktop's.
+            // The neutral two are backdrops for whatever the user's Windows accent is;
+            // this one is a designed object, and an arbitrary accent against that ground
+            // reads as a mistake rather than a preference.
+            System.Windows.Media.Color configuredAccent = palette.SignatureAccent is string signature
+                ? (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(signature)
+                : AccentColorService.GetConfiguredAccent();
+            bool followsWindows = palette.SignatureAccent is null && AccentColorService.UsesWindowsAccent;
             WpfUi.ApplicationTheme applicationTheme = light ? WpfUi.ApplicationTheme.Light : WpfUi.ApplicationTheme.Dark;
 
             // WPF UI owns the native-looking controls; Arsenal owns the surrounding
@@ -594,9 +684,10 @@ namespace Arsenal.UI
             else
                 accent = System.Windows.Media.Color.FromRgb(accent.R, accent.G, accent.B);
 
-            System.Windows.Media.Color card = light
-                ? System.Windows.Media.Colors.White
-                : System.Windows.Media.Color.FromRgb(0x25, 0x27, 0x28);
+            // The ground the selected-row wash is mixed against, so the blend lands on
+            // the card the user is actually looking at rather than on a remembered one.
+            var card = (System.Windows.Media.Color)
+                System.Windows.Media.ColorConverter.ConvertFromString(palette.AccentBlendGround);
             System.Windows.Media.Color foreground = AccentColorService.ContrastingText(accent);
             System.Windows.Media.Color subtle = AccentColorService.WithAlpha(accent, light ? (byte)0x20 : (byte)0x2E);
             System.Windows.Media.Color selected = AccentColorService.Blend(card, accent, light ? 0.14 : 0.20);
@@ -609,7 +700,38 @@ namespace Arsenal.UI
             Current.Resources["AccentForeground"] = Brush(foreground);
             Current.Resources["AccentSubtle"] = Brush(subtle);
             Current.Resources["SurfaceSelected"] = Brush(selected);
+
+            ApplySignalResources(palette, accent);
         }
+
+        /// <summary>
+        /// The glow behind a selected control.
+        /// </summary>
+        /// <remarks>
+        /// Built here rather than declared in XAML because it takes the live accent,
+        /// which is only known once <see cref="ApplyAccentResources"/> has run, and
+        /// because a theme that does not glow wants the resource absent rather than an
+        /// invisible effect still costing a render pass. A null Effect is free.
+        /// </remarks>
+        private static void ApplySignalResources(Theming.ThemePalette palette, System.Windows.Media.Color accent)
+        {
+            Current.Resources["AccentGlow"] = palette.Glows
+                ? Frozen(new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = accent,
+                    BlurRadius = 14,
+                    ShadowDepth = 0,
+                    Opacity = 0.55,
+                })
+                : null;
+        }
+
+        private static T Frozen<T>(T freezable) where T : System.Windows.Freezable
+        {
+            freezable.Freeze();
+            return freezable;
+        }
+
 
         private static SolidColorBrush Brush(string hex)
         {

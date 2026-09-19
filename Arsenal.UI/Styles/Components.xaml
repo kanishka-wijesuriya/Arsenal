@@ -138,7 +138,7 @@
                         <Border Background="{DynamicResource SurfaceCard}"
                                 BorderBrush="{DynamicResource StrokeSubtle}"
                                 BorderThickness="1"
-                                CornerRadius="{StaticResource RadiusCard}"
+                                CornerRadius="{DynamicResource RadiusCard}"
                                 SnapsToDevicePixels="True">
                             <ItemsPresenter/>
                         </Border>
@@ -272,7 +272,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{StaticResource RadiusControl}"
+                                CornerRadius="{DynamicResource RadiusControl}"
                                 SnapsToDevicePixels="True"/>
 
                         <!-- Hover and checked states fade in over their own layers: a
@@ -280,14 +280,14 @@
                              come from the theme so they cannot be animated directly. -->
                         <Border x:Name="HoverLayer"
                                 Background="{DynamicResource SurfaceSelected}"
-                                CornerRadius="{StaticResource RadiusControl}"
+                                CornerRadius="{DynamicResource RadiusControl}"
                                 Opacity="0"
                                 IsHitTestVisible="False"/>
                         <Border x:Name="CheckedLayer"
                                 Background="{DynamicResource AccentSubtle}"
                                 BorderBrush="{DynamicResource AccentPrimary}"
                                 BorderThickness="1"
-                                CornerRadius="{StaticResource RadiusControl}"
+                                CornerRadius="{DynamicResource RadiusControl}"
                                 Opacity="0"
                                 IsHitTestVisible="False"/>
 
@@ -542,7 +542,7 @@
                     <Border Background="{DynamicResource SurfaceCard}"
                             BorderBrush="{DynamicResource StrokeSubtle}"
                             BorderThickness="1"
-                            CornerRadius="{StaticResource RadiusCard}"
+                            CornerRadius="{DynamicResource RadiusCard}"
                             Padding="16,14,16,16"
                             SnapsToDevicePixels="True">
                         <StackPanel>
@@ -673,7 +673,7 @@
                                  pipeline - which it would if the shadow sat on the
                                  border that holds the content. -->
                             <Border Background="#FF05070A"
-                                    CornerRadius="{StaticResource RadiusFlyout}"
+                                    CornerRadius="{DynamicResource RadiusFlyout}"
                                     HorizontalAlignment="Center" VerticalAlignment="Center"
                                     Margin="24" IsHitTestVisible="False"
                                     Width="{Binding ActualWidth, ElementName=PART_Surface}"
@@ -688,7 +688,7 @@
                                     Background="{DynamicResource SurfaceLayer}"
                                     BorderBrush="{DynamicResource StrokeSubtle}"
                                     BorderThickness="1"
-                                    CornerRadius="{StaticResource RadiusFlyout}"
+                                    CornerRadius="{DynamicResource RadiusFlyout}"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     MaxWidth="{TemplateBinding PanelMaxWidth}"

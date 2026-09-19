@@ -88,11 +88,23 @@
     <Thickness x:Key="InlineGap">0,0,8,0</Thickness>
     <Thickness x:Key="ChipGap">0,0,8,8</Thickness>
 
-    <!-- ===== Shape ===== -->
+    <!-- ===== Shape =====
+         Themed, so every consumer reads these with DynamicResource. A theme with hard
+         corners is a different shape, not a different colour, and a StaticResource here
+         would be resolved once at load and keep the startup theme's radius forever. -->
     <CornerRadius x:Key="RadiusControl">6</CornerRadius>
     <CornerRadius x:Key="RadiusCard">8</CornerRadius>
     <CornerRadius x:Key="RadiusOverlay">12</CornerRadius>
     <CornerRadius x:Key="RadiusFlyout">16</CornerRadius>
+
+    <!-- Border weight for cards and controls. Heavier reads as machined. -->
+    <Thickness x:Key="BorderWeight">1</Thickness>
+
+    <!-- ===== Type =====
+         Two families and the tracking that goes on headings. The neutral themes use the
+         system UI font for both; a themed one may set a display face for headings. -->
+    <FontFamily x:Key="FontBody">Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="FontDisplay">Segoe UI Variable Display, Segoe UI</FontFamily>
 
     <!-- ===== Metrics =====
          One shared width for every slider + readout pair, and one shared minimum

@@ -44,7 +44,7 @@
                                       Visibility="{Binding HasAuraEffects, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <controls:SettingsRow.ContentBelow>
                         <StackPanel>
-                            <Border CornerRadius="{StaticResource RadiusCard}"
+                            <Border CornerRadius="{DynamicResource RadiusCard}"
                                     Background="{DynamicResource SurfaceSunken}"
                                     BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1"
                                     Padding="14" HorizontalAlignment="Left" MaxWidth="880">
@@ -127,7 +127,7 @@
                                                           ToolTip="Choose saturation and brightness, then use the hue strip below"/>
 
                             <StackPanel Grid.Column="2">
-                                <Border Height="72" CornerRadius="{StaticResource RadiusCard}" Background="{Binding ColorPreviewBrush}"
+                                <Border Height="72" CornerRadius="{DynamicResource RadiusCard}" Background="{Binding ColorPreviewBrush}"
                                         BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1"/>
 
                                 <TextBlock Text="{Binding HexColor}" FontFamily="Cascadia Mono, Consolas" FontSize="16" FontWeight="SemiBold"

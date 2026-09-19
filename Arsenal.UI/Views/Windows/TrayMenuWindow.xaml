@@ -22,7 +22,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Chrome" Background="{TemplateBinding Background}"
-                                CornerRadius="{StaticResource RadiusControl}" Padding="{TemplateBinding Padding}">
+                                CornerRadius="{DynamicResource RadiusControl}" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -51,7 +51,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
                         <Border x:Name="Chrome" Background="{TemplateBinding Background}"
-                                CornerRadius="{StaticResource RadiusControl}" Padding="{TemplateBinding Padding}">
+                                CornerRadius="{DynamicResource RadiusControl}" Padding="{TemplateBinding Padding}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="24"/>
@@ -106,7 +106,7 @@
         <Border Background="{DynamicResource SurfaceLayer}"
                 BorderBrush="{DynamicResource StrokeSubtle}"
                 BorderThickness="1"
-                CornerRadius="{StaticResource RadiusOverlay}"
+                CornerRadius="{DynamicResource RadiusOverlay}"
                 Padding="6"
                 TextElement.Foreground="{DynamicResource TextPrimary}">
             <Border.Effect>

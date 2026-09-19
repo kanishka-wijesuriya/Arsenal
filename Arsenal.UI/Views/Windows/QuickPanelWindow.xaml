@@ -46,10 +46,12 @@
                         <Grid>
                             <Border x:Name="Chrome" Background="{DynamicResource SurfaceCard}"
                                     BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1"
-                                    CornerRadius="{StaticResource RadiusControl}"/>
+                                    CornerRadius="{DynamicResource RadiusControl}"/>
                             <Border x:Name="SelectedLayer" Opacity="0" Background="{DynamicResource AccentSubtle}"
-                                    BorderBrush="{DynamicResource AccentPrimary}" BorderThickness="1"
-                                    CornerRadius="{StaticResource RadiusControl}"/>
+                                    BorderBrush="{DynamicResource AccentPrimary}"
+                                    BorderThickness="{DynamicResource BorderWeight}"
+                                    CornerRadius="{DynamicResource RadiusControl}"
+                                    Effect="{DynamicResource AccentGlow}"/>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               Margin="7,5" TextElement.Foreground="{TemplateBinding Foreground}"/>
                         </Grid>
@@ -84,7 +86,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Chrome" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{StaticResource RadiusControl}">
+                                CornerRadius="{DynamicResource RadiusControl}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="7,5"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -190,10 +192,10 @@
                     <ControlTemplate TargetType="Button">
                         <Grid>
                             <Border x:Name="Chrome" Background="{TemplateBinding Background}"
-                                    CornerRadius="{StaticResource RadiusControl}"/>
+                                    CornerRadius="{DynamicResource RadiusControl}"/>
                             <Border x:Name="HoverLayer" Opacity="0" IsHitTestVisible="False"
                                     Background="{DynamicResource SurfaceCardHover}"
-                                    CornerRadius="{StaticResource RadiusControl}"/>
+                                    CornerRadius="{DynamicResource RadiusControl}"/>
                             <ContentPresenter Margin="{TemplateBinding Padding}"
                                               HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
                         </Grid>
@@ -238,7 +240,7 @@
                 VerticalAlignment="Bottom"
                 IsHitTestVisible="False"
                 Background="{DynamicResource SurfaceLayer}"
-                CornerRadius="{StaticResource RadiusFlyout}"
+                CornerRadius="{DynamicResource RadiusFlyout}"
                 Height="{Binding ActualHeight, ElementName=PanelChrome}">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="18" ShadowDepth="6" Opacity="0.45" Color="Black"
@@ -250,8 +252,8 @@
                 VerticalAlignment="Bottom"
                 Background="{DynamicResource SurfaceLayer}"
                 BorderBrush="{DynamicResource StrokeSubtle}"
-                BorderThickness="1"
-                CornerRadius="{StaticResource RadiusFlyout}"
+                BorderThickness="{DynamicResource BorderWeight}"
+                CornerRadius="{DynamicResource RadiusFlyout}"
                 Padding="16"
                 TextElement.Foreground="{DynamicResource TextPrimary}">
 
@@ -314,7 +316,7 @@
                     <Border Background="{DynamicResource SurfaceCard}"
                             BorderBrush="{DynamicResource StrokeSubtle}"
                             BorderThickness="1"
-                            CornerRadius="{StaticResource RadiusCard}"
+                            CornerRadius="{DynamicResource RadiusCard}"
                             Padding="12"
                             Margin="0,0,0,16">
                         <UniformGrid x:Name="TelemetryReadouts" Columns="4">
@@ -582,7 +584,7 @@
                     <Border Background="{DynamicResource SurfaceCard}"
                             BorderBrush="{DynamicResource StrokeSubtle}"
                             BorderThickness="1"
-                            CornerRadius="{StaticResource RadiusCard}"
+                            CornerRadius="{DynamicResource RadiusCard}"
                             Padding="12,10">
                         <StackPanel>
                             <controls:ValueSlider Style="{StaticResource QuickPanelValueSliderStyle}"
@@ -717,7 +719,7 @@
 
                     <StackPanel Visibility="{Binding IsPerformanceShortcutEditor, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <Border Background="{DynamicResource AccentSubtle}" BorderBrush="{DynamicResource AccentPrimary}"
-                                BorderThickness="1" CornerRadius="{StaticResource RadiusCard}" Padding="12" Margin="0,0,0,12">
+                                BorderThickness="1" CornerRadius="{DynamicResource RadiusCard}" Padding="12" Margin="0,0,0,12">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="Edit24" FontSize="16" Margin="0,1,9,0" Foreground="{DynamicResource AccentPrimary}"/>
                                 <TextBlock Text="Pick three different plans for the quick panel. Custom plans appear here as soon as you create them." TextWrapping="Wrap" FontSize="11.5"
@@ -766,12 +768,12 @@
             <Grid>
                 <controls:BusyOverlay IsActive="{Binding IsGpuSwitching}"
                                       Message="{Binding GpuSwitchingMessage}"
-                                      CornerRadius="{StaticResource RadiusFlyout}"
+                                      CornerRadius="{DynamicResource RadiusFlyout}"
                                       FrameRate="45"/>
                 <controls:BusyOverlay IsActive="{Binding IsAsusServicesChanging}"
                                       Message="{Binding AsusServicesMessage}"
                                       Detail="{Binding AsusServicesDetail}"
-                                      CornerRadius="{StaticResource RadiusFlyout}"
+                                      CornerRadius="{DynamicResource RadiusFlyout}"
                                       FrameRate="45"/>
             </Grid>
         </Border>

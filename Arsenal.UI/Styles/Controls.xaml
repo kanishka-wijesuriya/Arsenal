@@ -26,7 +26,7 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Border CornerRadius="{StaticResource RadiusControl}"
+                    <Border CornerRadius="{DynamicResource RadiusControl}"
                             BorderBrush="{DynamicResource AccentPrimary}"
                             BorderThickness="2"
                             Margin="-2"
@@ -45,11 +45,12 @@
          =================================================================== -->
 
     <Style x:Key="TextBaseStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI"/>
+        <Setter Property="FontFamily" Value="{DynamicResource FontBody}"/>
     </Style>
 
     <Style x:Key="PageTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBaseStyle}">
-        <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI"/>
+        <Setter Property="FontFamily" Value="{DynamicResource FontDisplay}"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
         <Setter Property="FontSize" Value="28"/>
         <Setter Property="LineHeight" Value="36"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -198,8 +199,8 @@
     <Style x:Key="CardSurfaceStyle" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource SurfaceCard}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource StrokeSubtle}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusCard}"/>
+        <Setter Property="BorderThickness" Value="{DynamicResource BorderWeight}"/>
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusCard}"/>
         <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
         <Setter Property="Margin" Value="{StaticResource SectionGap}"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
@@ -209,8 +210,8 @@
     <Style x:Key="InsetSurfaceStyle" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource SurfaceSunken}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource StrokeDivider}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}"/>
+        <Setter Property="BorderThickness" Value="{DynamicResource BorderWeight}"/>
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusControl}"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
 
@@ -219,7 +220,7 @@
         <Setter Property="Background" Value="{DynamicResource SurfaceCard}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource StrokeSubtle}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}"/>
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusControl}"/>
         <Setter Property="Padding" Value="9,3"/>
         <Setter Property="Margin" Value="6,0,0,0"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -243,7 +244,7 @@
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="Background" Value="{DynamicResource SurfaceCardHover}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource StrokeSubtle}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderThickness" Value="{DynamicResource BorderWeight}"/>
         <Setter Property="Padding" Value="14,0"/>
         <Setter Property="MinHeight" Value="34"/>
         <Setter Property="MinWidth" Value="{StaticResource SegmentMinWidth}"/>
@@ -265,7 +266,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{StaticResource RadiusControl}"
+                                CornerRadius="{DynamicResource RadiusControl}"
                                 SnapsToDevicePixels="True"/>
                         <!-- Checked sits under hover so a checked chip still lifts on
                              hover instead of looking inert. -->
@@ -273,10 +274,11 @@
                                 Background="{DynamicResource AccentPrimary}"
                                 BorderBrush="{DynamicResource AccentPrimary}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{StaticResource RadiusControl}"/>
+                                CornerRadius="{DynamicResource RadiusControl}"
+                                Effect="{DynamicResource AccentGlow}"/>
                         <Border x:Name="HoverLayer" Opacity="0" IsHitTestVisible="False"
                                 Background="{DynamicResource SurfaceSelected}"
-                                CornerRadius="{StaticResource RadiusControl}"/>
+                                CornerRadius="{DynamicResource RadiusControl}"/>
                         <ContentPresenter x:Name="Content"
                                           Margin="{TemplateBinding Padding}"
                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -427,16 +429,16 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{StaticResource RadiusControl}"
+                                CornerRadius="{DynamicResource RadiusControl}"
                                 SnapsToDevicePixels="True"/>
                         <Border x:Name="CheckedLayer" Opacity="0" IsHitTestVisible="False"
                                 Background="{DynamicResource AccentSubtle}"
                                 BorderBrush="{DynamicResource AccentPrimary}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{StaticResource RadiusControl}"/>
+                                CornerRadius="{DynamicResource RadiusControl}"/>
                         <Border x:Name="HoverLayer" Opacity="0" IsHitTestVisible="False"
                                 Background="{DynamicResource SurfaceSelected}"
-                                CornerRadius="{StaticResource RadiusControl}"/>
+                                CornerRadius="{DynamicResource RadiusControl}"/>
                         <ContentPresenter Margin="{TemplateBinding Padding}"
                                           HorizontalAlignment="Center" VerticalAlignment="Center"
                                           TextElement.Foreground="{TemplateBinding Foreground}"/>
@@ -532,7 +534,7 @@
                 <ControlTemplate TargetType="TabItem">
                     <Border x:Name="Chrome"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="{StaticResource RadiusControl}"
+                            CornerRadius="{DynamicResource RadiusControl}"
                             Padding="{TemplateBinding Padding}"
                             MinHeight="{TemplateBinding MinHeight}"
                             SnapsToDevicePixels="True">
@@ -596,7 +598,7 @@
                 <ControlTemplate TargetType="{x:Type ui:Button}">
                     <Border x:Name="Chrome"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="{StaticResource RadiusControl}"
+                            CornerRadius="{DynamicResource RadiusControl}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter Content="{TemplateBinding Icon}"
                                           HorizontalAlignment="Center"

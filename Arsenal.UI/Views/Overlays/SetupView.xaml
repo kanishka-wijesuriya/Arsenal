@@ -627,7 +627,7 @@
 
                         <!-- Live pairing state. The dot breathes while nothing has connected
                              and settles to a solid green once a phone has. -->
-                        <Border Margin="0,20,0,0" CornerRadius="{StaticResource RadiusCard}"
+                        <Border Margin="0,20,0,0" CornerRadius="{DynamicResource RadiusCard}"
                                 Background="{DynamicResource SurfaceCard}"
                                 BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1"
                                 Padding="16,12"
