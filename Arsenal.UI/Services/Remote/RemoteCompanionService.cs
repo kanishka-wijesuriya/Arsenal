@@ -537,6 +537,13 @@ public sealed class RemoteCompanionService : IDisposable
                 }
 
                 request = request with { RemoteAddress = remote.ToString() };
+
+                // A remote control session leaves HTTP behind and keeps this socket for
+                // as long as somebody is watching, so it is handled before routing: the
+                // router's contract is one response and then a closed connection, which
+                // is the opposite of what a session needs.
+                if (await TryUpgradeToSessionAsync(ssl, request, remote, cancellationToken)) return;
+
                 HttpResponse response = await RouteAsync(request);
                 await WriteWithDeadlineAsync(ssl, response, cancellationToken);
             }
@@ -558,6 +565,57 @@ public sealed class RemoteCompanionService : IDisposable
                 Services.BackgroundMemoryRelease.Schedule();
             }
         }
+    }
+
+    /// <summary>
+    /// Hands the connection to a remote control session when the phone asked for one.
+    /// </summary>
+    /// <remarks>
+    /// The upgrade is answered on the same TLS connection the phone already pinned and
+    /// only after the bearer token has been checked, so a session inherits exactly the
+    /// trust the rest of the companion runs on rather than establishing its own.
+    ///
+    /// <para>Nothing may follow the request headers: the phone waits for the 101 before
+    /// it sends its first frame. A request that arrives with a body would leave those
+    /// bytes in the HTTP reader's buffer where the session would never see them, so it
+    /// is refused rather than silently desynchronised.</para>
+    /// </remarks>
+    private async Task<bool> TryUpgradeToSessionAsync(Stream stream, HttpRequest request, IPAddress remote, CancellationToken cancellationToken)
+    {
+        if (request.Method != "GET" || !request.Path.StartsWith(Desktop.RemoteDesktopProtocol.SessionPath, StringComparison.Ordinal)) return false;
+        if (!request.Headers.TryGetValue("upgrade", out string? upgrade)
+            || !string.Equals(upgrade.Trim(), Desktop.RemoteDesktopProtocol.UpgradeToken, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!IsAuthorized(request, out CompanionDeviceInfo? paired) || paired is null)
+        {
+            await WriteWithDeadlineAsync(stream, Error(401, "This phone is not paired with Arsenal."), cancellationToken);
+            return true;
+        }
+        if (request.Body.Length > 0)
+        {
+            await WriteWithDeadlineAsync(stream, Error(400, "A session request cannot carry a body."), cancellationToken);
+            return true;
+        }
+
+        var desktop = _services.GetRequiredService<Desktop.RemoteDesktopServer>();
+        if (!desktop.IsEnabled)
+        {
+            await WriteWithDeadlineAsync(stream, Error(403, "Remote control is turned off on this PC."), cancellationToken);
+            return true;
+        }
+
+        byte[] accepted = Encoding.ASCII.GetBytes(
+            "HTTP/1.1 101 Switching Protocols\r\n" +
+            "Upgrade: " + Desktop.RemoteDesktopProtocol.UpgradeToken + "\r\n" +
+            "Connection: Upgrade\r\n\r\n");
+        await stream.WriteAsync(accepted, cancellationToken);
+        await stream.FlushAsync(cancellationToken);
+
+        await desktop.AcceptAsync(stream, new Desktop.RemotePeer(paired.Id, paired.Name, remote.ToString()));
+        return true;
     }
 
     /// <summary>
@@ -700,8 +758,19 @@ public sealed class RemoteCompanionService : IDisposable
         });
     }
 
-    private bool IsAuthorized(HttpRequest request)
+    private bool IsAuthorized(HttpRequest request) => IsAuthorized(request, out _);
+
+    /// <summary>
+    /// Checks the bearer credential and says which paired phone presented it.
+    /// </summary>
+    /// <remarks>
+    /// Every other endpoint only needs to know that somebody paired is asking. A remote
+    /// control session needs to know <i>which</i> phone, because consent is remembered
+    /// per device and the prompt has to name who is asking.
+    /// </remarks>
+    private bool IsAuthorized(HttpRequest request, out CompanionDeviceInfo? paired)
     {
+        paired = null;
         if (!request.Headers.TryGetValue("authorization", out string? authorization) || !authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) return false;
         string presentedText = authorization[7..];
         CompanionDeviceRecord? matched = null;
@@ -745,6 +814,10 @@ public sealed class RemoteCompanionService : IDisposable
         // visible companion page has its own five-second refresh. Avoid allocating and
         // rebinding its complete device collection for every authenticated command.
         if (matched is not null && persist) DevicesChanged?.Invoke(this, EventArgs.Empty);
+        if (matched is not null)
+        {
+            paired = new CompanionDeviceInfo(matched.Id, matched.Name, matched.PairedUtc, matched.LastSeenUtc, matched.LastAddress);
+        }
         return matched is not null;
     }
 
@@ -905,6 +978,7 @@ public sealed class RemoteCompanionService : IDisposable
                 oledDimming = new { minimum = 20, maximum = 100, step = 1 },
                 slashInterval = new { minimum = 0, maximum = 5, step = 1 },
                 toastDuration = new { minimum = 2, maximum = 12, step = 1 },
+                remoteConsent = new { minimum = 10, maximum = 120, step = 5 },
             },
 
             // Moves whenever an option list, title or availability changes. The phone
@@ -958,7 +1032,32 @@ public sealed class RemoteCompanionService : IDisposable
                 minimizeToTray = AppConfig.IsNotFalse("minimize_to_tray"),
                 checkUpdates = AppConfig.IsNotFalse("check_updates"), theme = AppConfig.Get("theme", 0),
                 toastEnabled = AppConfig.IsNotFalse("toast_enabled"), toastStyle = AppConfig.Get("toast_style", 0),
-                toastPosition = AppConfig.Get("toast_position", 0), toastDuration = AppConfig.Get("toast_duration", 3500), toastProgress = AppConfig.IsNotFalse("toast_progress")
+                toastPosition = AppConfig.Get("toast_position", 0), toastDuration = AppConfig.Get("toast_duration", 3500), toastProgress = AppConfig.IsNotFalse("toast_progress"),
+
+                // Remote control. The phone needs these to draw its own switches, and
+                // to know before it offers a Connect button whether connecting would
+                // work at all.
+                remoteEnabled = Desktop.RemoteDesktopSettings.Enabled,
+                remoteUnattended = Desktop.RemoteDesktopSettings.Unattended,
+                remoteInput = Desktop.RemoteDesktopSettings.AllowInput,
+                remoteAudio = Desktop.RemoteDesktopSettings.AllowAudio,
+                remoteClipboard = Desktop.RemoteDesktopSettings.AllowClipboard,
+                remoteFiles = Desktop.RemoteDesktopSettings.AllowFiles,
+                remoteLockOnDisconnect = Desktop.RemoteDesktopSettings.LockOnDisconnect,
+                remoteConsentSeconds = Desktop.RemoteDesktopSettings.ConsentSeconds,
+                touchpadEnabled = _services.GetRequiredService<IInputDeviceService>().IsTouchpadEnabled
+            },
+            remote = new
+            {
+                enabled = Desktop.RemoteDesktopSettings.Enabled,
+                sessions = _services.GetRequiredService<Desktop.RemoteDesktopServer>().ActiveSessions,
+                status = _services.GetRequiredService<Desktop.RemoteDesktopServer>().StatusLine,
+                port = DefaultPort,
+                path = Desktop.RemoteDesktopProtocol.SessionPath,
+                protocol = Desktop.RemoteDesktopProtocol.UpgradeToken,
+                monitors = Desktop.RemoteMonitors.Enumerate()
+                    .Select(monitor => new { index = monitor.Index, name = monitor.Name, width = monitor.Width, height = monitor.Height, primary = monitor.Primary })
+                    .ToArray(),
             },
             peripherals = peripherals.Devices.Select(device => new
             {
@@ -1217,6 +1316,51 @@ public sealed class RemoteCompanionService : IDisposable
             case "peripherals.dpi": peripherals.SetDpi(String(values, "deviceId"), Int(values, "value")); break;
             case "peripherals.polling": peripherals.SetPollingRate(String(values, "deviceId"), Int(values, "value")); break;
             case "peripherals.sleep": peripherals.SetSleepTimeout(String(values, "deviceId"), Int(values, "value")); break;
+
+            // The rest of what a supported ASUS keyboard or mouse exposes. These were
+            // reachable only from the Windows Devices page, so a phone could change a
+            // mouse's DPI but not the lighting on the keyboard sitting beside it.
+            case "peripherals.lighting":
+                peripherals.SetKeyboardLighting(
+                    String(values, "deviceId"), Int(values, "mode"),
+                    Int(values, "primary"), Int(values, "secondary"),
+                    Int(values, "speed"), Int(values, "brightness"));
+                break;
+            case "peripherals.profile": peripherals.SetKeyboardProfile(String(values, "deviceId"), Int(values, "value")); break;
+            case "peripherals.energy":
+                peripherals.SetKeyboardEnergy(String(values, "deviceId"), Int(values, "sleepMinutes"), Int(values, "lowBatteryWarning"));
+                break;
+            case "peripherals.oled":
+                peripherals.SetKeyboardOled(String(values, "deviceId"), Bool(values.GetProperty("enabled")), Int(values, "brightness"), Int(values, "mode"));
+                break;
+
+            // The built-in pointer. A Home tile on the desktop with no companion action
+            // at all, which made it the one control on that page the phone could not reach.
+            case "input.touchpad": _services.GetRequiredService<IInputDeviceService>().ToggleTouchpad(); break;
+
+            case "remote.enabled":
+                Desktop.RemoteDesktopSettings.Enabled = Bool(value);
+                if (!Bool(value)) _services.GetRequiredService<Desktop.RemoteDesktopServer>().DisconnectAll();
+                break;
+            case "remote.unattended": Desktop.RemoteDesktopSettings.Unattended = Bool(value); break;
+            case "remote.input": Desktop.RemoteDesktopSettings.AllowInput = Bool(value); break;
+            case "remote.audio": Desktop.RemoteDesktopSettings.AllowAudio = Bool(value); break;
+            case "remote.clipboard": Desktop.RemoteDesktopSettings.AllowClipboard = Bool(value); break;
+            case "remote.files": Desktop.RemoteDesktopSettings.AllowFiles = Bool(value); break;
+            case "remote.lockOnDisconnect": Desktop.RemoteDesktopSettings.LockOnDisconnect = Bool(value); break;
+            case "remote.consentSeconds": Desktop.RemoteDesktopSettings.ConsentSeconds = Int(value); break;
+            case "remote.forgetTrusted": _services.GetRequiredService<Desktop.RemoteDesktopServer>().ForgetTrustedDevices(); break;
+            case "remote.endSessions": _services.GetRequiredService<Desktop.RemoteDesktopServer>().DisconnectAll(); break;
+
+            // Power, from the phone. Restarting was already here; the other three are the
+            // ones somebody actually reaches for after closing a remote session.
+            case "system.lock": Desktop.PrivacyGuard.LockWorkstation(); break;
+            case "system.sleep":
+                System.Windows.Forms.Application.SetSuspendState(System.Windows.Forms.PowerState.Suspend, force: false, disableWakeEvent: false);
+                break;
+            case "system.shutdown":
+                System.Diagnostics.Process.Start(ProcessHelper.SystemPath("shutdown"), "/s /t 3");
+                break;
             case "advanced.asusServices": await _services.GetRequiredService<AdvancedViewModel>().ToggleAsusServices(); break;
             case "advanced.fnLock": SetAdvanced(vm => vm.FnLockEnabled = Bool(value)); break;
             case "advanced.statusLeds": SetAdvanced(vm => vm.StatusLedEnabled = Bool(value)); break;

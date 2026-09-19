@@ -311,6 +311,33 @@ internal static class CompanionCatalog
             Action("peripherals.refresh", "Scan again"),
         }));
 
+        // ---- Remote control ------------------------------------------------------
+        // Described here like everything else, so the phone's own remote screen draws
+        // its permissions from what this machine reports rather than assuming them.
+        groups.Add(Group("remote", "Remote control", "Software", new List<object>
+        {
+            Toggle("remote.enabled", "remoteEnabled", "Allow remote control", "Let a paired phone see this screen and use its keyboard and mouse."),
+            Toggle("remote.unattended", "remoteUnattended", "Start without asking", "Off, a prompt appears on the PC and refuses on its own if nobody answers."),
+            Slider("remote.consentSeconds", "remoteConsentSeconds", "Prompt timeout", "remoteConsent", "s"),
+            Toggle("remote.input", "remoteInput", "Keyboard and mouse", "Off makes every session view only."),
+            Toggle("remote.audio", "remoteAudio", "Sound"),
+            Toggle("remote.clipboard", "remoteClipboard", "Shared clipboard"),
+            Toggle("remote.files", "remoteFiles", "File transfer"),
+            Toggle("remote.lockOnDisconnect", "remoteLockOnDisconnect", "Lock when the session ends"),
+            Action("remote.forgetTrusted", "Ask remembered phones again"),
+            Action("remote.endSessions", "End all sessions"),
+        }));
+
+        // ---- The machine itself --------------------------------------------------
+        groups.Add(Group("system", "Power", "Advanced", new List<object>
+        {
+            Toggle("input.touchpad", "touchpadEnabled", "Touchpad", "Enable or disable the built-in touchpad."),
+            Action("system.lock", "Lock this PC"),
+            Action("system.sleep", "Sleep"),
+            Action("system.restart", "Restart Windows"),
+            Action("system.shutdown", "Shut down"),
+        }));
+
         // ---- The desktop application --------------------------------------------
         groups.Add(Group("app", "Windows app", "Software", new List<object>
         {

@@ -75,6 +75,52 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
+            <!-- Separate from pairing on purpose. Pairing gives a phone the controls;
+                 this gives it the machine, and the two deserve different decisions. -->
+            <controls:SettingsGroup Header="Remote control" Icon="DesktopMac24"
+                                    Description="Let a paired phone see this screen and use its keyboard and mouse. Stays on your local network; nothing is relayed through a server.">
+                <controls:SettingsRow Header="Allow remote control" Description="{Binding RemoteStatus}">
+                    <ui:ToggleSwitch IsChecked="{Binding IsRemoteDesktopEnabled}"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="Start without asking"
+                                      Description="Off, a prompt appears on this PC and refuses on its own if nobody answers. On, any paired phone takes the screen immediately, which is what you want for a machine nobody is standing at and nothing else."
+                                      Visibility="{Binding IsRemoteDesktopEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding IsRemoteUnattended}"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="{Binding TrustedDevicesLabel}"
+                                      Description="Phones that were told not to ask again."
+                                      Visibility="{Binding IsRemoteDesktopEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:Button Content="Ask again for all" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowReset24}"
+                               Command="{Binding ForgetRemoteDevicesCommand}"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="Keyboard and mouse" Description="Off makes every session view only."
+                                      Visibility="{Binding IsRemoteDesktopEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding IsRemoteInputAllowed}"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="Sound" Description="Send what this PC is playing to the phone."
+                                      Visibility="{Binding IsRemoteDesktopEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding IsRemoteAudioAllowed}"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="Shared clipboard" Description="Copy on one, paste on the other. Text only."
+                                      Visibility="{Binding IsRemoteDesktopEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding IsRemoteClipboardAllowed}"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="File transfer" Description="Browse this PC and move files in both directions."
+                                      Visibility="{Binding IsRemoteDesktopEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding IsRemoteFileTransferAllowed}"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="Lock when the session ends"
+                                      Description="Whoever was driving has just walked away from a signed-in machine."
+                                      Visibility="{Binding IsRemoteDesktopEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding IsRemoteLockOnDisconnect}"/>
+                </controls:SettingsRow>
+                <controls:SettingsGroup.Footer>
+                    <ui:Button Content="End all sessions" Icon="{ui:SymbolIcon PlugDisconnected24}"
+                               Command="{Binding EndRemoteSessionsCommand}" Appearance="Secondary"
+                               HorizontalAlignment="Left" IsEnabled="{Binding HasRemoteSessions}"/>
+                </controls:SettingsGroup.Footer>
+            </controls:SettingsGroup>
+
             <controls:SettingsGroup Header="Connected devices" Icon="PhoneLaptop24"
                                     Description="A phone is shown as connected while it is actively receiving live status from this PC."
                                     ItemsSource="{Binding Devices}">

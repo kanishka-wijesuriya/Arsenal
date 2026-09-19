@@ -1,0 +1,74 @@
+<Window x:Class="Arsenal.UI.Views.Windows.RemoteConsentWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Width="440" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ShowInTaskbar="True" Topmost="True" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Title="Remote control request">
+
+    <!-- Deliberately not a toast. A toast is dismissible by ignoring it, and ignoring
+         this one has to mean no rather than yes, so it takes the focus, says who is
+         asking, and counts down to a refusal in view. -->
+    <Border Margin="18"
+            Background="{DynamicResource SurfaceLayer}"
+            BorderBrush="{DynamicResource StrokeSubtle}"
+            BorderThickness="1"
+            CornerRadius="{DynamicResource RadiusOverlay}"
+            Padding="22"
+            SnapsToDevicePixels="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="10" Opacity="0.42" Color="Black"/>
+        </Border.Effect>
+
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Width="42" Height="42" CornerRadius="{DynamicResource RadiusControl}"
+                        Background="{DynamicResource AccentSubtle}" VerticalAlignment="Top">
+                    <ui:SymbolIcon Symbol="PhoneLaptop20" FontSize="21" Foreground="{DynamicResource AccentPrimary}"/>
+                </Border>
+
+                <StackPanel Grid.Column="1" Margin="14,0,0,0">
+                    <TextBlock Text="Remote control request" FontSize="17" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}"/>
+                    <TextBlock x:Name="RequesterText" FontSize="13" Margin="0,3,0,0"
+                               Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Margin="0,16,0,0" FontSize="13" TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextSecondary}"
+                       Text="Allowing this shares everything on your screen and lets this phone use your keyboard and mouse until the session ends."/>
+
+            <CheckBox x:Name="ViewOnlyCheck" Margin="0,16,0,0" FontSize="13"
+                      Foreground="{DynamicResource TextPrimary}"
+                      Content="Let them watch only, without control"/>
+
+            <CheckBox x:Name="RememberCheck" Margin="0,8,0,0" FontSize="13"
+                      Foreground="{DynamicResource TextPrimary}"
+                      Content="Do not ask again for this phone"/>
+
+            <Grid Margin="0,20,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="CountdownText" VerticalAlignment="Center" FontSize="12"
+                           Foreground="{DynamicResource TextSecondary}"/>
+
+                <ui:Button Grid.Column="1" x:Name="RefuseButton" Content="Refuse" MinWidth="96"
+                           Appearance="Secondary" Click="Refuse_Click"/>
+                <ui:Button Grid.Column="2" x:Name="AllowButton" Content="Allow" MinWidth="96" Margin="10,0,0,0"
+                           Appearance="Primary" Click="Allow_Click"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+</Window>

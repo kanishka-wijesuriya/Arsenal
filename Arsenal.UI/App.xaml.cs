@@ -790,6 +790,10 @@ namespace Arsenal.UI
             AddTrackedSingleton<AboutViewModel>(services);
             services.AddSingleton<RemoteCompanionService>();
 
+            // The companion bridge hands an upgraded connection to this; it owns no
+            // socket of its own and costs nothing until a phone asks for the screen.
+            services.AddSingleton<Services.Remote.Desktop.RemoteDesktopServer>();
+
             // Register Windows
             services.AddSingleton<MainWindow>();
             services.AddSingleton<QuickPanelWindow>();
