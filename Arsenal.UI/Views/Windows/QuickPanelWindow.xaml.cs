@@ -887,12 +887,52 @@ namespace Arsenal.UI.Views.Windows
         /// </summary>
         private const double TrayGap = 11;
 
+        /// <summary>
+        /// The most <see cref="MatchTaskbarGapToScreenGap"/> may move the window. It
+        /// equalises the device-pixel rounding of one DIP gap, which is a pixel or two.
+        /// </summary>
+        private const int MaxGapCorrection = 3;
+
+        /// <summary>
+        /// The size to seat in the corner, in the DIPs of the monitor being opened on.
+        /// </summary>
+        /// <remarks>
+        /// Not <see cref="FrameworkElement.ActualWidth"/>. A cross-monitor DPI change
+        /// resizes the HWND in pixels, and WPF converts that new pixel size back into
+        /// DIPs using the scale it was carrying before the change: the 452x771 pixel
+        /// window this panel becomes on a 100% display is reported as 301x514, because
+        /// those pixels were divided by the laptop panel's 1.5. The placement then
+        /// reserves two thirds of the room the card needs and seats it that far past the
+        /// bottom-right corner. WPF catches up before the next open, which is why only
+        /// the first one after a display switch is wrong.
+        ///
+        /// <para>The native rectangle is the size the window really is, in the same
+        /// pixels the placement is applied in, so the anchor's own scale turns it into
+        /// the DIPs the arithmetic wants. The properties are the fallback for the first
+        /// open of all, before the window has a handle to measure.</para>
+        /// </remarks>
+        private (double Width, double Height) MeasuredWindowSize()
+        {
+            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+            if (_anchorScale > 0
+                && hwnd != IntPtr.Zero
+                && GetWindowRect(hwnd, out NativeRect bounds)
+                && bounds.Right > bounds.Left
+                && bounds.Bottom > bounds.Top)
+            {
+                return ((bounds.Right - bounds.Left) / _anchorScale,
+                        (bounds.Bottom - bounds.Top) / _anchorScale);
+            }
+
+            return (ActualWidth > 0 ? ActualWidth : Width,
+                    ActualHeight > 0 ? ActualHeight : 650);
+        }
+
         public void PositionNearTray()
         {
             if (!_anchorCaptured) CaptureTrayAnchor();
 
-            double panelWidth = ActualWidth > 0 ? ActualWidth : Width;
-            double panelHeight = ActualHeight > 0 ? ActualHeight : 650;
+            (double panelWidth, double panelHeight) = MeasuredWindowSize();
 
             // The card is inset from the window by the gutter its shadow needs, so the
             // window is placed that much nearer the edge to land the card on the gap.
@@ -942,6 +982,47 @@ namespace Arsenal.UI.Views.Windows
                 0,
                 0,
                 SetWindowPositionFlags.NoSize | SetWindowPositionFlags.NoZOrder | SetWindowPositionFlags.NoActivate);
+        }
+
+        /// <summary>
+        /// Parks the HWND on the monitor the panel is about to open on, before a single
+        /// DIP of it is measured or sized.
+        /// </summary>
+        /// <remarks>
+        /// Width and Height are DIPs, and WPF turns them into pixels with the scale of
+        /// the monitor the HWND is standing on. When the panel is opened on a second
+        /// monitor while the window still rests on the first - both attached, so nothing
+        /// has relocated it - a 452 DIP card sized against a 150% laptop panel is 678
+        /// physical pixels wide, and the placement that follows reserves the 452 the
+        /// 100% display calls for. Moving first makes Windows deliver WM_DPICHANGED
+        /// here, where nothing has been measured yet, so every DIP converted after this
+        /// point uses the scale of the monitor the panel is actually opening on.
+        ///
+        /// <para>Switching displays is the other case, and it does not come through
+        /// here: Windows has already dragged the window onto the surviving monitor and
+        /// changed its scale before the panel is asked to open. What is stale there is
+        /// the size WPF reports, which <see cref="MeasuredWindowSize"/> answers.</para>
+        /// </remarks>
+        private void MoveToAnchorMonitor()
+        {
+            if (!_anchorCaptured || _anchorWorkingAreaPixels.IsEmpty) return;
+
+            if (new WindowInteropHelper(this).EnsureHandle() == IntPtr.Zero) return;
+
+            // The scale is the test, not the coordinates. Work areas from two displays
+            // overlap - a laptop panel and the external that replaces it both start at
+            // the origin - so an origin inside the destination's rectangle is no
+            // evidence the window is on the destination. A window already converting
+            // DIPs with the anchor's scale has nothing to correct, and moving it would
+            // only throw away the corner the last open settled on.
+            double current = System.Windows.Media.VisualTreeHelper.GetDpi(this).DpiScaleX;
+            if (Math.Abs(current - _anchorScale) < 0.001) return;
+
+            // Anywhere inside the destination work area will do - the placement is
+            // computed and applied a few lines later. The corner is chosen because the
+            // window is guaranteed to overlap the monitor from there whatever size it
+            // currently is, which is what makes Windows treat it as having moved.
+            MoveToPixels(_anchorWorkingAreaPixels.Left, _anchorWorkingAreaPixels.Top);
         }
 
         /// <summary>
@@ -1020,8 +1101,18 @@ namespace Arsenal.UI.Views.Windows
 
             // How far the window has to move, in whole device pixels, for the first gap
             // to equal the second. Positive shrinks the first gap.
+            //
+            // Capped, because this only ever corrects the rounding of one DIP gap onto
+            // the device grid - a pixel, two at the highest scales Windows offers. The
+            // gaps above come from PointToScreen, which reads the card through the same
+            // stale scale that MeasuredWindowSize exists to avoid, and an unbounded
+            // delta would let one bad frame throw the panel across the display rather
+            // than nudge it onto the grid.
             static int Delta(double gap, double reference)
-                => (int)Math.Round(gap - reference, MidpointRounding.AwayFromZero);
+            {
+                int delta = (int)Math.Round(gap - reference, MidpointRounding.AwayFromZero);
+                return Math.Clamp(delta, -MaxGapCorrection, MaxGapCorrection);
+            }
         }
 
         /// <summary>
@@ -1099,6 +1190,7 @@ namespace Arsenal.UI.Views.Windows
                 if (version != _viewportRefitVersion || !IsVisible || _nativeViewportHeight <= 0) return;
 
                 CaptureTrayAnchor();
+                MoveToAnchorMonitor();
                 LockNativeViewport();
                 PositionNearTray();
             }), DispatcherPriority.Loaded);
@@ -1738,6 +1830,12 @@ namespace Arsenal.UI.Views.Windows
             // window the card is glued to, and that has to be settled before the
             // viewport below is measured and pinned.
             CaptureTrayAnchor();
+
+            // Before the viewport is sized: the sizing below is in DIPs, and they are
+            // only worth the right number of pixels once the HWND is standing on the
+            // monitor the anchor was read from.
+            MoveToAnchorMonitor();
+
             MainView.ScrollToTop();
 
             // Re-fit on every open because the monitor or its scale may have changed
