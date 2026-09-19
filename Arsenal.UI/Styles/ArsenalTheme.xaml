@@ -501,6 +501,13 @@
 
     <!-- =====================================================================
          Choice chip. Cut corners, a lit leading edge when chosen.
+
+         A chip carries the accent on its outline whether or not it is chosen: at rest
+         that outline is all it is, and choosing one fills it, lights its leading edge
+         and lets it glow. So the accent marks what can be pressed and the fill marks
+         what is pressed, rather than the outline having to do both jobs by changing
+         colour. It also stops a row of unchosen chips reading as disabled, which a grey
+         stroke on a near-black ground does.
          ===================================================================== -->
 
     <Style x:Key="SegmentedRadioButtonStyle" TargetType="RadioButton">
@@ -524,7 +531,7 @@
                                             Cut="9" Corners="TopRight,BottomLeft"
                                             ClipsContent="True"
                                             Background="{DynamicResource SurfaceSunken}"
-                                            BorderBrush="{DynamicResource StrokeSubtle}"
+                                            BorderBrush="{DynamicResource AccentPrimary}"
                                             BorderThickness="{DynamicResource BorderWeight}">
                         <Grid>
                             <Rectangle x:Name="Edge" Width="3" HorizontalAlignment="Left"
@@ -551,7 +558,6 @@
                              the whole row repainting. -->
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource AccentSubtle}"/>
-                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource AccentPrimary}"/>
                             <Setter TargetName="Chrome" Property="Effect" Value="{DynamicResource AccentGlow}"/>
                             <Setter Property="Foreground" Value="{DynamicResource AccentPrimary}"/>
                             <Trigger.EnterActions>
@@ -620,7 +626,7 @@
                     <controls:AngularBorder x:Name="Chrome"
                                             Cut="9" Corners="TopRight,BottomLeft"
                                             Background="{DynamicResource SurfaceSunken}"
-                                            BorderBrush="{DynamicResource StrokeSubtle}"
+                                            BorderBrush="{DynamicResource AccentPrimary}"
                                             BorderThickness="{DynamicResource BorderWeight}">
                         <ContentPresenter Margin="{TemplateBinding Padding}"
                                           HorizontalAlignment="Center"
@@ -630,7 +636,6 @@
 
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource AccentPrimary}"/>
                             <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SurfaceCardHover}"/>
                             <Setter Property="Foreground" Value="{DynamicResource AccentPrimary}"/>
                         </Trigger>
