@@ -262,45 +262,74 @@
                             <StackPanel.RenderTransform>
                                 <TranslateTransform x:Name="OpenedShift"/>
                             </StackPanel.RenderTransform>
-                            <Button x:Name="PART_Back" Focusable="False"
-                                    HorizontalAlignment="Left"
-                                    Margin="0,0,0,14"
-                                    Cursor="Hand"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Padding="0">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <StackPanel Orientation="Horizontal" Background="Transparent">
-                                            <ui:SymbolIcon Symbol="ArrowLeft24" FontSize="16"
-                                                           Foreground="{DynamicResource AccentPrimary}"
-                                                           VerticalAlignment="Center"
-                                                           Margin="0,0,10,0"/>
-                                            <TextBlock Text="{Binding Header, RelativeSource={RelativeSource AncestorType=controls:SettingsGroup}}"
-                                                       FontFamily="{DynamicResource FontDisplay}"
-                                                       FontSize="19" FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource TextPrimary}"
-                                                       VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                            <!-- The heading row, and whatever the page hangs off it.
+                                 The back bar and the pinned heading are mutually
+                                 exclusive, so they share a cell; only the visible one
+                                 sizes the row. -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <!-- A pinned group has no back bar to carry its name, so it
-                                 states it the way a section heading would. -->
-                            <StackPanel x:Name="PinnedHeader" Visibility="Collapsed" Margin="0,0,0,12">
-                                <StackPanel Orientation="Horizontal">
-                                    <ui:SymbolIcon Symbol="{TemplateBinding Icon}" FontSize="20"
-                                                   Foreground="{DynamicResource AccentPrimary}"
-                                                   VerticalAlignment="Center" Margin="0,0,12,0"
-                                                   Visibility="{TemplateBinding Icon, Converter={StaticResource HideWhenNoIcon}}"/>
-                                    <TextBlock Text="{TemplateBinding Header}"
-                                               FontFamily="{DynamicResource FontDisplay}"
-                                               FontSize="19" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextPrimary}"
-                                               VerticalAlignment="Center"/>
+                                <Button x:Name="PART_Back" Grid.Column="0" Focusable="False"
+                                        HorizontalAlignment="Left"
+                                        Margin="0,0,0,14"
+                                        Cursor="Hand"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="0">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <StackPanel Orientation="Horizontal" Background="Transparent">
+                                                <ui:SymbolIcon Symbol="ArrowLeft24" FontSize="16"
+                                                               Foreground="{DynamicResource AccentPrimary}"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,10,0"/>
+                                                <TextBlock Text="{Binding Header, RelativeSource={RelativeSource AncestorType=controls:SettingsGroup}}"
+                                                           FontFamily="{DynamicResource FontDisplay}"
+                                                           FontSize="19" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextPrimary}"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+
+                                <!-- A pinned group has no back bar to carry its name, so it
+                                     states it the way a section heading would. -->
+                                <StackPanel x:Name="PinnedHeader" Grid.Column="0" Visibility="Collapsed" Margin="0,0,0,12">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Symbol="{TemplateBinding Icon}" FontSize="20"
+                                                       Foreground="{DynamicResource AccentPrimary}"
+                                                       VerticalAlignment="Center" Margin="0,0,12,0"
+                                                       Visibility="{TemplateBinding Icon, Converter={StaticResource HideWhenNoIcon}}"/>
+                                        <TextBlock Text="{TemplateBinding Header}"
+                                                   FontFamily="{DynamicResource FontDisplay}"
+                                                   FontSize="19" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
                                 </StackPanel>
-                            </StackPanel>
+
+                                <!-- Whatever the page put beside the heading. This
+                                     template had no presenter for it at all, which is
+                                     why Home's Edit controls and Reset buttons existed,
+                                     bound correctly and were nowhere on screen in this
+                                     theme: a template that never mentions a property
+                                     does not fail, it silently drops it.
+
+                                     Only on the open state, and deliberately. When a
+                                     drill-in group is closed its whole card is the
+                                     button that opens it, so a control placed inside
+                                     that card could not be pressed without also
+                                     drilling in. -->
+                                <ContentPresenter x:Name="HeaderContentHost" Grid.Column="1"
+                                                  Content="{TemplateBinding HeaderContent}"
+                                                  Margin="16,0,0,12"
+                                                  HorizontalAlignment="Right"
+                                                  VerticalAlignment="Center"/>
+                            </Grid>
 
                             <TextBlock Text="{TemplateBinding Description}"
                                        Style="{StaticResource SettingDescriptionStyle}"
@@ -397,6 +426,13 @@
 
                         <Trigger Property="Footer" Value="{x:Null}">
                             <Setter TargetName="FooterHost" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+
+                        <!-- Collapsed rather than left empty: an Auto column costs no
+                             width with nothing in it, but its left margin does, and
+                             every group without header content would carry the gap. -->
+                        <Trigger Property="HeaderContent" Value="{x:Null}">
+                            <Setter TargetName="HeaderContentHost" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
 
                         <!-- Pinned by its page: the one control the page exists for is

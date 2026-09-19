@@ -69,9 +69,13 @@ internal static class Program
             App.ApplyConfiguredAccent();
             AssertAccentResources(application, expectedSubtleAlpha: 0x20);
 
+            AppConfig.Set("theme", (int)Arsenal.UI.Theming.AppTheme.Arsenal);
+            App.ApplyConfiguredTheme();
+            AssertGroupHeaderContentSurvivesTheTheme();
+
             AppConfig.Flush();
             application.Shutdown();
-            Console.WriteLine("Theme smoke passed: accent themes, Settings editor and Quick Panel slider geometry.");
+            Console.WriteLine("Theme smoke passed: accent themes, Settings editor, Quick Panel slider geometry and themed group header content.");
             return 0;
         }
         catch (Exception exception)
@@ -423,6 +427,72 @@ internal static class Program
         rearmWheel.Invoke(panel, new object?[] { null, EventArgs.Empty });
         Assert(Begin(120), "The pager did not re-arm after the wheel stream went idle.");
         rearmWheel.Invoke(panel, new object?[] { null, EventArgs.Empty });
+    }
+
+    /// <summary>
+    /// A group's header content is still on screen once a theme has replaced the
+    /// template that draws it.
+    /// </summary>
+    /// <remarks>
+    /// The Arsenal theme brings its own SettingsGroup template, and the first version
+    /// of it had no presenter for HeaderContent at all. Nothing failed: the property
+    /// was set, the binding resolved, and the buttons were simply never realised, so
+    /// Home lost its Edit controls and Reset with no error anywhere. A template that
+    /// drops a property is invisible to the compiler and to every test that only looks
+    /// at colours, which is what this checks instead.
+    ///
+    /// <para>Measured and arranged rather than merely constructed. An unrealised
+    /// template has no visual children, so a tree walk over a control that was never
+    /// laid out passes whether the presenter exists or not.</para>
+    /// </remarks>
+    private static void AssertGroupHeaderContentSurvivesTheTheme()
+    {
+        var marker = new Wpf.Ui.Controls.Button { Content = "Edit controls", Width = 120, Height = 32 };
+        var group = new SettingsGroup
+        {
+            Header = "Controls",
+            Description = "Your selected controls.",
+            AlwaysOpen = true,
+            HeaderContent = marker,
+            Width = 800,
+        };
+
+        var host = new Border { Child = group, Width = 800 };
+        host.Measure(new System.Windows.Size(800, 2000));
+        host.Arrange(new System.Windows.Rect(0, 0, 800, 2000));
+        host.UpdateLayout();
+
+        Assert(VisualDescendants(host).Contains(marker),
+            "The Arsenal theme's group template does not present HeaderContent, so a page's header buttons never appear.");
+        Assert(marker.ActualWidth > 0 && marker.ActualHeight > 0,
+            "Group header content was realised but laid out with no size.");
+
+        // The far commoner case: no header content at all. The presenter has to take
+        // itself out of the layout rather than leave its margin behind, or every other
+        // group in the application gains a gap it did not ask for.
+        var plain = new SettingsGroup { Header = "Controls", AlwaysOpen = true, Width = 800 };
+        var plainHost = new Border { Child = plain, Width = 800 };
+        plainHost.Measure(new System.Windows.Size(800, 2000));
+        plainHost.Arrange(new System.Windows.Rect(0, 0, 800, 2000));
+        plainHost.UpdateLayout();
+
+        ContentPresenter? empty = VisualDescendants(plainHost)
+            .OfType<ContentPresenter>()
+            .FirstOrDefault(presenter => presenter.Name == "HeaderContentHost");
+        Assert(empty is null || empty.Visibility != Visibility.Visible,
+            "A group with no header content still reserves room for it.");
+    }
+
+    private static IEnumerable<DependencyObject> VisualDescendants(DependencyObject root)
+    {
+        int count = VisualTreeHelper.GetChildrenCount(root);
+        for (int index = 0; index < count; index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, index);
+            yield return child;
+            foreach (DependencyObject descendant in VisualDescendants(child))
+                yield return descendant;
+        }
     }
 
     private static IEnumerable<DependencyObject> Descendants(DependencyObject root)
