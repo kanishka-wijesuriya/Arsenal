@@ -295,6 +295,36 @@ internal static class RemoteNative
     [DllImport("user32.dll")]
     internal static extern bool LockWorkStation();
 
+    /// <summary>
+    /// Whether the desktop receiving input right now is one this process can read.
+    /// </summary>
+    /// <remarks>
+    /// Windows gives the sign-in screen, the UAC prompt and Ctrl+Alt+Del a separate
+    /// desktop inside a separate window station, and a process running as the signed-in
+    /// user has no access to it at all. Capture does not fail there, which is the
+    /// awkward part: BitBlt succeeds and returns black, so without asking this question
+    /// a session on the sign-in screen looks like a session that broke.
+    ///
+    /// <para>Showing that screen needs a service running as SYSTEM that can attach to
+    /// the secure desktop. Arsenal has no service, so the honest thing is to detect it
+    /// and say so.</para>
+    /// </remarks>
+    internal static bool IsInputDesktopReadable()
+    {
+        IntPtr desktop = OpenInputDesktop(0, false, DESKTOP_READOBJECTS);
+        if (desktop == IntPtr.Zero) return false;
+        CloseDesktop(desktop);
+        return true;
+    }
+
+    private const uint DESKTOP_READOBJECTS = 0x0001;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr OpenInputDesktop(uint flags, bool inherit, uint desiredAccess);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool CloseDesktop(IntPtr desktop);
+
     [DllImport("kernel32.dll")]
     internal static extern uint SetThreadExecutionState(uint flags);
 

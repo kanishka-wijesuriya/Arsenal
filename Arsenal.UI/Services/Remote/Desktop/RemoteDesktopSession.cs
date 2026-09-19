@@ -52,6 +52,13 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
     private static readonly TimeSpan StatsInterval = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan IdleKeyFrameInterval = TimeSpan.FromSeconds(10);
 
+    /// <summary>How often to look again while the secure desktop is up.</summary>
+    /// <remarks>
+    /// Nothing can be captured until it goes away, so the frame rate is irrelevant;
+    /// what matters is noticing promptly once somebody has signed back in.
+    /// </remarks>
+    private const int SecureDesktopPollMs = 400;
+
     private readonly Stream _stream;
     private readonly RemotePeer _peer;
     private readonly Dispatcher _dispatcher;
@@ -81,6 +88,14 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
     private volatile bool _cursorWanted = true;
     private volatile bool _audioRequested;
     private volatile bool _everStreamed;
+    private bool _surfaceReadable = true;
+
+    /// <summary>The codecs the phone says it can decode, best first.</summary>
+    /// <remarks>
+    /// Empty until the phone asks to start, and the tile encoder needs no entry: it is
+    /// what happens when none of these can be produced.
+    /// </remarks>
+    private IReadOnlyList<string> _codecs = Array.Empty<string>();
     private long _bytesSent;
     private int _framesSent;
     private int _lastEncodeMs;
@@ -118,8 +133,12 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
                 AppConfig.GetModelDisplayName(),
                 RemoteMonitors.Enumerate().Select(monitor => monitor.ToInfo()).ToArray(),
                 new RemoteSessionCapabilities(
-                    HardwareVideo: false,
-                    Codecs: new[] { "jpeg-tiles" },
+                    // What this PC will attempt, not what it will end up using. Which
+                    // encoder actually starts depends on the phone's own list and on
+                    // whether the graphics driver hands one over, so the answer arrives
+                    // with "started" rather than here.
+                    HardwareVideo: true,
+                    Codecs: new[] { "hevc", "h264", "jpeg-tiles" },
                     Audio: RemoteDesktopSettings.AllowAudio,
                     Clipboard: RemoteDesktopSettings.AllowClipboard,
                     FileTransfer: RemoteDesktopSettings.AllowFiles,
@@ -244,6 +263,7 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         _audioRequested = RemoteDesktopSettings.AllowAudio
             && root.TryGetProperty("audio", out JsonElement audio) && audio.ValueKind == JsonValueKind.True;
         _quality = ResolveQuality(root);
+        _codecs = ReadCodecs(root);
 
         var monitors = RemoteMonitors.Enumerate();
         int index = Math.Clamp(Int(root, "monitor"), 0, monitors.Count - 1);
@@ -276,7 +296,13 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         try
         {
             source = new GdiScreenSource(_monitor, _quality.MaxWidth, _quality.MaxHeight, _cursorWanted);
-            encoder = new JpegTileEncoder(source.Width, source.Height, _quality.JpegQuality);
+
+            // A real video codec where this machine has one and the phone can decode
+            // it, tiles where it cannot. The order comes from the phone: it is the only
+            // side that knows which decoders exist on it, and offering HEVC to a
+            // handset without one opens the session onto a black rectangle.
+            encoder = MediaFoundationVideoEncoder.TryCreate(_codecs, source.Width, source.Height, _quality.FrameRate, _quality.BitrateKbps)
+                ?? (IVideoEncoder)new JpegTileEncoder(source.Width, source.Height, _quality.JpegQuality);
         }
         catch (Exception ex)
         {
@@ -410,6 +436,26 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
                 }
                 if (source is null || encoder is null) break;
 
+                // The sign-in screen, a UAC prompt and Ctrl+Alt+Del all run on a desktop
+                // this process cannot read. Capture does not fail there, it returns
+                // black, so without asking first the phone shows a frozen picture and no
+                // reason for it.
+                bool readable = RemoteNative.IsInputDesktopReadable();
+                if (readable != _surfaceReadable)
+                {
+                    _surfaceReadable = readable;
+                    _ = SendControlAsync(new RemoteSurfaceState(
+                        "surface",
+                        readable ? "live" : "secure",
+                        readable ? null : "This PC is showing the Windows sign-in screen. Arsenal runs as you rather than as a service, so it cannot see that screen or type into it. Sign in at the laptop and the session picks up again."));
+                    if (readable) encoder.RequestKeyFrame();
+                }
+                if (!readable)
+                {
+                    Thread.Sleep(SecureDesktopPollMs);
+                    continue;
+                }
+
                 long captureStart = stopwatch.ElapsedMilliseconds;
                 bool captured = source.TryCapture(frame);
                 _lastCaptureMs = (int)(stopwatch.ElapsedMilliseconds - captureStart);
@@ -502,7 +548,26 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
             _lastEncodeMs,
             _lastCaptureMs,
             _outbound.Reader.Count,
-            _encoder?.Codec ?? "none"));
+            EncoderLabel()));
+    }
+
+    /// <summary>What the statistics line names as the encoder.</summary>
+    /// <remarks>
+    /// The hardware encoders report the name Windows registered them under, so the
+    /// phone can say "NVIDIA H.264 Encoder" rather than just "h264" and anybody looking
+    /// at a slow session can see at a glance whether it fell back to the CPU.
+    /// </remarks>
+    private string EncoderLabel()
+    {
+        lock (_videoGate)
+        {
+            return _encoder switch
+            {
+                MediaFoundationVideoEncoder hardware => hardware.EncoderName,
+                null => "none",
+                var other => other.Codec,
+            };
+        }
     }
 
     // ---- Writing -----------------------------------------------------------------
@@ -574,6 +639,31 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
 
     // ---- Helpers -----------------------------------------------------------------
 
+    /// <summary>
+    /// The decoders the phone offered, in its order of preference.
+    /// </summary>
+    /// <remarks>
+    /// An older phone sends nothing, and gets tiles, which is what it knows how to
+    /// draw. Names it does not recognise are left in the list rather than filtered
+    /// here: the encoder factory is the thing that knows which ones mean something.
+    /// </remarks>
+    private static IReadOnlyList<string> ReadCodecs(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Object
+            || !root.TryGetProperty("codecs", out JsonElement codecs)
+            || codecs.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<string>();
+        }
+
+        var names = new List<string>(codecs.GetArrayLength());
+        foreach (JsonElement entry in codecs.EnumerateArray())
+        {
+            if (entry.ValueKind == JsonValueKind.String && entry.GetString() is { Length: > 0 } name) names.Add(name);
+        }
+        return names;
+    }
+
     private static string Text(JsonElement root, string? name) =>
         name is not null && root.ValueKind == JsonValueKind.Object && root.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.String
             ? value.GetString() ?? string.Empty
@@ -616,10 +706,14 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         _stopping.Cancel();
         _server.Remove(this);
 
-        // Only for a session that actually took the screen. A request that was refused
-        // at the prompt, or a phone that connected and thought better of it, has not
-        // left anybody away from a signed-in machine, and locking it then would punish
-        // the person who said no.
+        // Off unless somebody deliberately turned it on, and only for a session that
+        // actually took the screen.
+        //
+        // The phone asks before it closes instead, which is the better place for the
+        // question: the person ending the session is the one who knows whether they are
+        // coming back. Locking here as well meant a session ended, the machine locked,
+        // and the phone was then looking at the sign-in screen - which this app cannot
+        // capture, so the session appeared to have crashed on the way out.
         if (streamed && !_viewOnly && RemoteDesktopSettings.LockOnDisconnect) PrivacyGuard.LockWorkstation();
     }
 }

@@ -200,10 +200,15 @@ internal sealed class GdiScreenSource : IScreenSource
     {
         if (_disposed) return false;
 
+        // SRCCOPY alone, deliberately. CAPTUREBLT asks GDI to include layered windows,
+        // and to do that it makes the compositor hide and redraw the pointer for every
+        // blit: at thirty of them a second the cursor visibly flickers on the laptop for
+        // as long as a session is open. Under DWM the layered windows are already in the
+        // screen device context, so the flag was buying nothing for that.
         bool scaled = Width != _monitor.Width || Height != _monitor.Height;
         bool copied = scaled
-            ? RemoteNative.StretchBlt(_memoryDc, 0, 0, Width, Height, _screenDc, _monitor.Left, _monitor.Top, _monitor.Width, _monitor.Height, RemoteNative.SRCCOPY | RemoteNative.CAPTUREBLT)
-            : RemoteNative.BitBlt(_memoryDc, 0, 0, Width, Height, _screenDc, _monitor.Left, _monitor.Top, RemoteNative.SRCCOPY | RemoteNative.CAPTUREBLT);
+            ? RemoteNative.StretchBlt(_memoryDc, 0, 0, Width, Height, _screenDc, _monitor.Left, _monitor.Top, _monitor.Width, _monitor.Height, RemoteNative.SRCCOPY)
+            : RemoteNative.BitBlt(_memoryDc, 0, 0, Width, Height, _screenDc, _monitor.Left, _monitor.Top, RemoteNative.SRCCOPY);
         if (!copied) return false;
 
         frame.CursorX = -1;

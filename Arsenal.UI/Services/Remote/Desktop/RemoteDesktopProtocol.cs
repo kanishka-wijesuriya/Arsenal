@@ -175,3 +175,11 @@ internal sealed record RemoteStats(
     string Encoder);
 
 internal sealed record RemoteError(string Type, string Message, string? Code = null);
+
+/// <summary>Why the picture stopped, when it stopped for a reason worth explaining.</summary>
+/// <remarks>
+/// Separate from an error: the session is healthy, the desktop is simply somewhere
+/// this process is not allowed to look. A phone shown a black rectangle and nothing
+/// else concludes the app broke.
+/// </remarks>
+internal sealed record RemoteSurfaceState(string Type, string State, string? Message);

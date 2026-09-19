@@ -121,7 +121,56 @@ public sealed class RemoteDesktopServer : IDisposable
     }
 
     internal void NotifySessionsChanged() =>
-        _dispatcher.BeginInvoke(() => SessionsChanged?.Invoke(this, EventArgs.Empty));
+        _dispatcher.BeginInvoke(() =>
+        {
+            UpdateBanner();
+            SessionsChanged?.Invoke(this, EventArgs.Empty);
+        });
+
+    /// <summary>
+    /// Shows or hides the on-screen notice that this machine is being driven.
+    /// </summary>
+    /// <remarks>
+    /// Driven from the same signal as everything else rather than from the session, so
+    /// there is one place that decides whether a banner should exist and it cannot be
+    /// left behind by a session that ended badly. Only a streaming session counts: a
+    /// phone that has connected but not been allowed the screen is not controlling
+    /// anything, and announcing it would train people to ignore the banner.
+    /// </remarks>
+    private void UpdateBanner()
+    {
+        RemoteDesktopSession? driving;
+        int count;
+        lock (_gate)
+        {
+            driving = _sessions.FirstOrDefault(session => session.Streaming);
+            count = _sessions.Count(session => session.Streaming);
+        }
+
+        if (driving is null)
+        {
+            _banner?.Close();
+            _banner = null;
+            return;
+        }
+
+        string headline = driving.ViewOnly ? "Someone is watching this PC" : "This PC is being controlled";
+        string detail = driving.Peer.DeviceName + "  ·  " + driving.Peer.Address;
+        if (count > 1) detail += "  ·  and " + (count - 1) + " more";
+
+        if (_banner is null)
+        {
+            _banner = new RemoteSessionBanner(DisconnectAll);
+            _banner.Describe(headline, detail);
+            _banner.Show();
+        }
+        else
+        {
+            _banner.Describe(headline, detail);
+        }
+    }
+
+    private RemoteSessionBanner? _banner;
 
     /// <summary>Ends every session, for the switch on the companion page.</summary>
     public void DisconnectAll()

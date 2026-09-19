@@ -81,15 +81,23 @@ internal static class RemoteDesktopSettings
     }
 
     /// <summary>
-    /// Lock Windows when the last session ends.
+    /// Lock Windows whenever a session ends, without being asked.
     /// </summary>
     /// <remarks>
-    /// Whoever was driving the machine has just walked away from it while it is signed
-    /// in. On by default for the same reason a screen lock is.
+    /// Off by default. The phone asks before it closes a session, which is the better
+    /// place for the question: the person ending it knows whether they are coming back,
+    /// and this machine does not.
+    ///
+    /// <para>Locking automatically also has a cost that is not obvious until it
+    /// happens. Arsenal runs as the signed-in user, so it cannot capture the sign-in
+    /// screen; a session that locked on its way out left the phone looking at a screen
+    /// nothing could show, which reads as a crash rather than as a lock. This stays as
+    /// a switch for a machine somewhere that should never be left signed in, and stays
+    /// off for everybody else.</para>
     /// </remarks>
     internal static bool LockOnDisconnect
     {
-        get => AppConfig.IsNotFalse(LockOnDisconnectKey);
+        get => AppConfig.Is(LockOnDisconnectKey);
         set => AppConfig.Set(LockOnDisconnectKey, value ? 1 : 0);
     }
 }
