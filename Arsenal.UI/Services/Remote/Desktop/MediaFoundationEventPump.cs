@@ -29,6 +29,9 @@ internal sealed class MediaFoundationEventPump : MF.IMFAsyncCallback, IDisposabl
     private readonly SemaphoreSlim _needInput = new(0);
     private readonly SemaphoreSlim _haveOutput = new(0);
     private readonly object _gate = new();
+
+    /// <summary>Held for the whole of a callback, so teardown can wait one out.</summary>
+    private readonly object _callbackGate = new();
     private bool _running;
     private bool _disposed;
 
@@ -47,9 +50,27 @@ internal sealed class MediaFoundationEventPump : MF.IMFAsyncCallback, IDisposabl
         return Arm();
     }
 
+    /// <summary>
+    /// Stops the pump, and does not return until no callback is running.
+    /// </summary>
+    /// <remarks>
+    /// The waiting is the point. Invoke runs on a Media Foundation work queue thread
+    /// and touches both the transform and the semaphores; the caller's next act is to
+    /// release the transform. Without this the two race, and the mild version of losing
+    /// that race is the two exceptions it used to log ("COM object separated from its
+    /// underlying RCW", "cannot access a disposed object"). The severe version is the
+    /// callback reaching through a released interface pointer, which is not an
+    /// exception at all.
+    /// </remarks>
     internal void Stop()
     {
-        lock (_gate) _running = false;
+        // Taking the same gate Invoke holds means this blocks until any callback in
+        // flight has finished, and _running being false stops the next one from
+        // starting or re-arming.
+        lock (_callbackGate)
+        {
+            lock (_gate) _running = false;
+        }
 
         // Anything already waiting is released so the capture thread can finish rather
         // than sit out its timeout on an encoder that is going away.
@@ -112,39 +133,44 @@ internal sealed class MediaFoundationEventPump : MF.IMFAsyncCallback, IDisposabl
 
     public int Invoke(MF.IMFAsyncResult result)
     {
-        try
+        // Held for the whole callback so Stop cannot release the transform underneath
+        // it. Re-entrant for this thread, so the Arm below is safe inside it.
+        lock (_callbackGate)
         {
-            int hr = _events.EndGetEvent(result, out MF.IMFMediaEvent? mediaEvent);
-            if (hr != MF.S_OK || mediaEvent is null) return MF.S_OK;
+            if (!Running) return MF.S_OK;
 
             try
             {
-                if (mediaEvent.GetStatus(out int status) == MF.S_OK && status != MF.S_OK)
-                {
-                    FaultStatus = status;
-                }
+                int hr = _events.EndGetEvent(result, out MF.IMFMediaEvent? mediaEvent);
+                if (hr != MF.S_OK || mediaEvent is null) return MF.S_OK;
 
-                if (mediaEvent.GetType(out uint eventType) == MF.S_OK)
+                try
                 {
-                    if (eventType == MF.METransformNeedInput) _needInput.Release();
-                    else if (eventType == MF.METransformHaveOutput) _haveOutput.Release();
+                    if (mediaEvent.GetStatus(out int status) == MF.S_OK && status != MF.S_OK)
+                    {
+                        FaultStatus = status;
+                    }
+
+                    if (mediaEvent.GetType(out uint eventType) == MF.S_OK)
+                    {
+                        if (eventType == MF.METransformNeedInput) _needInput.Release();
+                        else if (eventType == MF.METransformHaveOutput) _haveOutput.Release();
+                    }
+                }
+                finally
+                {
+                    Marshal.ReleaseComObject(mediaEvent);
                 }
             }
-            finally
+            catch (Exception ex)
             {
-                Marshal.ReleaseComObject(mediaEvent);
+                Logger.WriteLine("Remote encoder event: " + ex.Message);
             }
-        }
-        catch (Exception ex)
-        {
-            Logger.WriteLine("Remote encoder event: " + ex.Message);
-        }
 
-        // One BeginGetEvent yields one event, so the next one has to be asked for. Not
-        // while stopping: re-arming there keeps the transform alive past its own
-        // teardown and the release below never happens.
-        if (Running) Arm();
-        return MF.S_OK;
+            // One BeginGetEvent yields one event, so the next one has to be asked for.
+            if (Running) Arm();
+            return MF.S_OK;
+        }
     }
 
     public void Dispose()
@@ -152,7 +178,11 @@ internal sealed class MediaFoundationEventPump : MF.IMFAsyncCallback, IDisposabl
         if (_disposed) return;
         _disposed = true;
         Stop();
-        _needInput.Dispose();
-        _haveOutput.Dispose();
+
+        // The semaphores are deliberately not disposed. A capture thread can still be
+        // inside a timed Wait on one of them when the session ends, and disposing it
+        // underneath that thread throws where releasing it simply wakes it. Neither
+        // holds an OS handle unless AvailableWaitHandle is asked for, which it never
+        // is here, so there is nothing to leak.
     }
 }

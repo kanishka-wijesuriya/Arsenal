@@ -23,6 +23,14 @@ namespace Arsenal.UI.Services.Remote.Desktop;
 /// of them return failure as part of normal operation: an encoder with nothing ready
 /// yet answers <c>MF_E_TRANSFORM_NEED_MORE_INPUT</c> on most frames, and letting the
 /// marshaller turn that into an exception would cost one throw per frame.</para>
+///
+/// <para><b>Every array parameter is marked <c>LPArray</c>, and has to be.</b> In a
+/// COM interface, unlike a P/Invoke, the default marshalling for an array is SAFEARRAY:
+/// the callee is handed a descriptor where it expected a pointer to bytes. Media
+/// Foundation then writes the parameter sets straight over the runtime's own heap
+/// structures and the process dies later, somewhere else, with a heap corruption that
+/// names nothing to do with this file. That is what happened; it is written down here
+/// because nothing about the declaration looks wrong.</para>
 /// </remarks>
 internal static class MF
 {
@@ -179,7 +187,7 @@ internal static class MF
         [PreserveSig] int GetString(ref Guid key, [Out, MarshalAs(UnmanagedType.LPWStr)] System.Text.StringBuilder value, uint size, IntPtr length);
         [PreserveSig] int Reserved10(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] int GetBlobSize(ref Guid key, out uint size);
-        [PreserveSig] int GetBlob(ref Guid key, [Out] byte[] buffer, uint bufferSize, IntPtr blobSize);
+        [PreserveSig] int GetBlob(ref Guid key, [Out, MarshalAs(UnmanagedType.LPArray)] byte[] buffer, uint bufferSize, IntPtr blobSize);
         [PreserveSig] int Reserved13(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] int Reserved14(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] int Reserved15(IntPtr a, IntPtr b);
@@ -215,7 +223,7 @@ internal static class MF
         [PreserveSig] new int GetString(ref Guid key, [Out, MarshalAs(UnmanagedType.LPWStr)] System.Text.StringBuilder value, uint size, IntPtr length);
         [PreserveSig] new int Reserved10(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] new int GetBlobSize(ref Guid key, out uint size);
-        [PreserveSig] new int GetBlob(ref Guid key, [Out] byte[] buffer, uint bufferSize, IntPtr blobSize);
+        [PreserveSig] new int GetBlob(ref Guid key, [Out, MarshalAs(UnmanagedType.LPArray)] byte[] buffer, uint bufferSize, IntPtr blobSize);
         [PreserveSig] new int Reserved13(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] new int Reserved14(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] new int Reserved15(IntPtr a, IntPtr b);
@@ -266,7 +274,7 @@ internal static class MF
         [PreserveSig] new int GetString(ref Guid key, [Out, MarshalAs(UnmanagedType.LPWStr)] System.Text.StringBuilder value, uint size, IntPtr length);
         [PreserveSig] new int Reserved10(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] new int GetBlobSize(ref Guid key, out uint size);
-        [PreserveSig] new int GetBlob(ref Guid key, [Out] byte[] buffer, uint bufferSize, IntPtr blobSize);
+        [PreserveSig] new int GetBlob(ref Guid key, [Out, MarshalAs(UnmanagedType.LPArray)] byte[] buffer, uint bufferSize, IntPtr blobSize);
         [PreserveSig] new int Reserved13(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] new int Reserved14(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] new int Reserved15(IntPtr a, IntPtr b);
@@ -306,7 +314,7 @@ internal static class MF
     {
         [PreserveSig] int GetStreamLimits(out uint inputMin, out uint inputMax, out uint outputMin, out uint outputMax);
         [PreserveSig] int GetStreamCount(out uint inputs, out uint outputs);
-        [PreserveSig] int GetStreamIDs(uint inputSize, [Out] uint[]? inputIds, uint outputSize, [Out] uint[]? outputIds);
+        [PreserveSig] int GetStreamIDs(uint inputSize, [Out, MarshalAs(UnmanagedType.LPArray)] uint[]? inputIds, uint outputSize, [Out, MarshalAs(UnmanagedType.LPArray)] uint[]? outputIds);
         [PreserveSig] int GetInputStreamInfo(uint id, out MFT_INPUT_STREAM_INFO info);
         [PreserveSig] int GetOutputStreamInfo(uint id, out MFT_OUTPUT_STREAM_INFO info);
         [PreserveSig] int GetAttributes(out IMFAttributes attributes);
@@ -344,7 +352,7 @@ internal static class MF
         [PreserveSig] new int GetString(ref Guid key, [Out, MarshalAs(UnmanagedType.LPWStr)] System.Text.StringBuilder value, uint size, IntPtr length);
         [PreserveSig] new int Reserved10(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] new int GetBlobSize(ref Guid key, out uint size);
-        [PreserveSig] new int GetBlob(ref Guid key, [Out] byte[] buffer, uint bufferSize, IntPtr blobSize);
+        [PreserveSig] new int GetBlob(ref Guid key, [Out, MarshalAs(UnmanagedType.LPArray)] byte[] buffer, uint bufferSize, IntPtr blobSize);
         [PreserveSig] new int Reserved13(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] new int Reserved14(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] new int Reserved15(IntPtr a, IntPtr b);
@@ -483,7 +491,7 @@ internal static class MF
         [PreserveSig] new int GetString(ref Guid key, [Out, MarshalAs(UnmanagedType.LPWStr)] System.Text.StringBuilder value, uint size, IntPtr length);
         [PreserveSig] new int Reserved10(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] new int GetBlobSize(ref Guid key, out uint size);
-        [PreserveSig] new int GetBlob(ref Guid key, [Out] byte[] buffer, uint bufferSize, IntPtr blobSize);
+        [PreserveSig] new int GetBlob(ref Guid key, [Out, MarshalAs(UnmanagedType.LPArray)] byte[] buffer, uint bufferSize, IntPtr blobSize);
         [PreserveSig] new int Reserved13(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] new int Reserved14(IntPtr a, IntPtr b, IntPtr c);
         [PreserveSig] new int Reserved15(IntPtr a, IntPtr b);
