@@ -344,11 +344,24 @@
                     <!-- High-frequency choices live above the customizable tile grid.
                          The first three performance slots are user-selected; the fourth
                          opens the complete tuning surface. -->
-                    <StackPanel Margin="0,0,0,13">
-                        <Grid Margin="0,0,0,4">
+                    <!-- 5 rather than 13, because the heading that follows is a 26 tall
+                         button row with its label centred in it: the label already sits
+                         about 9 below the top of its own band, and that counts as space
+                         above the title just as much as this margin does. Measured from
+                         the controls above them, both the GPU modes and Quick settings
+                         titles now start 18 down. -->
+                    <StackPanel Margin="0,0,0,5">
+                        <!-- All three section headings clear their controls by the same
+                             amount. What differs is where that space comes from: a label
+                             centred in a row as tall as its buttons already carries half
+                             the surplus underneath it, so these rows need almost no
+                             margin while the bare GPU label below needs the lot. The
+                             button is 26 to match the Quick settings row exactly, so the
+                             two behave as one. -->
+                        <Grid Margin="0,0,0,2">
                             <TextBlock Text="Performance modes" Style="{StaticResource PanelSectionLabel}"
                                        Margin="2,0,0,0" VerticalAlignment="Center"/>
-                            <ui:Button Icon="{ui:SymbolIcon Edit24}" Appearance="Transparent" Width="28" Height="28" Padding="0"
+                            <ui:Button Icon="{ui:SymbolIcon Edit24}" Appearance="Transparent" Width="26" Height="26" Padding="0"
                                        HorizontalAlignment="Right" Command="{Binding OpenPerformanceShortcutsCommand}"
                                        ToolTip="Choose which three plans appear here"/>
                         </Grid>
@@ -389,8 +402,10 @@
                             </Button>
                         </UniformGrid>
 
+                        <!-- No buttons on this row, so none of the gap is inherited from
+                             a taller sibling and all of it is the margin. -->
                         <TextBlock Text="GPU modes" Style="{StaticResource PanelSectionLabel}"
-                                   Margin="2,10,0,4"/>
+                                   Margin="2,10,0,8"/>
                         <UniformGrid x:Name="GpuModeRow" Columns="4">
                             <RadioButton Style="{StaticResource QuickModeChoiceStyle}" GroupName="QuickGpuModes"
                                          IsEnabled="{Binding IsEcoSupported}"
@@ -433,7 +448,10 @@
                          rather than written out here. Options that depend on the model
                          live inside the detail pages; a tile the machine cannot offer is
                          kept out of the picker instead of appearing and doing nothing. -->
-                    <Grid Margin="0,0,0,8">
+                    <!-- Same 26 tall row and same 2 as the performance heading, so the
+                         space under the two labels matches without either being measured
+                         against the other. -->
+                    <Grid Margin="0,0,0,2">
                         <Grid.ColumnDefinitions>
                             <!-- Equal outer columns keep the pager on the panel's true
                                  centre line even though the edit controls are wider than
@@ -450,7 +468,6 @@
                              one compact, symmetric row directly above the tiles. -->
                         <StackPanel Grid.Column="1" Orientation="Horizontal"
                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                    Margin="0,0,0,8"
                                     Visibility="{Binding HasTilePages, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <ui:Button Icon="{ui:SymbolIcon ChevronUp24}" Command="{Binding PreviousTilePageCommand}"
                                        IsEnabled="{Binding CanGoBackTilePage}"
@@ -480,8 +497,7 @@
                                        ToolTip="Scroll to the next tile page"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                    Margin="0,0,0,8">
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <ui:Button Icon="{ui:SymbolIcon Add24}" Command="{Binding AddTileCommand}"
                                        IsEnabled="{Binding CanAddTile}"
                                        Appearance="Secondary" Width="26" Height="26" Padding="0"
