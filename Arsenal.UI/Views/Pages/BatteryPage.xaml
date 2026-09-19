@@ -79,7 +79,8 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="Diagnostics" Icon="Document24">
+            <controls:SettingsGroup Header="Diagnostics" Icon="Document24"
+                                    Description="The report Windows can produce about this battery, covering wear and charge history.">
                 <controls:SettingsRow Header="Windows battery report"
                                       Description="Generates the full powercfg report, including design capacity against current capacity.">
                     <ui:Button Content="Generate report" Command="{Binding GenerateReportCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Open24}"/>

@@ -15,7 +15,8 @@
                 </StackPanel>
             </Grid>
 
-            <controls:SettingsGroup Header="Keyboard backlight" Icon="Lightbulb24">
+            <controls:SettingsGroup Header="Keyboard backlight" Icon="Lightbulb24"
+                                    Description="Brightness, Aura effect, colour and speed for the keyboard and the lightbar.">
                 <controls:SettingsRow Header="Brightness" Description="Keyboard and lightbar illumination level.">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
                         <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Off"

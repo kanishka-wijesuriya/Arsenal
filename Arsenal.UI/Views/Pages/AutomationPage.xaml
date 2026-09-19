@@ -44,7 +44,8 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="Graphics and lid" Icon="Laptop24">
+            <controls:SettingsGroup Header="Graphics and lid" Icon="Laptop24"
+                                    Description="Rules that change GPU mode on battery and react to the lid without being asked.">
                 <controls:SettingsRow Header="Eco GPU mode on battery"
                                       Description="Switch the dedicated GPU off entirely once the charger is unplugged.">
                     <ui:ToggleSwitch IsChecked="{Binding IsAutoEcoOnBattery, Mode=TwoWay}"/>

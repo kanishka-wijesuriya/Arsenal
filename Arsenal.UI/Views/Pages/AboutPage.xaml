@@ -62,7 +62,8 @@
                  lines up with the rest of the application. A value the machine would not
                  report leaves its row hidden rather than labelled and blank, which is the
                  same treatment the capability-gated rows elsewhere get. -->
-            <controls:SettingsGroup Header="This laptop" Icon="Info24">
+            <controls:SettingsGroup Header="This laptop" Icon="Info24"
+                                    Description="What Arsenal reads back from this machine: model, BIOS, processor, memory, graphics, display and storage.">
 
                 <controls:SettingsRow Header="Reading specifications"
                                       Description="Asking the system about the processor, memory, graphics and storage."

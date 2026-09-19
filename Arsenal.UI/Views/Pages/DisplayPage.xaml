@@ -195,7 +195,8 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="Colour profiles" Icon="DocumentBulletList24">
+            <controls:SettingsGroup Header="Colour profiles" Icon="DocumentBulletList24"
+                                    Description="The ICC profiles ASUS ships for this panel, and installing them for Windows to use.">
                 <controls:SettingsRow Header="ASUS ICC profiles" Description="{Binding ColorProfileStatus}">
                     <ui:Button Content="Install profiles" Command="{Binding InstallColorProfilesCommand}" Appearance="Secondary"
                                Visibility="{Binding CanInstallColorProfiles, Converter={StaticResource BooleanToVisibilityConverter}}"

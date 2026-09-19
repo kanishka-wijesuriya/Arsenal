@@ -14,7 +14,8 @@
                 </StackPanel>
             </Grid>
 
-            <controls:SettingsGroup Header="Application" Icon="Settings24">
+            <controls:SettingsGroup Header="Application" Icon="Settings24"
+                                    Description="How Arsenal starts, whether it stays in the tray, and when it looks for updates.">
                 <controls:SettingsRow Header="Run as administrator"
                                       Description="{Binding AdministratorDescription}">
                     <ui:ToggleSwitch IsChecked="{Binding RunAsAdministrator, Mode=TwoWay}"/>
@@ -49,7 +50,8 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="Appearance" Icon="Color24">
+            <controls:SettingsGroup Header="Appearance" Icon="Color24"
+                                    Description="Theme, accent colour and whether the window paints on a transparent backdrop.">
                 <controls:SettingsRow Header="Theme"
                                       Description="Applies immediately. System mode follows Windows from the next theme change.">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">

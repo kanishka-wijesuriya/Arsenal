@@ -61,7 +61,8 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="CPU power and thermals" Icon="DeveloperBoard24">
+            <controls:SettingsGroup Header="CPU power and thermals" Icon="DeveloperBoard24"
+                                    Description="Power limits, the temperature ceiling and undervolting, saved with the selected profile.">
                 <controls:SettingsRow Header="Apply custom power limits"
                                       Description="Write the values below to the CPU whenever this profile is applied.">
                     <ui:ToggleSwitch IsChecked="{Binding ApplyPower}"/>

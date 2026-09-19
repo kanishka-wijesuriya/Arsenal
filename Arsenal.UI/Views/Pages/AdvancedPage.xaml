@@ -36,7 +36,8 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="ASUS services and keyboard" Icon="Wrench24">
+            <controls:SettingsGroup Header="ASUS services and keyboard" Icon="Wrench24"
+                                    Description="Which ASUS background services are allowed to run, and whether the function row needs Fn held.">
                 <controls:SettingsRow Header="ASUS background services"
                                       Description="Stop or start ASUS Optimization and the services it depends on.">
                     <!-- Deliberately not a switch. Starting and stopping services is an
@@ -109,7 +110,8 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="Hardware overlay" Icon="DataUsage24">
+            <controls:SettingsGroup Header="Hardware overlay" Icon="DataUsage24"
+                                    Description="The on-screen readout of temperatures, clocks and power, and whether it appears only in games.">
                 <controls:SettingsRow Header="On-screen hardware monitor"
                                       Description="Low-overhead CPU, GPU, fan, power and FPS readout drawn over full-screen apps.">
                     <ui:ToggleSwitch IsChecked="{Binding HardwareOverlayEnabled}"/>
@@ -123,6 +125,7 @@
             </controls:SettingsGroup>
 
             <controls:SettingsGroup Header="ROG Ally" Icon="XboxController24"
+                                    Description="Handheld-only controls: automatic TDP and the frame-rate cap."
                                     Visibility="{Binding HasHandheldControls, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <controls:SettingsRow Header="Automatic TDP" Description="Adapt APU power to the active frame-rate target.">
                     <ui:ToggleSwitch IsChecked="{Binding AutoTdpEnabled}"/>
@@ -134,7 +137,8 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="Power and graphics policy" Icon="PlugConnected24">
+            <controls:SettingsGroup Header="Power and graphics policy" Icon="PlugConnected24"
+                                    Description="Link power management, standby networking, and the rules around Eco mode and panel overdrive.">
                 <controls:SettingsRow Header="PCIe link power management"
                                       Description="ASPM. Let balanced power plans reduce PCIe link power.">
                     <ui:ToggleSwitch IsChecked="{Binding AspmEnabled}"/>
@@ -171,7 +175,8 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="Sleep, lid and window behaviour" Icon="Sleep24">
+            <controls:SettingsGroup Header="Sleep, lid and window behaviour" Icon="Sleep24"
+                                    Description="What happens when the lid closes, when the machine idles, and how long the backlight stays on.">
                 <controls:SettingsRow Header="Automatic clamshell mode"
                                       Description="Stay awake with the lid closed when an external display is connected.">
                     <ui:ToggleSwitch IsChecked="{Binding AutoClamshellEnabled}"/>
@@ -201,7 +206,8 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="Diagnostics" Icon="Document24">
+            <controls:SettingsGroup Header="Diagnostics" Icon="Document24"
+                                    Description="Windows power options and the log Arsenal writes, for working out what the hardware did.">
                 <controls:SettingsRow Header="Windows power options" Description="Opens the system power plan control panel.">
                     <ui:Button Content="Open" Command="{Binding OpenPowerPlanSettingsCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Open24}"/>
                 </controls:SettingsRow>
