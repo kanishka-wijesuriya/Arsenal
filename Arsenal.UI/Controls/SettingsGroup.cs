@@ -15,11 +15,68 @@ namespace Arsenal.UI.Controls
     public class SettingsGroup : ItemsControl
     {
 
+        static SettingsGroup()
+        {
+            // Coercion, not a template trigger setting Visibility.
+            //
+            // Pages bind a group's Visibility to the hardware it needs - the OLED group,
+            // the MUX group, the Mini-LED group - and a local binding beats a setter
+            // from inside the control's own template. Hiding siblings that way left
+            // exactly the capability-gated groups on screen inside an open subpage.
+            // Coercion sits above the binding instead of fighting it, and releases it
+            // again when the group is no longer dimmed.
+            VisibilityProperty.OverrideMetadata(
+                typeof(SettingsGroup),
+                new FrameworkPropertyMetadata(
+                    Visibility.Visible,
+                    FrameworkPropertyMetadataOptions.AffectsMeasure
+                        | FrameworkPropertyMetadataOptions.AffectsArrange,
+                    null,
+                    CoerceVisibility));
+        }
+
+        private static object CoerceVisibility(DependencyObject d, object baseValue)
+            => ((SettingsGroup)d).IsDimmed ? Visibility.Collapsed : baseValue;
+
         public SettingsGroup()
         {
-            Loaded += (_, _) => UpdateDividers();
             ItemContainerGenerator.StatusChanged += (_, _) =>
                 Dispatcher.BeginInvoke(UpdateDividers, System.Windows.Threading.DispatcherPriority.Loaded);
+
+            // Paired with Unloaded rather than taken in the constructor: a page is
+            // loaded and unloaded repeatedly as the user navigates, and a subscription
+            // dropped on the first departure would leave the group deaf on return.
+            // Unsubscribing first keeps a repeated Loaded from stacking handlers.
+            Loaded += (_, _) =>
+            {
+                OpenChanged -= OnOpenChanged;
+                OpenChanged += OnOpenChanged;
+
+                // Recomputed on arrival rather than trusted from last time. A page is
+                // built once and shown again on every visit, so a group carries
+                // whatever state it was left in; asking the current one is the only
+                // reading that is certainly right.
+                OnOpenChanged(_open);
+                UpdateDividers();
+            };
+
+            // Leaving a page closes whatever was drilled into on it, so coming back
+            // shows the list of groups rather than wherever the user stopped. The
+            // static event would otherwise hold every group a page has ever built.
+            //
+            // Each group clears its own state here instead of waiting to be told. The
+            // groups on a page unload in an order nothing guarantees, so a sibling that
+            // went first had already unsubscribed by the time the open one broadcast
+            // its close - it never heard the reset, stayed dimmed, and came back
+            // invisible. Leaving on foot rather than waiting for the message makes the
+            // order stop mattering.
+            Unloaded += (_, _) =>
+            {
+                if (IsOpen) Close();
+                OpenChanged -= OnOpenChanged;
+                IsOpen = false;
+                IsDimmed = false;
+            };
         }
 
         public static readonly DependencyProperty HeaderProperty =
@@ -75,6 +132,169 @@ namespace Arsenal.UI.Controls
         {
             get => GetValue(FooterProperty);
             set => SetValue(FooterProperty, value);
+        }
+
+        // ===== Drill-in =====
+        //
+        // A theme can ask for its settings to live one level down instead of all at once
+        // on a long page: every group collapses to a panel you press, and pressing one
+        // leaves that group alone on the page with a way back. It reads as a subpage and
+        // is not one, which is the point - the alternative is a second copy of every
+        // page's XAML, or moving live rows into an overlay and back out again, and rows
+        // that are mid-animation or hold an open picker do not survive being reparented.
+        // Here nothing moves. The open group stays where it is and its siblings go
+        // Collapsed, so the page is left showing one group and a back bar.
+
+        public static readonly DependencyProperty DrillInProperty =
+            DependencyProperty.Register(nameof(DrillIn), typeof(bool), typeof(SettingsGroup),
+                new PropertyMetadata(false, OnDrillInChanged));
+
+        /// <summary>
+        /// Present this group as a panel that opens, rather than as an open card. Set
+        /// from the theme, not from a page.
+        /// </summary>
+        public bool DrillIn
+        {
+            get => (bool)GetValue(DrillInProperty);
+            set => SetValue(DrillInProperty, value);
+        }
+
+        private static void OnDrillInChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            // Leaving the mode has to leave the page open, or a theme switch made while
+            // drilled in would strand every other group Collapsed.
+            if (!(bool)e.NewValue) Close();
+        }
+
+        public static readonly DependencyProperty AlwaysOpenProperty =
+            DependencyProperty.Register(nameof(AlwaysOpen), typeof(bool), typeof(SettingsGroup),
+                new PropertyMetadata(false));
+
+        /// <summary>
+        /// Never becomes a destination. The group shows its rows on the list itself,
+        /// for the one control on a page that is the reason the page exists and should
+        /// not be a click away.
+        /// </summary>
+        /// <remarks>
+        /// Set by a page, not by the theme, because which group matters that much is a
+        /// fact about the page. It does nothing in a theme that has no drill-in.
+        /// </remarks>
+        public bool AlwaysOpen
+        {
+            get => (bool)GetValue(AlwaysOpenProperty);
+            set => SetValue(AlwaysOpenProperty, value);
+        }
+
+        private static readonly DependencyPropertyKey IsOpenPropertyKey =
+            DependencyProperty.RegisterReadOnly(nameof(IsOpen), typeof(bool), typeof(SettingsGroup),
+                new PropertyMetadata(false));
+
+        public static readonly DependencyProperty IsOpenProperty = IsOpenPropertyKey.DependencyProperty;
+
+        /// <summary>This group is the one currently drilled into.</summary>
+        public bool IsOpen
+        {
+            get => (bool)GetValue(IsOpenProperty);
+            private set => SetValue(IsOpenPropertyKey, value);
+        }
+
+        private static readonly DependencyPropertyKey IsDimmedPropertyKey =
+            DependencyProperty.RegisterReadOnly(nameof(IsDimmed), typeof(bool), typeof(SettingsGroup),
+                new PropertyMetadata(false, (d, _) => d.CoerceValue(VisibilityProperty)));
+
+        public static readonly DependencyProperty IsDimmedProperty = IsDimmedPropertyKey.DependencyProperty;
+
+        /// <summary>Another group is open, so this one is out of the way.</summary>
+        public bool IsDimmed
+        {
+            get => (bool)GetValue(IsDimmedProperty);
+            private set => SetValue(IsDimmedPropertyKey, value);
+        }
+
+        /// <summary>
+        /// Raised when any group opens or closes, so siblings can step aside. Static
+        /// because the groups on a page are siblings in XAML with nothing between them
+        /// that knows about all of them.
+        /// </summary>
+        private static event Action<SettingsGroup?>? OpenChanged;
+
+        private static SettingsGroup? _open;
+
+        /// <summary>Opens this group, closing whichever was open.</summary>
+        public void Open()
+        {
+            if (!DrillIn || _open == this) return;
+            _open = this;
+            OpenChanged?.Invoke(_open);
+        }
+
+        /// <summary>Returns the page to the list of groups.</summary>
+        public static void Close()
+        {
+            if (_open is null) return;
+            _open = null;
+            OpenChanged?.Invoke(null);
+        }
+
+        private void OnOpenChanged(SettingsGroup? open)
+        {
+            IsOpen = open == this;
+
+            // Only groups on the same page step aside. Two pages are alive at once
+            // during a navigation transition, and the one being left should not be
+            // rearranged on its way out.
+            bool samePage = open is not null && ReferenceEquals(PageRoot(), open.PageRoot());
+            IsDimmed = open is not null && open != this && samePage;
+        }
+
+        /// <summary>
+        /// The page this group sits on, used to tell siblings from strangers. The
+        /// nearest UserControl ancestor is the page: every page in the app is one.
+        /// </summary>
+        private DependencyObject? PageRoot()
+        {
+            DependencyObject? node = this;
+            DependencyObject? page = null;
+            while (node is not null)
+            {
+                if (node is System.Windows.Controls.UserControl) page = node;
+                node = System.Windows.Media.VisualTreeHelper.GetParent(node)
+                    ?? LogicalTreeHelper.GetParent(node);
+            }
+            return page;
+        }
+
+        public override void OnApplyTemplate()
+        {
+            base.OnApplyTemplate();
+
+            if (GetTemplateChild("PART_Back") is System.Windows.Controls.Primitives.ButtonBase back)
+            {
+                back.Click -= OnBackClick;
+                back.Click += OnBackClick;
+            }
+        }
+
+        private void OnBackClick(object sender, RoutedEventArgs e)
+        {
+            Close();
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// While closed, the group is a single pressable panel, so any click inside it
+        /// is a press on that panel. While open it is a list of live rows and this must
+        /// keep its hands off them.
+        /// </summary>
+        protected override void OnMouseLeftButtonUp(System.Windows.Input.MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonUp(e);
+
+            if (!DrillIn || AlwaysOpen || IsOpen || e.Handled) return;
+            if (string.IsNullOrEmpty(Header)) return;
+
+            Open();
+            e.Handled = true;
         }
 
         protected override void OnItemsChanged(System.Collections.Specialized.NotifyCollectionChangedEventArgs e)

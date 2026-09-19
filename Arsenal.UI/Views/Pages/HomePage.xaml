@@ -274,7 +274,12 @@
                                      DetailIcon="ShieldCheckmark24"/>
             </controls:ResponsiveGrid>
 
+            <!-- Pinned: these are the controls the user chose to put on Home, so they
+                 are the reason the page exists. A theme that files settings one level
+                 down leaves this group open rather than making the dashboard a link to
+                 the dashboard. -->
             <controls:SettingsGroup x:Name="HomeControlsGroup" Header="Controls" Icon="Flash24"
+                                    AlwaysOpen="True"
                                     Description="Your selected controls, in the order you want them on Home."
                                     ItemsSource="{Binding HomeControls}"
                                     ItemTemplateSelector="{StaticResource HomeControlSelector}">

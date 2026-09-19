@@ -25,7 +25,12 @@
                 </StackPanel>
             </Grid>
 
+            <!-- Pinned: every other group on this page tunes whatever profile is chosen
+                 here, so the choice has to be visible while the page is being read. In a
+                 theme that puts settings one level down this group stays on the list
+                 instead of becoming a destination; in the others it changes nothing. -->
             <controls:SettingsGroup x:Name="ProfileGroup" Header="Active profile"
+                                    AlwaysOpen="True"
                                     Icon="Gauge24"
                                     Description="The tuning below belongs to whichever profile is selected here. Switching profiles loads its own saved values.">
                 <controls:SettingsRow Header="Profile"
@@ -273,7 +278,7 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Border Background="{DynamicResource SurfaceCard}" BorderBrush="{DynamicResource StrokeSubtle}"
-                                        BorderThickness="1" CornerRadius="{StaticResource RadiusCard}" Padding="14" Margin="0,0,0,8">
+                                        BorderThickness="1" CornerRadius="{DynamicResource RadiusCard}" Padding="14" Margin="0,0,0,8">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="36"/>

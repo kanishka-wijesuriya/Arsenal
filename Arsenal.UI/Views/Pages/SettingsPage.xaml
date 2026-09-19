@@ -62,6 +62,9 @@
                         <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="Theme" Content="Light"
                                      IsChecked="{Binding SelectedTheme, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                      Command="{Binding SetThemeCommand}" CommandParameter="2"/>
+                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="Theme" Content="Arsenal"
+                                     IsChecked="{Binding SelectedTheme, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
+                                     Command="{Binding SetThemeCommand}" CommandParameter="3"/>
                     </WrapPanel>
                 </controls:SettingsRow>
 
