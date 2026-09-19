@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Wpf.Ui.Controls;
 using InputModifierKeys = System.Windows.Input.ModifierKeys;
@@ -404,8 +405,57 @@ namespace Arsenal.UI.Views.Windows
             // render between these two operations, so the user never sees an empty host.
             PageContentHost.Children.Clear();
             PageContentHost.Children.Add(page);
+            AnimatePageIn(page);
             _viewModel.ActivePageTag = tag;
             MarkActiveNavigationItem(tag);
+        }
+
+        /// <summary>How long a destination takes to arrive.</summary>
+        /// <remarks>
+        /// A whole page is a lot of surface to move, and it read as a flinch at the
+        /// 220ms a small control uses. The distance is unchanged: the same travel over
+        /// longer reads as deliberate rather than as further.
+        /// </remarks>
+        private static readonly Duration PageArrival = new(TimeSpan.FromMilliseconds(320));
+
+        /// <summary>
+        /// Slides and fades a destination in.
+        /// </summary>
+        /// <remarks>
+        /// Done here rather than with NavigationView's own Transition property, which
+        /// looks like the obvious answer and does nothing: that animates the frame the
+        /// control navigates itself, and this app never uses it. Destinations are built
+        /// here and swapped into <c>PageContentHost</c>, so the control has nothing to
+        /// animate and the setting is inert.
+        ///
+        /// <para>Render-only, so it costs no layout and cannot disturb a page that is
+        /// measuring itself as it arrives. The animations are released on completion
+        /// rather than left holding their final value: pages are cached and shown again,
+        /// and a held animation would outrank anything that later set opacity on one.</para>
+        /// </remarks>
+        private static void AnimatePageIn(UIElement page)
+        {
+            var shift = new TranslateTransform();
+            page.RenderTransform = shift;
+
+            // Cubic rather than quartic. A quartic spends almost all its travel in the
+            // first third and then crawls, which is what made a longer duration feel
+            // slow without feeling smooth; a cubic distributes the movement more evenly
+            // across the same time.
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+            var slide = new DoubleAnimation(26, 0, PageArrival) { EasingFunction = ease };
+            var fade = new DoubleAnimation(0, 1, PageArrival) { EasingFunction = ease };
+
+            fade.Completed += (_, _) =>
+            {
+                page.BeginAnimation(UIElement.OpacityProperty, null);
+                page.Opacity = 1;
+                page.RenderTransform = Transform.Identity;
+            };
+
+            shift.BeginAnimation(TranslateTransform.XProperty, slide);
+            page.BeginAnimation(UIElement.OpacityProperty, fade);
         }
 
         private UIElement GetOrCreatePage(string tag)
