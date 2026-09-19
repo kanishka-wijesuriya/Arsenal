@@ -114,20 +114,37 @@
             </controls:SettingsGroup>
 
             <!-- Arsenal is free and stays free. The ask sits here rather than anywhere
-                 the app is actually being used, and it is a single row with one button
-                 that hands the URL to the default browser. Nothing is collected in the
-                 app, and no feature is withheld from anyone who scrolls past it. -->
-            <controls:SettingsGroup Header="Support" Icon="Heart24"
-                                    Description="Arsenal is developed independently and given away. Donations are optional and change nothing about the app.">
+                 the app is actually being used. Nothing is collected in the app, and no
+                 feature is withheld from anyone who scrolls past it.
 
-                <controls:SettingsRow Header="Support the developer"
-                                      Icon="Heart24"
-                                      Description="Opens PayPal in your browser. Arsenal never handles the payment and asks for nothing in return.">
-                    <ui:Button Content="Donate" Command="{Binding OpenSupportCommand}"
+                 A card rather than a settings group: a group of one row is a section
+                 heading over a single control, and in a theme that files settings one
+                 level down it became a destination you had to open to find one button.
+                 This is a note with an action, which is what it always was. -->
+            <Border Style="{StaticResource CardSurfaceStyle}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ui:SymbolIcon Grid.Column="0" Symbol="Heart24" FontSize="22"
+                                   Foreground="{DynamicResource AccentPrimary}"
+                                   VerticalAlignment="Center" Margin="0,0,16,0"/>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,20,0">
+                        <TextBlock Text="Support the developer" Style="{StaticResource SettingLabelStyle}"/>
+                        <TextBlock Style="{StaticResource SettingDescriptionStyle}"
+                                   TextWrapping="Wrap" MaxWidth="620" HorizontalAlignment="Left"
+                                   Text="Arsenal is developed independently and given away. Donating opens PayPal in your browser, is entirely optional, and changes nothing about the app."/>
+                    </StackPanel>
+
+                    <ui:Button Grid.Column="2" VerticalAlignment="Center"
+                               Content="Donate" Command="{Binding OpenSupportCommand}"
                                Appearance="Primary" Icon="{ui:SymbolIcon Heart24}"/>
-                </controls:SettingsRow>
-
-            </controls:SettingsGroup>
+                </Grid>
+            </Border>
 
             <!-- Arsenal is GPL-3.0, and the licence asks that recipients be told so and
                  be able to reach the source. This group is that notice, and the credit
