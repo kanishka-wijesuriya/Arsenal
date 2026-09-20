@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>MfEncoderProbe</AssemblyName>
+    <RootNamespace>Arsenal.UI.Services.Remote.Desktop</RootNamespace>
+  </PropertyGroup>
+
+  <!-- The encoder's own sources, compiled into the probe rather than referenced.
+       They are internal to Arsenal.UI, which is a WPF application; pulling the four
+       files that make up the encoder in here keeps the probe a console program and
+       keeps Arsenal.UI free of an InternalsVisibleTo that exists only for a tool. -->
+  <ItemGroup>
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\MediaFoundationVideoEncoder.cs" Link="MediaFoundationVideoEncoder.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\MediaFoundationEventPump.cs" Link="MediaFoundationEventPump.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\MediaFoundationInterop.cs" Link="MediaFoundationInterop.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\VideoEncoding.cs" Link="VideoEncoding.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\RemoteDesktopProtocol.cs" Link="RemoteDesktopProtocol.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\ScreenCapture.cs" Link="ScreenCapture.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\RemoteNative.cs" Link="RemoteNative.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Arsenal.Application\Arsenal.Application.csproj" />
+  </ItemGroup>
+</Project>
