@@ -249,6 +249,9 @@ namespace Arsenal.Application.Services.Implementations
         {
             BatteryControl.BatteryReport();
         }
+
+        public Task<Arsenal.Battery.BatteryReportData?> BuildBatteryReportAsync(CancellationToken cancel = default)
+            => Arsenal.Battery.BatteryReportReader.GenerateAsync(cancel);
     }
 
     public class CoolingService : ICoolingService

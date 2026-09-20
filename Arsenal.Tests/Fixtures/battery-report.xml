@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type='text/xsl' href='C:\battery-stylesheet.xsl'?>
+<BatteryReport xmlns="http://schemas.microsoft.com/battery/2012">
+  <ReportInformation>
+    <ReportGuid>5ab5b0d9-979a-4f60-a088-3a9f6f122fff</ReportGuid>
+    <ReportVersion>1.1</ReportVersion>
+    <ScanTime>2026-09-20T04:00:08Z</ScanTime>
+    <LocalScanTime>2026-09-20T09:30:08</LocalScanTime>
+    <ReportStartTime>2026-09-13T04:00:08Z</ReportStartTime>
+    <LocalReportStartTime>2026-09-13T09:30:08</LocalReportStartTime>
+    <ReportDuration>7</ReportDuration>
+    <UtcOffset>+5:30</UtcOffset>
+  </ReportInformation>
+  <SystemInformation>
+    <ComputerName>TEST-MACHINE</ComputerName>
+    <SystemManufacturer>ASUSTeK COMPUTER INC.</SystemManufacturer>
+    <SystemProductName>ROG Zephyrus G16 GU605MI_GU605MI</SystemProductName>
+    <BIOSDate>06/06/2025</BIOSDate>
+    <BIOSVersion>GU605MI.329</BIOSVersion>
+    <OSBuild>26100.6.amd64fre.ge_release_flt.260716-1700</OSBuild>
+    <PlatformRole>Mobile</PlatformRole>
+    <ConnectedStandby>1</ConnectedStandby>
+  </SystemInformation>
+  <Batteries>
+    <Battery>
+      <Id>A32-K55</Id>
+      <Manufacturer>ASUS </Manufacturer>
+      <SerialNumber> </SerialNumber>
+      <ManufactureDate>
+      </ManufactureDate>
+      <Chemistry>LiON</Chemistry>
+      <LongTerm>1</LongTerm>
+      <RelativeCapacity>0</RelativeCapacity>
+      <DesignCapacity>90005</DesignCapacity>
+      <FullChargeCapacity>74521</FullChargeCapacity>
+      <CycleCount>0</CycleCount>
+    </Battery>
+  </Batteries>
+  <RuntimeEstimates>
+    <DesignCapacity>
+      <Capacity>90005</Capacity>
+      <ActiveRuntime>PT4H23M17S</ActiveRuntime>
+      <ConnectedStandbyRuntime>P1DT7H51M47S</ConnectedStandbyRuntime>
+    </DesignCapacity>
+    <FullChargeCapacity>
+      <Capacity>74521</Capacity>
+      <ActiveRuntime>PT3H37M59S</ActiveRuntime>
+      <ConnectedStandbyRuntime>P1DT2H22M53S</ConnectedStandbyRuntime>
+    </FullChargeCapacity>
+  </RuntimeEstimates>
+  <History>
+    <HistoryEntry StartDate="2026-04-20T00:34:32Z" LocalStartDate="2026-04-20T06:04:32" EndDate="2026-04-27T04:19:04Z" LocalEndDate="2026-04-27T09:49:04" DesignCapacity="90005" FullChargeCapacity="77788" CycleCount="0" ActiveAcTime="PT4H40M18S" ActiveDcTime="PT8H43M5S" CsAcTime="PT25M12S" CsDcTime="PT1H54M1S" ActiveDcEnergy="151431" CsDcEnergy="2662" EstimatedDesignActiveTime="PT5H10M54S" EstimatedFullChargeActiveTime="PT4H28M42S" EstimatedDesignCsTime="P2DT16H15M1S" EstimatedFullChargeCsTime="P2DT7H31M45S" BatteryChanged="0" />
+    <HistoryEntry StartDate="2026-04-27T04:19:04Z" LocalStartDate="2026-04-27T09:49:04" EndDate="2026-05-04T01:26:09Z" LocalEndDate="2026-05-04T06:56:09" DesignCapacity="90005" FullChargeCapacity="75004" CycleCount="0" ActiveAcTime="PT12H9M28S" ActiveDcTime="P1DT1H37M21S" CsAcTime="P2DT0H49M29S" CsDcTime="PT10H30M36S" ActiveDcEnergy="282070" CsDcEnergy="14770" EstimatedDesignActiveTime="PT8H10M32S" EstimatedFullChargeActiveTime="PT6H48M47S" EstimatedDesignCsTime="P2DT16H2M43S" EstimatedFullChargeCsTime="P2DT5H22M16S" BatteryChanged="0" />
+    <HistoryEntry StartDate="2026-05-04T01:26:09Z" LocalStartDate="2026-05-04T06:56:09" EndDate="2026-05-11T22:30:56Z" LocalEndDate="2026-05-12T04:00:56" DesignCapacity="90005" FullChargeCapacity="74054" CycleCount="0" ActiveAcTime="PT1H42M5S" ActiveDcTime="PT3H3M54S" CsAcTime="P1DT0H23M50S" CsDcTime="PT7H59M16S" ActiveDcEnergy="57732" CsDcEnergy="9778" EstimatedDesignActiveTime="PT4H46M42S" EstimatedFullChargeActiveTime="PT3H55M53S" EstimatedDesignCsTime="P3DT1H31M34S" EstimatedFullChargeCsTime="P2DT12H29M44S" BatteryChanged="0" />
+    <HistoryEntry StartDate="2026-05-11T22:30:56Z" LocalStartDate="2026-05-12T04:00:56" EndDate="2026-05-18T00:41:28Z" LocalEndDate="2026-05-18T06:11:28" DesignCapacity="90005" FullChargeCapacity="74817" CycleCount="0" ActiveAcTime="PT3H54M38S" ActiveDcTime="PT7H28M16S" CsAcTime="PT15H23M54S" CsDcTime="PT3H46M4S" ActiveDcEnergy="126946" CsDcEnergy="12106" EstimatedDesignActiveTime="PT5H17M49S" EstimatedFullChargeActiveTime="PT4H24M11S" EstimatedDesignCsTime="P1DT4H0M44S" EstimatedFullChargeCsTime="PT23H17M7S" BatteryChanged="0" />
+  </History>
+</BatteryReport>

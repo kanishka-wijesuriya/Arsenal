@@ -83,10 +83,84 @@
             </controls:SettingsGroup>
 
             <controls:SettingsGroup Header="Diagnostics" Icon="Document24"
-                                    Description="The report Windows can produce about this battery, covering wear and charge history.">
-                <controls:SettingsRow Header="Windows battery report"
-                                      Description="Generates the full powercfg report, including design capacity against current capacity.">
-                    <ui:Button Content="Generate report" Command="{Binding GenerateReportCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Open24}"/>
+                                    Description="What Windows has recorded about this battery: how much it still holds, and how that has changed.">
+                <controls:SettingsRow Header="Battery report"
+                                      Description="Runs the same scan Windows does and reads it here. Takes a few seconds.">
+                    <ui:Button Content="{Binding IsBuildingReport, Converter={StaticResource BoolToTextConverter}, ConverterParameter=Reading the report…|Generate report}"
+                               Command="{Binding GenerateReportCommand}"
+                               IsEnabled="{Binding IsBuildingReport, Converter={StaticResource InverseBoolConverter}}"
+                               Appearance="Primary" Icon="{ui:SymbolIcon DocumentBulletList24}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Visibility="{Binding ReportError, Converter={StaticResource HideWhenEmptyText}}">
+                    <controls:SettingsRow.ContentBelow>
+                        <TextBlock Text="{Binding ReportError}" Style="{StaticResource SettingDescriptionStyle}"
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}"/>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
+
+                <!-- The report itself. Four readings and the line they came from: what
+                     the battery holds now against what it was built to hold, and whether
+                     that has been moving. The full Windows document stays one click
+                     away for the rest of it. -->
+                <controls:SettingsRow Visibility="{Binding HasReport, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow.ContentBelow>
+                        <StackPanel>
+                            <controls:ResponsiveGrid MinItemWidth="190" MaxColumns="4" Margin="-5,0,-5,14">
+                                <controls:MetricTile Icon="Heart24"
+                                                     Label="Health"
+                                                     Value="{Binding ReportHealth}"
+                                                     Detail="{Binding ReportHealthDetail}"/>
+                                <controls:MetricTile Icon="BatteryCharge24"
+                                                     Label="Holds now"
+                                                     Value="{Binding ReportCapacity}"
+                                                     Detail="{Binding ReportCapacityDetail}"/>
+                                <controls:MetricTile Icon="ArrowSync24"
+                                                     Label="Cycles"
+                                                     Value="{Binding ReportCycles}"
+                                                     Detail="{Binding ReportCyclesDetail}"/>
+                                <controls:MetricTile Icon="Timer24"
+                                                     Label="Estimated runtime"
+                                                     Value="{Binding ReportRuntime}"
+                                                     Detail="{Binding ReportRuntimeDetail}"/>
+                            </controls:ResponsiveGrid>
+
+                            <TextBlock Text="Capacity over time" Style="{StaticResource SettingLabelStyle}"
+                                       HorizontalAlignment="Left"/>
+                            <TextBlock Text="{Binding ReportHistoryCaption}" Style="{StaticResource SettingDescriptionStyle}"
+                                       TextWrapping="Wrap" MaxWidth="620" HorizontalAlignment="Left"/>
+
+                            <Border CornerRadius="{DynamicResource RadiusCard}"
+                                    Background="{DynamicResource SurfaceSunken}"
+                                    BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1"
+                                    Padding="14,12" Margin="0,10,0,0">
+                                <controls:CapacityHistoryChart Height="150" Points="{Binding ReportHistory}"/>
+                            </Border>
+
+                            <WrapPanel Margin="0,14,-10,-10">
+                                <Border Style="{StaticResource InsetSettingChipStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="Chemistry" Style="{StaticResource CaptionStyle}"/>
+                                        <TextBlock Text="{Binding ReportChemistry}" Style="{StaticResource SettingLabelStyle}"
+                                                   HorizontalAlignment="Left" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource InsetSettingChipStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="Report" Style="{StaticResource CaptionStyle}"/>
+                                        <TextBlock Text="{Binding ReportScanned}" Style="{StaticResource SettingLabelStyle}"
+                                                   HorizontalAlignment="Left" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+
+                            <ui:Button Content="Open the full Windows report"
+                                       Command="{Binding OpenFullReportCommand}"
+                                       Visibility="{Binding CanOpenFullReport, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                       Appearance="Secondary" Icon="{ui:SymbolIcon Open24}"
+                                       HorizontalAlignment="Left" Margin="0,16,0,0"/>
+                        </StackPanel>
+                    </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 

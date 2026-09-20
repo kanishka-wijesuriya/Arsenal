@@ -205,6 +205,9 @@ namespace Arsenal.Application.Services.Contracts
         void SetChargeLimit(int limitPercent);
         void ToggleFullChargeOverride();
         void GenerateBatteryReport();
+
+        /// <summary>Runs the Windows battery scan and returns it as data for the page.</summary>
+        Task<Arsenal.Battery.BatteryReportData?> BuildBatteryReportAsync(CancellationToken cancel = default);
     }
 
     public interface ICoolingService

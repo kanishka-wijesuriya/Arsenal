@@ -105,24 +105,37 @@ namespace Arsenal.Battery
             Program.Bridge?.VisualiseBattery(limit);
         }
 
+        /// <summary>
+        /// Writes the Windows battery report and opens the page Windows produces.
+        /// </summary>
+        /// <remarks>
+        /// The in-app summary reads the same scan through
+        /// <see cref="BatteryReportReader"/>; this remains for the places that want the
+        /// whole document - the command palette, and a paired phone asking for it, where
+        /// there is no page to show a summary on.
+        ///
+        /// <para>It no longer runs through PowerShell. The old call handed
+        /// <c>powercfg /batteryreport; explorer battery-report.html</c> to a shell with
+        /// the working directory set to the user's profile, which dropped the report in
+        /// the middle of their home folder and depended on that path surviving a second
+        /// parser. Both files live in Arsenal's own folder now.</para>
+        /// </remarks>
         public static void BatteryReport()
         {
-            var reportDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            _ = Task.Run(async () =>
+            {
+                BatteryReportData? report = await BatteryReportReader.GenerateAsync().ConfigureAwait(false);
+                if (report is null || report.HtmlPath.Length == 0) return;
 
-            try
-            {
-                var cmd = new Process();
-                cmd.StartInfo.WorkingDirectory = reportDir;
-                cmd.StartInfo.UseShellExecute = false;
-                cmd.StartInfo.CreateNoWindow = true;
-                cmd.StartInfo.FileName = ProcessHelper.SystemPath("powershell");
-                cmd.StartInfo.Arguments = "powercfg /batteryreport; explorer battery-report.html";
-                cmd.Start();
-            }
-            catch (Exception ex)
-            {
-                Logger.WriteLine(ex.Message);
-            }
+                try
+                {
+                    Process.Start(new ProcessStartInfo(report.HtmlPath) { UseShellExecute = true });
+                }
+                catch (Exception ex)
+                {
+                    Logger.WriteLine(ex.Message);
+                }
+            });
         }
     }
 }

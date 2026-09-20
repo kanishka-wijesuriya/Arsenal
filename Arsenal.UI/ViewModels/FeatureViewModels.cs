@@ -1869,10 +1869,134 @@ namespace Arsenal.UI.ViewModels
             IsFullChargeOverride = _batteryService.IsFullChargeOverride;
         }
 
+        // ---- The battery report, read in the app ---------------------------------
+
+        [ObservableProperty] private bool _isBuildingReport;
+        [ObservableProperty] private bool _hasReport;
+        [ObservableProperty] private string _reportError = "";
+
+        [ObservableProperty] private string _reportHealth = "";
+        [ObservableProperty] private string _reportHealthDetail = "";
+        [ObservableProperty] private string _reportCapacity = "";
+        [ObservableProperty] private string _reportCapacityDetail = "";
+        [ObservableProperty] private string _reportCycles = "";
+        [ObservableProperty] private string _reportCyclesDetail = "";
+        [ObservableProperty] private string _reportRuntime = "";
+        [ObservableProperty] private string _reportRuntimeDetail = "";
+        [ObservableProperty] private string _reportChemistry = "";
+        [ObservableProperty] private string _reportScanned = "";
+        [ObservableProperty] private string _reportHistoryCaption = "";
+
+        /// <summary>The weekly capacity readings, oldest first, for the chart.</summary>
+        public System.Collections.ObjectModel.ObservableCollection<Arsenal.Battery.BatteryHistoryPoint> ReportHistory { get; } = new();
+
+        private string _reportHtmlPath = "";
+
+        public bool CanOpenFullReport => _reportHtmlPath.Length > 0;
+
+        /// <summary>
+        /// Builds the report and reads it here rather than handing the user a web page.
+        /// </summary>
+        /// <remarks>
+        /// The scan takes a few seconds and runs a process, so it is off the UI thread
+        /// and the button says so while it runs. Pressing it again while one is in
+        /// flight is a no-op rather than a second powercfg.
+        /// </remarks>
         [RelayCommand]
-        public void GenerateReport()
+        public async Task GenerateReportAsync()
         {
-            _batteryService.GenerateBatteryReport();
+            if (IsBuildingReport) return;
+
+            IsBuildingReport = true;
+            ReportError = "";
+
+            try
+            {
+                Arsenal.Battery.BatteryReportData? report = await _batteryService.BuildBatteryReportAsync();
+                if (report is null)
+                {
+                    ReportError = "Windows could not produce a battery report on this machine. The log has the detail.";
+                    HasReport = false;
+                    return;
+                }
+
+                Apply(report);
+                HasReport = true;
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine("Battery report failed: " + ex.Message);
+                ReportError = "The battery report could not be read. The log has the detail.";
+                HasReport = false;
+            }
+            finally
+            {
+                IsBuildingReport = false;
+            }
+        }
+
+        private void Apply(Arsenal.Battery.BatteryReportData report)
+        {
+            ReportHealth = $"{report.Health * 100:F0}%";
+            ReportHealthDetail = report.WearPercent < 1
+                ? "No measurable wear yet"
+                : $"{report.WearPercent:F0}% of the original capacity has been lost";
+
+            ReportCapacity = $"{report.FullChargeCapacity / 1000.0:F1} Wh";
+            ReportCapacityDetail = $"Built to hold {report.DesignCapacity / 1000.0:F1} Wh";
+
+            // A pack that will not report its cycles says 0, which is not none.
+            ReportCycles = report.HasCycleCount ? report.CycleCount.ToString() : "Not reported";
+            ReportCyclesDetail = report.HasCycleCount
+                ? "Full charge and discharge cycles"
+                : "This battery's firmware does not publish a cycle count";
+
+            ReportRuntime = report.CurrentRuntime is { } current ? FormatHours(current.TotalHours) : "Unknown";
+            ReportRuntimeDetail = report.DesignRuntime is { } design
+                ? $"{FormatHours(design.TotalHours)} when the battery was new"
+                : "Estimated from this machine's own use, not from a benchmark";
+
+            ReportChemistry = string.IsNullOrWhiteSpace(report.Chemistry) ? "Unknown" : report.Chemistry;
+            ReportScanned = $"Scanned {report.ScanTime:d MMMM yyyy, HH:mm}";
+
+            ReportHistory.Clear();
+            foreach (Arsenal.Battery.BatteryHistoryPoint point in report.History) ReportHistory.Add(point);
+
+            ReportHistoryCaption = report.History.Count >= 2
+                ? DescribeHistory(report)
+                : "Windows has not recorded enough weeks on this machine to show a trend yet.";
+
+            _reportHtmlPath = report.HtmlPath;
+            OnPropertyChanged(nameof(CanOpenFullReport));
+        }
+
+        private static string DescribeHistory(Arsenal.Battery.BatteryReportData report)
+        {
+            int lost = report.CapacityLostOverReport;
+            string span = $"{report.History[0].Period:MMM yyyy} to {report.History[^1].Period:MMM yyyy}";
+
+            // A pack can report more than it did a year ago, usually after the gauge
+            // recalibrates. Saying it "gained" capacity would be wrong, so say what
+            // actually happened.
+            if (lost <= 0)
+                return $"{span}. The reported capacity is no lower than when the record starts.";
+
+            return $"{span}. {lost / 1000.0:F1} Wh lower than when the record starts.";
+        }
+
+        [RelayCommand]
+        public void OpenFullReport()
+        {
+            if (_reportHtmlPath.Length == 0) return;
+            try
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(_reportHtmlPath) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine(ex.Message);
+            }
         }
 
         private static int ToInt(object? param, int defaultValue = 80)
