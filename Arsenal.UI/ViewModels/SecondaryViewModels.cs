@@ -918,6 +918,10 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty]
         private bool _disableTransparency;
 
+        /// <summary>Whether a settings section is a place you open or a card already open.</summary>
+        [ObservableProperty]
+        private bool _useSubpages = Controls.SettingsGroup.SubpagesEnabled;
+
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsCustomAccent))]
         [NotifyPropertyChangedFor(nameof(AccentDescription))]
@@ -1109,6 +1113,20 @@ namespace Arsenal.UI.ViewModels
 
         partial void OnMinimizeToTrayChanged(bool value) { if (_isReady) SavePreferences(); }
         partial void OnStartMinimizedChanged(bool value) { if (_isReady) SavePreferences(); }
+
+        /// <summary>
+        /// Applied to every group that is on screen, at once.
+        /// </summary>
+        /// <remarks>
+        /// No restart and no page rebuild: the control takes the setting itself and the
+        /// live groups re-dress where they stand, including the ones on this very page
+        /// underneath the switch being flipped.
+        /// </remarks>
+        partial void OnUseSubpagesChanged(bool value)
+        {
+            if (!_isReady) return;
+            Controls.SettingsGroup.SetSubpagesEnabled(value);
+        }
 
         partial void OnDisableTransparencyChanged(bool value)
         {

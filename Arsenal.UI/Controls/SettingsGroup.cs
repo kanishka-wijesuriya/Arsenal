@@ -40,6 +40,14 @@ namespace Arsenal.UI.Controls
 
         public SettingsGroup()
         {
+            // Before the first layout rather than on Loaded. The property defaults to
+            // false, so a group that waited would draw its open form for a frame and
+            // then collapse into a card, which reads as the page assembling itself.
+            // AlwaysOpen is not set yet - XAML sets properties after construction - so
+            // the load below corrects a pinned group, and until then its own trigger
+            // already holds it open.
+            ApplyPresentation();
+
             ItemContainerGenerator.StatusChanged += (_, _) =>
                 Dispatcher.BeginInvoke(UpdateDividers, System.Windows.Threading.DispatcherPriority.Loaded);
 
@@ -51,6 +59,13 @@ namespace Arsenal.UI.Controls
             {
                 OpenChanged -= OnOpenChanged;
                 OpenChanged += OnOpenChanged;
+                SubpagesChanged -= ApplyPresentation;
+                SubpagesChanged += ApplyPresentation;
+
+                // Asked on arrival rather than trusted from last time, for the same
+                // reason the open state is: a page is built once and shown again on
+                // every visit, so it carries whatever it was left wearing.
+                ApplyPresentation();
 
                 // Recomputed on arrival rather than trusted from last time. A page is
                 // built once and shown again on every visit, so a group carries
@@ -83,6 +98,7 @@ namespace Arsenal.UI.Controls
                 if (IsLoaded) return;
 
                 OpenChanged -= OnOpenChanged;
+                SubpagesChanged -= ApplyPresentation;
                 if (IsOpen) Close();
                 IsOpen = false;
                 IsDimmed = false;
@@ -160,14 +176,67 @@ namespace Arsenal.UI.Controls
                 new PropertyMetadata(false, OnDrillInChanged));
 
         /// <summary>
-        /// Present this group as a panel that opens, rather than as an open card. Set
-        /// from the theme, not from a page.
+        /// Present this group as a panel that opens, rather than as an open card.
         /// </summary>
+        /// <remarks>
+        /// Not set by a page and no longer set by a theme: it follows
+        /// <see cref="SubpagesEnabled"/>, except on a group the page has pinned open.
+        /// </remarks>
         public bool DrillIn
         {
             get => (bool)GetValue(DrillInProperty);
             set => SetValue(DrillInProperty, value);
         }
+
+        private const string SubpagesKey = "subpages";
+
+        /// <summary>
+        /// Whether a settings group is a place you open, or a card already open.
+        /// </summary>
+        /// <remarks>
+        /// This began as part of the Arsenal theme, which is why every page is written
+        /// as a list of groups with a heading and a description: that reads as a menu of
+        /// destinations when the groups are closed and as a set of sections when they
+        /// are not. Nothing about it is a matter of colour or shape, so it had no
+        /// business being tied to one palette - a person on the light theme who wants a
+        /// page they step into should have it, and a person on the Arsenal theme who
+        /// finds it a click too many should be able to turn it off.
+        ///
+        /// <para>On by default. It is how this application's pages are laid out, and a
+        /// page of a dozen long sections is the thing the arrangement exists to
+        /// avoid.</para>
+        /// </remarks>
+        public static bool SubpagesEnabled { get; private set; } = AppConfig.Get(SubpagesKey, 1) != 0;
+
+        /// <summary>Raised when the setting changes, so live groups can re-dress.</summary>
+        /// <remarks>
+        /// Static for the same reason <see cref="OpenChanged"/> is: the groups on a page
+        /// are siblings in XAML with nothing between them that knows about all of them.
+        /// Subscribed on load and dropped on unload, so it never holds a page.
+        /// </remarks>
+        private static event Action? SubpagesChanged;
+
+        public static void SetSubpagesEnabled(bool enabled)
+        {
+            if (SubpagesEnabled == enabled) return;
+            SubpagesEnabled = enabled;
+            AppConfig.Set(SubpagesKey, enabled ? 1 : 0);
+
+            // Turning it off while inside a subpage has to put the page back together,
+            // or every other group on it stays collapsed with no way to return.
+            if (!enabled) Close();
+
+            SubpagesChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Takes the presentation this group should be wearing.
+        /// </summary>
+        /// <remarks>
+        /// A pinned group never becomes a destination whatever the setting says: it is
+        /// the one control its page exists for, and the page named it as such.
+        /// </remarks>
+        private void ApplyPresentation() => DrillIn = SubpagesEnabled && !AlwaysOpen;
 
         private static void OnDrillInChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {

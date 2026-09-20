@@ -107,7 +107,75 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:SettingsGroup}">
-                    <StackPanel>
+                    <Grid>
+                    <!-- ===== A destination, when subpages are on ===== -->
+                    <!-- The same idea the Arsenal theme has always had, drawn in this
+                         theme's own language rather than its cut corners: a card you
+                         press, with the section's icon, name and description on it and a
+                         chevron saying where pressing it goes. Turning subpages off
+                         collapses this and leaves the open section below, which is what
+                         every theme did before the setting existed. -->
+                    <Border x:Name="Closed"
+                            Visibility="Collapsed"
+                            Background="{DynamicResource SurfaceCard}"
+                            BorderBrush="{DynamicResource StrokeSubtle}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource RadiusCard}"
+                            Padding="18,16"
+                            Cursor="Hand"
+                            SnapsToDevicePixels="True">
+                        <Border.RenderTransform>
+                            <TransformGroup>
+                                <!-- One transform for the hover nudge and one for the
+                                     return from a subpage. Sharing a single transform
+                                     between them means the return animation holds the
+                                     property and the nudge stops working for the rest of
+                                     the session. -->
+                                <TranslateTransform x:Name="ClosedShift"/>
+                                <TranslateTransform x:Name="ClosedReturn"/>
+                            </TransformGroup>
+                        </Border.RenderTransform>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ui:SymbolIcon Grid.Column="0"
+                                           Symbol="{TemplateBinding Icon}"
+                                           FontSize="22"
+                                           Foreground="{DynamicResource AccentPrimary}"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,16,0"
+                                           Visibility="{TemplateBinding Icon, Converter={StaticResource HideWhenNoIcon}}"/>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="{TemplateBinding Header}" Style="{StaticResource SectionTitleStyle}"/>
+                                <TextBlock Text="{TemplateBinding Description}"
+                                           Style="{StaticResource SettingDescriptionStyle}"
+                                           MaxWidth="640" HorizontalAlignment="Left"
+                                           TextTrimming="CharacterEllipsis"
+                                           Visibility="{TemplateBinding Description, Converter={StaticResource HideWhenEmptyText}}"/>
+                            </StackPanel>
+
+                            <ui:SymbolIcon Grid.Column="2" Symbol="ChevronRight24"
+                                           FontSize="16"
+                                           Foreground="{DynamicResource TextTertiary}"
+                                           VerticalAlignment="Center">
+                                <ui:SymbolIcon.RenderTransform>
+                                    <TranslateTransform x:Name="ChevronShift"/>
+                                </ui:SymbolIcon.RenderTransform>
+                            </ui:SymbolIcon>
+                        </Grid>
+                    </Border>
+
+                    <!-- ===== The section itself ===== -->
+                    <StackPanel x:Name="Opened">
+                        <StackPanel.RenderTransform>
+                            <TranslateTransform x:Name="OpenedShift"/>
+                        </StackPanel.RenderTransform>
                         <StackPanel x:Name="HeaderHost" Margin="2,0,2,10">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -147,6 +215,7 @@
                                           Content="{TemplateBinding Footer}"
                                           Margin="0,12,0,0"/>
                     </StackPanel>
+                    </Grid>
 
                     <ControlTemplate.Triggers>
                         <Trigger Property="Header" Value="{x:Null}">
@@ -160,6 +229,91 @@
                         </Trigger>
                         <Trigger Property="HeaderContent" Value="{x:Null}">
                             <Setter TargetName="HeaderContentHost" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+
+                        <!-- Subpages on: the section becomes a card you press, and its
+                             own heading goes away because the card is already carrying
+                             it. Declared before the IsOpen trigger so opening one wins. -->
+                        <Trigger Property="DrillIn" Value="True">
+                            <Setter TargetName="Closed" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="Opened" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+
+                        <!-- The panel leans toward the pointer and its chevron moves the
+                             way pressing it will take the page. -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="DrillIn" Value="True"/>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Closed" Property="Background" Value="{DynamicResource SurfaceCardHover}"/>
+                            <Setter TargetName="Closed" Property="BorderBrush" Value="{DynamicResource AccentPrimary}"/>
+                            <MultiTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="ClosedShift"
+                                                         Storyboard.TargetProperty="X" To="5"
+                                                         Duration="0:0:0.16"/>
+                                        <DoubleAnimation Storyboard.TargetName="ChevronShift"
+                                                         Storyboard.TargetProperty="X" To="4"
+                                                         Duration="0:0:0.16"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </MultiTrigger.EnterActions>
+                            <MultiTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="ClosedShift"
+                                                         Storyboard.TargetProperty="X" To="0"
+                                                         Duration="0:0:0.16"/>
+                                        <DoubleAnimation Storyboard.TargetName="ChevronShift"
+                                                         Storyboard.TargetProperty="X" To="0"
+                                                         Duration="0:0:0.16"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </MultiTrigger.ExitActions>
+                        </MultiTrigger>
+
+                        <!-- Opening: the subpage arrives from the right, the direction
+                             the chevron pointed. Coming back the list falls in from the
+                             left. Both stop rather than hold, so neither keeps the
+                             property the hover nudge needs. -->
+                        <Trigger Property="IsOpen" Value="True">
+                            <Setter TargetName="Closed" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="Opened" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="HeaderHost" Property="Visibility" Value="Collapsed"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard FillBehavior="Stop">
+                                        <DoubleAnimation Storyboard.TargetName="OpenedShift"
+                                                         Storyboard.TargetProperty="X" From="34" To="0"
+                                                         Duration="0:0:0.22"/>
+                                        <DoubleAnimation Storyboard.TargetName="Opened"
+                                                         Storyboard.TargetProperty="Opacity" From="0" To="1"
+                                                         Duration="0:0:0.22"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard FillBehavior="Stop">
+                                        <DoubleAnimation Storyboard.TargetName="ClosedReturn"
+                                                         Storyboard.TargetProperty="X" From="-26" To="0"
+                                                         Duration="0:0:0.22"/>
+                                        <DoubleAnimation Storyboard.TargetName="Closed"
+                                                         Storyboard.TargetProperty="Opacity" From="0" To="1"
+                                                         Duration="0:0:0.22"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+
+                        <!-- A group its page has pinned is never a destination, and
+                             keeps its own heading because nothing else names it. -->
+                        <Trigger Property="AlwaysOpen" Value="True">
+                            <Setter TargetName="Closed" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="Opened" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="HeaderHost" Property="Visibility" Value="Visible"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

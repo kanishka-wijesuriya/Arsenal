@@ -193,8 +193,10 @@
          without any page having been navigated to.
          ===================================================================== -->
 
+    <!-- No DrillIn setter. Subpages are a setting now, applied to whichever theme is
+         on, and the control takes it from there; a setter here would have pinned it on
+         for this theme and left it off for the others. -->
     <Style TargetType="{x:Type controls:SettingsGroup}">
-        <Setter Property="DrillIn" Value="True"/>
         <Setter Property="Margin" Value="0,0,0,10"/>
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="ItemsPanel">
@@ -472,6 +474,19 @@
                         <Trigger Property="Header" Value="">
                             <Setter TargetName="Closed" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="Opened" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+
+                        <!-- Subpages turned off. This template was written when the
+                             Arsenal theme always had them, so the closed panel was its
+                             resting state; without this the section would sit there as a
+                             card that looks pressable and does nothing, because the
+                             control refuses to open a group that is not a destination.
+                             The heading comes back with it, since the card that was
+                             carrying the name has gone. -->
+                        <Trigger Property="DrillIn" Value="False">
+                            <Setter TargetName="Closed" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="Opened" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="PinnedHeader" Property="Visibility" Value="Visible"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

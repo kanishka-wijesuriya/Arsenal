@@ -70,6 +70,11 @@
                     </WrapPanel>
                 </controls:SettingsRow>
 
+                <controls:SettingsRow Header="Open sections as subpages"
+                                      Description="Each section on a page becomes a card you press, and opens onto a page of its own with its name in the title bar. Turn this off to show every section at once, down one long page. Applies to whichever theme you are using.">
+                    <ui:ToggleSwitch IsChecked="{Binding UseSubpages, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
                 <controls:SettingsRow Header="Disable transparency"
                                       Description="Turns off the Mica backdrop for Arsenal only and paints the window on flat colours. Windows transparency elsewhere is unaffected.">
                     <ui:ToggleSwitch IsChecked="{Binding DisableTransparency, Mode=TwoWay}"/>
