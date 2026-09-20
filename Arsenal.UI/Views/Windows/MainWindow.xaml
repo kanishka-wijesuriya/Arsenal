@@ -116,43 +116,6 @@
                                Click="SearchButton_Click"
                                Icon="{ui:SymbolIcon Search24}"
                                ToolTip="Search every setting and command (Ctrl+K)"/>
-
-                    <!-- Where you are, in the bar rather than on the page. A subpage
-                         used to state its own name and carry its own way back, which
-                         put the same words twice on screen and a second back control
-                         two inches below the one in this bar.
-
-                         Not hit testable, deliberately: this sits in the window's drag
-                         region, and text that answers the mouse is text you cannot
-                         pick the window up by. -->
-                    <StackPanel x:Name="Breadcrumb" Orientation="Horizontal"
-                                VerticalAlignment="Center" Margin="12,0,0,0"
-                                IsHitTestVisible="False">
-                        <TextBlock x:Name="BreadcrumbRoot"
-                                   FontFamily="{DynamicResource FontDisplay}"
-                                   FontSize="13.5" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextPrimary}"
-                                   VerticalAlignment="Center"/>
-
-                        <!-- The subpage. Smaller than the page that owns it, so the
-                             pair reads as one path rather than as two titles. -->
-                        <StackPanel x:Name="BreadcrumbTail" Orientation="Horizontal"
-                                    VerticalAlignment="Center"
-                                    Visibility="Collapsed" Opacity="0">
-                            <StackPanel.RenderTransform>
-                                <TranslateTransform x:Name="BreadcrumbTailShift" X="-10"/>
-                            </StackPanel.RenderTransform>
-
-                            <TextBlock Text="&#x203A;" FontSize="13"
-                                       Margin="7,0,7,0" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource TextTertiary}"/>
-                            <TextBlock x:Name="BreadcrumbLeaf"
-                                       FontSize="12" FontWeight="Medium"
-                                       Foreground="{DynamicResource TextSecondary}"
-                                       VerticalAlignment="Center"
-                                       TextTrimming="CharacterEllipsis" MaxWidth="320"/>
-                        </StackPanel>
-                    </StackPanel>
                 </StackPanel>
             </ui:TitleBar.Header>
 
@@ -189,6 +152,60 @@
                 </StackPanel>
             </ui:TitleBar.TrailingContent>
         </ui:TitleBar>
+
+        <!-- Where you are, shown only while a subpage is open. On a top-level page the
+             sidebar's own selection and the page's own title already say it, and a bar
+             that repeated them put the same words on screen twice.
+
+             Outside the title bar's header on purpose. In the header it sat wherever
+             the toolbar happened to end, which is over the seam between the navigation
+             column and the page; here it is placed against the left edge of the page's
+             own content and follows the pane as it opens and closes - see
+             PlaceBreadcrumb.
+
+             Declared after the bar so it draws over it, and not hit testable: this sits
+             in the window's drag region, and text that answers the mouse is text you
+             cannot pick the window up by. -->
+        <!-- A grid rather than a horizontal stack: a stack measures its children against
+             infinity, so neither segment would ever trim and a long pair of names would
+             simply run on under the status pills. Here the leading segments take what
+             they need and the trailing one takes the rest, which is what makes the
+             ellipsis appear where the room actually runs out. -->
+        <Grid x:Name="Breadcrumb"
+              Grid.Row="0"
+              Panel.ZIndex="1"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Center"
+              IsHitTestVisible="False"
+              Visibility="Collapsed"
+              Opacity="0">
+            <Grid.RenderTransform>
+                <TranslateTransform x:Name="BreadcrumbShift" X="-10"/>
+            </Grid.RenderTransform>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- The page that owns the subpage, quieter than the subpage itself: the
+                 pair reads as one path rather than as two titles. -->
+            <TextBlock x:Name="BreadcrumbRoot" Grid.Column="0"
+                       FontSize="12.5" FontWeight="Medium"
+                       Foreground="{DynamicResource TextSecondary}"
+                       VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" MaxWidth="260"/>
+
+            <TextBlock Grid.Column="1" Text="&#x203A;" FontSize="12.5"
+                       Margin="7,0,7,0" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextTertiary}"/>
+
+            <TextBlock x:Name="BreadcrumbLeaf" Grid.Column="2"
+                       FontSize="12.5" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimary}"
+                       VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis"/>
+        </Grid>
 
         <!-- Spans both rows so the navigation column is the full height of the window
              and its content area reaches up behind the title bar. The bar itself is
