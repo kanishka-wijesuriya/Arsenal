@@ -83,8 +83,43 @@ public class Startup
         }
     }
 
+    /// <summary>
+    /// Whether the process running this code is Arsenal itself.
+    /// </summary>
+    /// <remarks>
+    /// Arsenal.Core is linked by the smoke harnesses in tools/ as well as by the
+    /// application, and they run the same deferred startup path. Everything else here
+    /// is harmless from a harness; rescheduling is not, because it points the user's
+    /// Windows sign-in task at whatever executable happens to be running. A smoke run
+    /// did exactly that: the task that starts Arsenal at sign-in was left pointing at
+    /// ThemeSmoke.exe, which would have started a test harness instead of the
+    /// application at the next sign-in.
+    /// </remarks>
+    private static bool IsArsenalItself()
+    {
+        try
+        {
+            return string.Equals(
+                Path.GetFileNameWithoutExtension(strExeFilePath),
+                "Arsenal",
+                StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception e)
+        {
+            Logger.WriteLine("Could not identify the running executable: " + e.Message);
+            return false;
+        }
+    }
+
     public static void StartupCheck()
     {
+        // A harness may run this path. It may not rewrite where Windows starts Arsenal.
+        if (!IsArsenalItself())
+        {
+            Logger.WriteLine("Startup task left alone: " + strExeFilePath + " is not Arsenal.");
+            return;
+        }
+
         using (TaskService taskService = new TaskService())
         {
             var task = GetUserTask(taskService);
@@ -287,6 +322,14 @@ public class Startup
 
     public static void Schedule()
     {
+        // The same guard as StartupCheck, and for the same reason: this writes the
+        // running executable's path into the sign-in task, and a harness linking
+        // Arsenal.Core is not the thing the user wants started at sign-in.
+        if (!IsArsenalItself())
+        {
+            Logger.WriteLine("Startup task not written: " + strExeFilePath + " is not Arsenal.");
+            return;
+        }
 
         using (TaskDefinition td = TaskService.Instance.NewTask())
         {
