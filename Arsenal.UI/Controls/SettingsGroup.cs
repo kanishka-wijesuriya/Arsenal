@@ -277,9 +277,11 @@ namespace Arsenal.UI.Controls
         /// The page this group sits on, used to tell siblings from strangers. The
         /// nearest UserControl ancestor is the page: every page in the app is one.
         /// </summary>
-        private DependencyObject? PageRoot()
+        private DependencyObject? PageRoot() => PageRootOf(this);
+
+        private static DependencyObject? PageRootOf(DependencyObject? from)
         {
-            DependencyObject? node = this;
+            DependencyObject? node = from;
             DependencyObject? page = null;
             while (node is not null)
             {
@@ -288,6 +290,74 @@ namespace Arsenal.UI.Controls
                     ?? LogicalTreeHelper.GetParent(node);
             }
             return page;
+        }
+
+        /// <summary>
+        /// Marks page content that is not a group but belongs to the list of groups, so
+        /// it stands aside while one of them is open.
+        /// </summary>
+        /// <remarks>
+        /// Groups step aside for each other on their own. Anything else a page puts
+        /// among them does not: the status tiles above Battery's groups stayed on screen
+        /// inside every subpage, over a heading that had been retitled to name the
+        /// subpage, so the page read as a subpage with another page's summary stuck to
+        /// the top of it.
+        ///
+        /// <para>Set this on the container, not on each tile, and only on content whose
+        /// Visibility is not otherwise bound: this writes that property directly, and a
+        /// local value would win over a page's own binding. Groups use coercion instead,
+        /// which is worth its complexity there because pages do bind their visibility to
+        /// the hardware they need.</para>
+        /// </remarks>
+        public static readonly DependencyProperty HideInSubpageProperty =
+            DependencyProperty.RegisterAttached(
+                "HideInSubpage", typeof(bool), typeof(SettingsGroup),
+                new PropertyMetadata(false, OnHideInSubpageChanged));
+
+        public static void SetHideInSubpage(DependencyObject element, bool value)
+            => element.SetValue(HideInSubpageProperty, value);
+
+        public static bool GetHideInSubpage(DependencyObject element)
+            => (bool)element.GetValue(HideInSubpageProperty);
+
+        /// <summary>
+        /// The handler each marked element listens with, so it can be taken off again.
+        /// </summary>
+        /// <remarks>
+        /// Keyed weakly on the element. The event is static and outlives every page, and
+        /// a strong table here would hold each page that ever carried such content for
+        /// the life of the process - the tray release exists to avoid exactly that.
+        /// </remarks>
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<FrameworkElement, Action<SettingsGroup?>> _hideHandlers = new();
+
+        private static void OnHideInSubpageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not FrameworkElement element) return;
+
+            if (_hideHandlers.TryGetValue(element, out var existing))
+            {
+                OpenChanged -= existing;
+                _hideHandlers.Remove(element);
+            }
+
+            if (!(bool)e.NewValue) return;
+
+            void Apply(SettingsGroup? open)
+            {
+                // Only for the page this content is on. Two pages are alive at once
+                // during a navigation transition, and the one being left must not be
+                // rearranged on its way out - the same rule the groups follow.
+                bool hidden = open is not null
+                    && ReferenceEquals(PageRootOf(element), PageRootOf(open));
+                element.Visibility = hidden ? Visibility.Collapsed : Visibility.Visible;
+            }
+
+            _hideHandlers.Add(element, Apply);
+            OpenChanged += Apply;
+
+            // Whatever is open right now, not whatever was open when this page was last
+            // built: a cached page comes back carrying the state it was left in.
+            Apply(_open);
         }
 
         public override void OnApplyTemplate()

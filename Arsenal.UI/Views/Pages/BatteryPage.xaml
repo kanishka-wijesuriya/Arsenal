@@ -15,7 +15,10 @@
                 </StackPanel>
             </Grid>
 
-            <controls:ResponsiveGrid MinItemWidth="200" MaxColumns="3" Margin="-5,0,-5,15">
+            <!-- Stands aside with the groups when one of them is opened. These summarise
+                 the page, and a subpage is not this page. -->
+            <controls:ResponsiveGrid MinItemWidth="200" MaxColumns="3" Margin="-5,0,-5,15"
+                                     controls:SettingsGroup.HideInSubpage="True">
                 <controls:MetricTile Icon="BatteryCharge24"
                                      Label="Charge"
                                      Value="{Binding BatteryPercent, StringFormat='{}{0}%'}"
