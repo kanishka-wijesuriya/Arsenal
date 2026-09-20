@@ -355,6 +355,9 @@ namespace Arsenal.UI.Views.Windows
         private void BreadcrumbRootLink_Click(object sender, RoutedEventArgs e)
             => Controls.SettingsGroup.Close();
 
+        private void SubpageBackButton_Click(object sender, RoutedEventArgs e)
+            => Controls.SettingsGroup.Close();
+
         private void NavigateForwardButton_Click(object sender, RoutedEventArgs e) => GoForward();
 
         /// <summary>
@@ -634,6 +637,9 @@ namespace Arsenal.UI.Views.Windows
         /// because each faded to nothing and then swapped its own words, the header spent
         /// a moment empty in the middle of it. One block, one motion, and the words are
         /// exchanged while nothing is showing.</para>
+        ///
+        /// <para>The way back out sits above the title, arriving and leaving with the
+        /// words rather than on a clock of its own.</para>
         /// </remarks>
         private void ShowSubpageHeader(Controls.SettingsGroup? group, bool animate)
         {
@@ -645,24 +651,99 @@ namespace Arsenal.UI.Views.Windows
                 ? null
                 : string.IsNullOrWhiteSpace(group?.Description) ? subtitle.Value.Original : group!.Description!;
 
+            // The page the way back leads to, read now rather than when it is pressed:
+            // this is the page the subpage was opened from, and it is what the control
+            // has to be labelled with.
+            string? backTo = string.IsNullOrWhiteSpace(group?.Header)
+                ? null
+                : PageDisplayName(_viewModel.ActivePageTag ?? "Home");
+
+            FrameworkElement? block = HeaderBlock(title.Line, subtitle?.Line);
+
             bool changes = !string.Equals(title.Line.Text, wantedTitle, StringComparison.Ordinal)
                 || (subtitle is { } current && !string.Equals(current.Line.Text, wantedSubtitle, StringComparison.Ordinal));
             if (!changes) return;
+
+            // Taken now, not read back out of the host inside Swap: an animated swap runs
+            // that a tenth of a second later, by which time the host can have been
+            // emptied by the window going to the tray.
+            UIElement page = PageContentHost.Children[0];
 
             void Swap()
             {
                 title.Line.Text = wantedTitle;
                 if (subtitle is { } line && wantedSubtitle is not null) line.Line.Text = wantedSubtitle;
+                ShowSubpageBackButton(page, block as System.Windows.Controls.Panel, title.Line, backTo);
             }
 
-            FrameworkElement? block = animate ? HeaderBlock(title.Line, subtitle?.Line) : null;
-            if (block is null)
+            if (!animate || block is null)
             {
                 Swap();
                 return;
             }
 
             ReplaceHeaderWords(block, Swap, ++_headerSwap, () => _headerSwap);
+        }
+
+        /// <summary>
+        /// The way back out of a subpage, kept per page and shown above its title.
+        /// </summary>
+        /// <remarks>
+        /// One per page, made when that page first needs one and then reused, so the
+        /// button does not churn on every trip in and out of a group. Keyed on the page
+        /// exactly as the header lines are, and dropped with them when the window
+        /// returns to the tray.
+        /// </remarks>
+        private readonly Dictionary<UIElement, System.Windows.Controls.Button> _subpageBackButtons = new();
+
+        /// <summary>
+        /// Puts the control above the page's title, or takes it away.
+        /// </summary>
+        /// <remarks>
+        /// Inserted into the page's own header block rather than written into a dozen
+        /// page headers by hand, for the same reason the title and description are found
+        /// by walking the page: the alternative is the same four lines of XAML repeated
+        /// on every page that owns a group, each free to drift from the others.
+        ///
+        /// <para>Inside the block that fades, deliberately, so it arrives with the title
+        /// it belongs to. A control appearing at full strength above a header still
+        /// dissolving would be the one thing on screen not taking part in the change.
+        /// </para>
+        /// </remarks>
+        private void ShowSubpageBackButton(UIElement page, System.Windows.Controls.Panel? header, System.Windows.Controls.TextBlock title, string? backTo)
+        {
+            if (header is null) return;
+
+            if (backTo is null)
+            {
+                if (_subpageBackButtons.TryGetValue(page, out var open))
+                    header.Children.Remove(open);
+                return;
+            }
+
+            if (!_subpageBackButtons.TryGetValue(page, out var button))
+            {
+                button = new System.Windows.Controls.Button
+                {
+                    Style = TryFindResource("SubpageBackButtonStyle") as Style
+                };
+                button.Click += SubpageBackButton_Click;
+                _subpageBackButtons[page] = button;
+            }
+
+            // "Go back", not the page's name. The name is already on screen twice by
+            // the time this is showing - in the path above it and on the sidebar item
+            // still marked active - and a third copy read as a heading rather than as
+            // something to press. The tooltip still says where it goes.
+            button.Content = "Go back";
+            button.ToolTip = $"Back to {backTo}";
+
+            // Directly above the title, wherever the title happens to sit: a page may
+            // carry something else in its header block, and index 0 is not reliably the
+            // line this belongs over.
+            int at = header.Children.IndexOf(title);
+            if (header.Children.Contains(button)) return;
+            header.Children.Insert(at < 0 ? 0 : at, button);
         }
 
         /// <summary>
@@ -905,6 +986,9 @@ namespace Arsenal.UI.Views.Windows
             // originals are read back off the XAML when the pages are rebuilt.
             _pageTitles.Clear();
             _pageSubtitles.Clear();
+
+            foreach (var button in _subpageBackButtons.Values) button.Click -= SubpageBackButton_Click;
+            _subpageBackButtons.Clear();
 
             _pageContentReleased = true;
 

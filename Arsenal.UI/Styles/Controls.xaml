@@ -646,6 +646,15 @@
         <Setter Property="Cursor" Value="Hand"/>
     </Style>
 
+    <!-- ===================================================================
+         Ways back out of a subpage.
+
+         Two of them, for the same step, because they answer different questions.
+         The path in the title bar says where you are and lets you press the part
+         of it you want to return to; the control above the page title is the one
+         you find without looking up, at the top of the thing you are reading.
+         =================================================================== -->
+
     <!-- The page half of the title bar's path. A button rather than text, but it
          has to stay looking like the path: no chrome at rest, and only the ink
          changes under the pointer. Anything more - a fill, a border - would read
@@ -675,6 +684,69 @@
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter Property="Foreground" Value="{DynamicResource AccentPrimary}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Floats above the page title while a subpage is open, naming the page it
+         goes back to. Quiet by design: it is a step back up, not an action on the
+         page, and it shares the top of the window with a title three times its
+         size.
+
+         It costs no height. Its own height, its negative top margin and its
+         bottom margin sum to zero, so a vertical stack gives it no room and
+         places the title exactly where the title sits on every other page - the
+         button is then drawn 22px above that, in the padding the page already
+         had over its heading. Taking real space instead pushed the title, the
+         description and every card below them down the moment a subpage opened,
+         and back up when it closed, which made opening a group look like the
+         page had been rebuilt rather than drilled into.
+
+         The arithmetic is why Height is set here rather than left to the
+         content: a measured height and a fixed margin would only cancel by
+         luck, and any drift shows up as the whole page moving. -->
+    <Style x:Key="SubpageBackButtonStyle" TargetType="{x:Type Button}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="Height" Value="20"/>
+        <!-- -6 left so the arrow's ink starts on the same line as the title below
+             it, rather than the button's box doing so. -22 top and 2 bottom
+             against a height of 20: nothing. -->
+        <Setter Property="Margin" Value="-6,-22,0,2"/>
+        <Setter Property="Padding" Value="6,0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="Chrome"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{DynamicResource RadiusControl}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="ArrowLeft24" FontSize="13"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,6,0"
+                                           Foreground="{TemplateBinding Foreground}"/>
+                            <ContentPresenter VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SurfaceCardHover}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SurfaceSelected}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
