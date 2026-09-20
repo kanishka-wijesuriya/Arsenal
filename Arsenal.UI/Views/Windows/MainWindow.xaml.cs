@@ -557,8 +557,12 @@ namespace Arsenal.UI.Views.Windows
         /// reach: it trims itself at that point instead of running under the pills. The
         /// pills are a little narrower than this at most readings, which leaves a gap
         /// rather than a collision when they are at their widest.
+        ///
+        /// <para>Raised when the elevation pill joined the row. It has to clear the
+        /// widest the pills ever get, which is the standard-user wording rather than the
+        /// shorter one an elevated instance shows.</para>
         /// </remarks>
-        private const double BreadcrumbRightReserve = 520d;
+        private const double BreadcrumbRightReserve = 600d;
 
         /// <summary>
         /// Lines the path up with the left edge of the page's own content.

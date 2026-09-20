@@ -31,6 +31,32 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty]
         private string _currentGpuStatus = "Standard";
 
+        /// <summary>
+        /// Whether this instance is running with administrator rights.
+        /// </summary>
+        /// <remarks>
+        /// Asked once and never again. A process cannot gain or lose its elevation while
+        /// it is running - restarting as administrator is a new process - so there is
+        /// nothing to watch for and nothing that can change this while the window is
+        /// open.
+        /// </remarks>
+        public bool IsElevated { get; } = ProcessHelper.IsUserAdministrator();
+
+        public string ElevationLabel => IsElevated ? "ADMIN" : "STANDARD";
+
+        /// <summary>
+        /// What being on one side of this actually costs, rather than the word again.
+        /// </summary>
+        /// <remarks>
+        /// Nearly everything Arsenal does works either way, because the ACPI calls it
+        /// makes go through a driver that does not care. The things that do care are
+        /// machine-wide Windows settings and the scheduled tasks, which is a short and
+        /// worth naming list - otherwise the pill reads as a warning about nothing.
+        /// </remarks>
+        public string ElevationDetail => IsElevated
+            ? "Running as administrator. Machine-wide settings, the startup task and Windows smart charging can all be written."
+            : "Running as a standard user. Everything on this machine's hardware works; reporting the charge limit to Windows and scheduling Arsenal at sign-in need administrator rights.";
+
         [ObservableProperty]
         private bool _isCommandPaletteOpen = false;
 

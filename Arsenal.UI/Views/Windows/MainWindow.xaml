@@ -149,6 +149,25 @@
                     <Border Style="{StaticResource CompactStatusPillStyle}" ToolTip="Battery charge">
                         <TextBlock Text="{Binding Telemetry.BatteryPercentage, StringFormat='{}BAT {0}%'}" Style="{StaticResource PillTextStyle}"/>
                     </Border>
+
+                    <!-- Which rights this instance is running with. Last in the row
+                         because it is the one value here that cannot change while the
+                         window is open: a process does not gain or lose elevation, and
+                         the three readings to its left move every second.
+
+                         A shield rather than a coloured dot. Elevated is not a good
+                         state or a bad one - almost everything works either way - so it
+                         is stated in the same ink as the temperatures, and the tooltip
+                         carries what actually differs. -->
+                    <Border Style="{StaticResource CompactStatusPillStyle}"
+                            ToolTip="{Binding ElevationDetail}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="ShieldCheckmark24" FontSize="12"
+                                           Margin="0,0,5,0" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextTertiary}"/>
+                            <TextBlock Text="{Binding ElevationLabel}" Style="{StaticResource PillTextStyle}"/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </ui:TitleBar.TrailingContent>
         </ui:TitleBar>
