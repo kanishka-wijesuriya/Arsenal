@@ -65,7 +65,8 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
     private const long TicksPerSecond = 10_000_000;
 
     private static readonly object StartupGate = new();
-    private static int _startupCount;
+    private static bool _platformStarted;
+    private static bool _platformUnavailable;
 
     private readonly MF.IMFTransform _transform;
     private readonly MediaFoundationEventPump? _pump;
@@ -203,7 +204,6 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
         catch (Exception ex)
         {
             Logger.WriteLine("Remote encoder enumeration: " + ex.Message);
-            Shutdown();
             return null;
         }
         finally
@@ -283,6 +283,7 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
             }
 
             configured = true;
+
             Logger.WriteLine($"Remote encoder: {name} producing {codec} at {width}x{height}, {frameRate} fps, {bitrateKbps} kbps"
                 + (async ? " (hardware, asynchronous)" : " (synchronous)"));
             return encoder;
@@ -813,27 +814,47 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
     /// Two sessions at once would otherwise have the first one to finish shut the
     /// platform down underneath the second.
     /// </remarks>
+    /// <summary>
+    /// Starts the Media Foundation platform, once, for the life of the process.
+    /// </summary>
+    /// <remarks>
+    /// There is deliberately no matching shutdown. MFShutdown tears the platform down
+    /// under everything still using it - transforms that are alive, work queue items not
+    /// yet run, async callbacks armed and not yet delivered - and reports nothing when
+    /// it does. It corrupts the heap, and the process dies later somewhere unrelated.
+    ///
+    /// <para>This was counted, and the count was wrong: the enumeration took one
+    /// reference for a whole run of candidates while every rejected candidate gave one
+    /// back as it was disposed, so the first candidate to fail closed the platform that
+    /// the rest of the loop was still enumerating from. Changing quality re-runs that
+    /// enumeration, which is why it showed up there.</para>
+    ///
+    /// <para>Correcting the count was the obvious repair and it is not the one taken
+    /// here, because a correct count still leaves the platform closing and reopening
+    /// around every session, and every one of those closes has to be right about
+    /// everything the platform still owns. Started once and left running, there is
+    /// nothing to be right about. It costs a platform that stays initialised in a tray
+    /// application that is going to open another session anyway.</para>
+    /// </remarks>
     private static bool Startup()
     {
         lock (StartupGate)
         {
-            if (_startupCount > 0)
-            {
-                _startupCount++;
-                return true;
-            }
-            if (MF.MFStartup(MF.MF_VERSION, MF.MFSTARTUP_LITE) != MF.S_OK) return false;
-            _startupCount = 1;
-            return true;
-        }
-    }
+            if (_platformStarted) return true;
 
-    private static void Shutdown()
-    {
-        lock (StartupGate)
-        {
-            if (_startupCount == 0) return;
-            if (--_startupCount == 0) MF.MFShutdown();
+            // A machine without Media Foundation is not going to grow it; asking again
+            // on every session would be a failed COM call per candidate per attempt.
+            if (_platformUnavailable) return false;
+
+            if (MF.MFStartup(MF.MF_VERSION, MF.MFSTARTUP_LITE) != MF.S_OK)
+            {
+                _platformUnavailable = true;
+                Logger.WriteLine("Media Foundation did not start; remote sessions will use picture tiles.");
+                return false;
+            }
+
+            _platformStarted = true;
+            return true;
         }
     }
 
@@ -855,7 +876,6 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
 
         try { Marshal.ReleaseComObject(_transform); }
         catch (Exception ex) { Logger.WriteLine("Remote encoder release: " + ex.Message); }
-
-        Shutdown();
     }
+
 }
