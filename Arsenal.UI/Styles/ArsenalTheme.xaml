@@ -337,8 +337,19 @@
 
                     <ControlTemplate.Triggers>
                         <!-- The panel leans toward the pointer and its chevron moves the
-                             way pressing it will take the page. -->
-                        <Trigger SourceName="Closed" Property="IsMouseOver" Value="True">
+                             way pressing it will take the page.
+
+                             Keyed on the group rather than on the panel inside it. As
+                             SourceName="Closed" the setters below still ran - the card
+                             lit up - but the storyboards did not, so the card changed
+                             colour under the pointer and never moved, which is the half
+                             of the gesture that says it leads somewhere. The row
+                             template a few lines up animates a named transform the same
+                             way and has always worked; the trigger there names no
+                             source. While the group is closed it is nothing but this
+                             panel, so hovering one is hovering the other, and while it
+                             is open the panel is collapsed and has nothing to show. -->
+                        <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Closed" Property="Background" Value="{DynamicResource SurfaceCardHover}"/>
                             <Setter TargetName="Closed" Property="BorderBrush" Value="{DynamicResource AccentPrimary}"/>
                             <Trigger.EnterActions>
