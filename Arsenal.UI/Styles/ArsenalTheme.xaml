@@ -216,8 +216,24 @@
                                                 BorderThickness="{DynamicResource BorderWeight}"
                                                 Padding="18,16"
                                                 Cursor="Hand">
+                            <!-- Two transforms, not one, because two different things
+                                 move this card and they must not share a property.
+
+                                 The hover nudge and the card's return from a subpage
+                                 both used to animate one TranslateTransform. Coming back
+                                 from a subpage left the return animation holding X at
+                                 its final value, and a held animation outranks whatever
+                                 is applied to that property afterwards - so the card you
+                                 had just visited never nudged again for the rest of the
+                                 session, while every card you had not opened still did.
+
+                                 Split, each animation owns a property nothing else
+                                 writes, and the two compose into one movement. -->
                             <controls:AngularBorder.RenderTransform>
-                                <TranslateTransform x:Name="ClosedShift"/>
+                                <TransformGroup>
+                                    <TranslateTransform x:Name="ClosedShift"/>
+                                    <TranslateTransform x:Name="ClosedReturn"/>
+                                </TransformGroup>
                             </controls:AngularBorder.RenderTransform>
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -388,9 +404,15 @@
                         <Trigger Property="IsOpen" Value="True">
                             <Setter TargetName="Closed" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="Opened" Property="Visibility" Value="Visible"/>
+                            <!-- Every animation here ends on the value the property
+                                 already holds and then lets go of it - FillBehavior
+                                 Stop, not the default. Each of these runs once and is
+                                 finished; holding the final value forever costs nothing
+                                 visibly and quietly takes the property away from
+                                 whatever animates it next. -->
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
-                                    <Storyboard>
+                                    <Storyboard FillBehavior="Stop">
                                         <DoubleAnimation Storyboard.TargetName="OpenedShift"
                                                          Storyboard.TargetProperty="X" From="34" To="0"
                                                          Duration="{StaticResource PageDuration}"
@@ -403,11 +425,12 @@
                                 </BeginStoryboard>
                             </Trigger.EnterActions>
                             <!-- Coming back the list falls in from the left, the
-                                 opposite of the way it left. -->
+                                 opposite of the way it left. On its own transform, so
+                                 this never touches the one the hover nudge uses. -->
                             <Trigger.ExitActions>
                                 <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="ClosedShift"
+                                    <Storyboard FillBehavior="Stop">
+                                        <DoubleAnimation Storyboard.TargetName="ClosedReturn"
                                                          Storyboard.TargetProperty="X" From="-26" To="0"
                                                          Duration="{StaticResource PageDuration}"
                                                          EasingFunction="{StaticResource PageEase}"/>
