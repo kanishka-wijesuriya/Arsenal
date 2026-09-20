@@ -113,9 +113,39 @@
 
             </controls:SettingsGroup>
 
-            <!-- Arsenal is free and stays free. The ask sits here rather than anywhere
-                 the app is actually being used. Nothing is collected in the app, and no
-                 feature is withheld from anyone who scrolls past it.
+            <!-- Arsenal is GPL-3.0, and the licence asks that recipients be told so and
+                 be able to reach the source. This group is that notice, and the credit
+                 to G-Helper belongs beside it rather than tucked away: the hardware
+                 layer below this interface is that project's work. -->
+            <controls:SettingsGroup Header="Licence and source" Icon="Book24"
+                                    Description="Arsenal is free software, and its hardware layer is G-Helper.">
+
+                <controls:SettingsRow Header="GNU General Public License v3"
+                                      Icon="DocumentBulletList24"
+                                      Description="Arsenal may be used, studied, changed and shared. Anything you pass on carries the same freedoms, and comes with no warranty.">
+                    <ui:Button Content="Read the licence" Command="{Binding OpenLicenseCommand}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Source code"
+                                      Icon="Code24"
+                                      Description="The complete corresponding source for this exact build. You are entitled to it, and you can rebuild this binary from it.">
+                    <ui:Button Content="View source" Command="{Binding OpenSourceCommand}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Built on G-Helper by @seerge"
+                                      Icon="Heart24"
+                                      Description="Everything Arsenal knows about ASUS hardware (ACPI, fans, GPU modes, the panel, battery and lighting) comes from G-Helper. Arsenal exists because that work came first, and is GPL-3.0 because it is.">
+                    <ui:Button Content="Visit G-Helper" Command="{Binding OpenUpstreamCommand}"/>
+                </controls:SettingsRow>
+
+            </controls:SettingsGroup>
+
+            <!-- Arsenal is free and stays free. The ask sits at the very end of the last
+                 page rather than anywhere the app is actually being used, and after the
+                 licence rather than before it: the notice saying the software is free is
+                 the honest thing to read first, and asking for money above it made the
+                 two look connected. Nothing is collected in the app, and no feature is
+                 withheld from anyone who scrolls past this.
 
                  A card rather than a settings group: a group of one row is a section
                  heading over a single control, and in a theme that files settings one
@@ -145,33 +175,6 @@
                                Appearance="Primary" Icon="{ui:SymbolIcon Heart24}"/>
                 </Grid>
             </Border>
-
-            <!-- Arsenal is GPL-3.0, and the licence asks that recipients be told so and
-                 be able to reach the source. This group is that notice, and the credit
-                 to G-Helper belongs beside it rather than tucked away: the hardware
-                 layer below this interface is that project's work. -->
-            <controls:SettingsGroup Header="Licence and source" Icon="Book24"
-                                    Description="Arsenal is free software, and its hardware layer is G-Helper.">
-
-                <controls:SettingsRow Header="GNU General Public License v3"
-                                      Icon="DocumentBulletList24"
-                                      Description="Arsenal may be used, studied, changed and shared. Anything you pass on carries the same freedoms, and comes with no warranty.">
-                    <ui:Button Content="Read the licence" Command="{Binding OpenLicenseCommand}"/>
-                </controls:SettingsRow>
-
-                <controls:SettingsRow Header="Source code"
-                                      Icon="Code24"
-                                      Description="The complete corresponding source for this exact build. You are entitled to it, and you can rebuild this binary from it.">
-                    <ui:Button Content="View source" Command="{Binding OpenSourceCommand}"/>
-                </controls:SettingsRow>
-
-                <controls:SettingsRow Header="Built on G-Helper by @seerge"
-                                      Icon="Heart24"
-                                      Description="Everything Arsenal knows about ASUS hardware (ACPI, fans, GPU modes, the panel, battery and lighting) comes from G-Helper. Arsenal exists because that work came first, and is GPL-3.0 because it is.">
-                    <ui:Button Content="Visit G-Helper" Command="{Binding OpenUpstreamCommand}"/>
-                </controls:SettingsRow>
-
-            </controls:SettingsGroup>
 
         </StackPanel>
     </ScrollViewer>
