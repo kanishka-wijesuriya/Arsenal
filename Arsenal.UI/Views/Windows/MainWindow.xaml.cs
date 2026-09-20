@@ -424,6 +424,11 @@ namespace Arsenal.UI.Views.Windows
             // swap. ReleasePageContent clears this cache when the window goes to the tray.
             UIElement page = GetOrCreatePage(tag);
 
+            // Leaving a page leaves whatever was drilled into on it. Closed here rather
+            // than after the swap so the page that lent the bar its subpage gets it back
+            // while it is still the one on screen.
+            Controls.SettingsGroup.Close();
+
             // Construct the replacement before removing the current page. WPF cannot
             // render between these two operations, so the user never sees an empty host.
             PageContentHost.Children.Clear();
