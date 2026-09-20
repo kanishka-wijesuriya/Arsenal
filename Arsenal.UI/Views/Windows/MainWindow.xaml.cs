@@ -343,6 +343,18 @@ namespace Arsenal.UI.Views.Windows
 
         private void NavigateBackButton_Click(object sender, RoutedEventArgs e) => GoBack();
 
+        /// <summary>
+        /// Pressing the page half of the path leaves the subpage standing on it.
+        /// </summary>
+        /// <remarks>
+        /// Not <see cref="GoBack"/>, even though it does the same thing today. This
+        /// button names one destination - the page written on it - and it must go there
+        /// and nowhere else; the arrow's job is to undo the last step, whatever that
+        /// was, and the two would part company the moment a subpage could hold another.
+        /// </remarks>
+        private void BreadcrumbRootLink_Click(object sender, RoutedEventArgs e)
+            => Controls.SettingsGroup.Close();
+
         private void NavigateForwardButton_Click(object sender, RoutedEventArgs e) => GoForward();
 
         /// <summary>

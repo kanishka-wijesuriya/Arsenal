@@ -646,4 +646,40 @@
         <Setter Property="Cursor" Value="Hand"/>
     </Style>
 
+    <!-- The page half of the title bar's path. A button rather than text, but it
+         has to stay looking like the path: no chrome at rest, and only the ink
+         changes under the pointer. Anything more - a fill, a border - would read
+         as a control parked in the title bar rather than as the words being
+         live. -->
+    <Style x:Key="BreadcrumbLinkStyle" TargetType="{x:Type Button}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <!-- Transparent, not null: a null background is not hit tested,
+                         and the gap between the glyphs would fall through to the
+                         window drag underneath. -->
+                    <Border Background="Transparent">
+                        <ContentPresenter VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource AccentPrimary}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

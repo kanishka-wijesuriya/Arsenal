@@ -163,9 +163,10 @@
              own content and follows the pane as it opens and closes - see
              PlaceBreadcrumb.
 
-             Declared after the bar so it draws over it, and not hit testable: this sits
-             in the window's drag region, and text that answers the mouse is text you
-             cannot pick the window up by. -->
+             Declared after the bar so it draws over it. Only the page half answers the
+             mouse: this sits in the window's drag region, and every glyph that responds
+             to a click is a glyph you cannot pick the window up by, so the separator and
+             the subpage - which lead nowhere you are not already - stay inert. -->
         <!-- A grid rather than a horizontal stack: a stack measures its children against
              infinity, so neither segment would ever trim and a long pair of names would
              simply run on under the status pills. Here the leading segments take what
@@ -176,7 +177,6 @@
               Panel.ZIndex="1"
               HorizontalAlignment="Left"
               VerticalAlignment="Center"
-              IsHitTestVisible="False"
               Visibility="Collapsed"
               Opacity="0">
             <Grid.RenderTransform>
@@ -189,21 +189,33 @@
             </Grid.ColumnDefinitions>
 
             <!-- The page that owns the subpage, quieter than the subpage itself: the
-                 pair reads as one path rather than as two titles. -->
-            <TextBlock x:Name="BreadcrumbRoot" Grid.Column="0"
-                       FontSize="12.5" FontWeight="Medium"
-                       Foreground="{DynamicResource TextSecondary}"
-                       VerticalAlignment="Center"
-                       TextTrimming="CharacterEllipsis" MaxWidth="260"/>
+                 pair reads as one path rather than as two titles. Pressing it goes back
+                 to that page, which is the step a path is for.
+
+                 Not focusable: it is the third way back out of a subpage, after the
+                 bar's arrow and the control above the page title, and a tab stop for
+                 each of them would put three identical stops in front of anyone
+                 reaching the page by keyboard. -->
+            <Button x:Name="BreadcrumbRootLink" Grid.Column="0"
+                    Style="{StaticResource BreadcrumbLinkStyle}"
+                    Click="BreadcrumbRootLink_Click"
+                    ToolTip="Back to the page">
+                <TextBlock x:Name="BreadcrumbRoot"
+                           FontSize="12.5" FontWeight="Medium"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" MaxWidth="260"/>
+            </Button>
 
             <TextBlock Grid.Column="1" Text="&#x203A;" FontSize="12.5"
                        Margin="7,0,7,0" VerticalAlignment="Center"
+                       IsHitTestVisible="False"
                        Foreground="{DynamicResource TextTertiary}"/>
 
             <TextBlock x:Name="BreadcrumbLeaf" Grid.Column="2"
                        FontSize="12.5" FontWeight="SemiBold"
                        Foreground="{DynamicResource TextPrimary}"
                        VerticalAlignment="Center"
+                       IsHitTestVisible="False"
                        TextTrimming="CharacterEllipsis"/>
         </Grid>
 
