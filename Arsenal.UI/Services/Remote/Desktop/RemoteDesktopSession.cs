@@ -349,7 +349,13 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         // over a long download watches the display time out and then the machine sleep.
         RemoteNative.SetThreadExecutionState(RemoteNative.ES_CONTINUOUS | RemoteNative.ES_SYSTEM_REQUIRED | RemoteNative.ES_DISPLAY_REQUIRED);
 
-        _captureThread = new Thread(CaptureLoop)
+        // Which run of the capture loop this is. A loop that outlived its stop - the
+        // encoder was slow to return and the join gave up on it - would otherwise see
+        // _streaming set true again by the next start and carry on beside the new one,
+        // two threads capturing the same screen into two encoders.
+        int generation = Interlocked.Increment(ref _captureGeneration);
+
+        _captureThread = new Thread(() => CaptureLoop(generation))
         {
             IsBackground = true,
             Name = "Arsenal remote capture",
@@ -357,6 +363,8 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         };
         _captureThread.Start();
     }
+
+    private int _captureGeneration;
 
     private async Task RestartCaptureAsync()
     {
@@ -387,20 +395,60 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         _server.NotifySessionsChanged();
     }
 
+    /// <summary>
+    /// Tears the capture pipeline down.
+    /// </summary>
+    /// <remarks>
+    /// The encoder and the screen source are native objects the capture thread writes
+    /// into, so nothing may dispose them while that thread is inside them. This used to
+    /// join the thread for two seconds and then dispose regardless of whether the join
+    /// had succeeded: an encode that ran long - and a hardware encoder that has gone out
+    /// to lunch runs very long - had its buffers released underneath it, which is memory
+    /// corruption rather than a managed exception, and took the process out with
+    /// STATUS_HEAP_CORRUPTION. Changing quality does exactly this, because it stops the
+    /// pipeline and starts another one immediately.
+    ///
+    /// <para>Now the objects are taken off the session first and only disposed once
+    /// nothing can be using them. If the thread did not stop in time, the disposal waits
+    /// for the capture gate on a pool thread rather than here - this runs on the thread
+    /// serving the phone's messages, and blocking it is how the window stops responding.
+    /// </para>
+    /// </remarks>
     private void StopStream()
     {
         _streaming = false;
         Thread? thread = _captureThread;
         _captureThread = null;
-        if (thread is not null && thread.IsAlive && !thread.Equals(Thread.CurrentThread)) thread.Join(TimeSpan.FromSeconds(2));
 
-        lock (_videoGate)
+        bool finished = thread is null
+            || !thread.IsAlive
+            || thread.Equals(Thread.CurrentThread)
+            || thread.Join(TimeSpan.FromSeconds(2));
+
+        // Detached before anything is disposed: once these are null the capture loop
+        // ends its next tick, whatever it is in the middle of now.
+        IVideoEncoder? encoder;
+        IScreenSource? source;
+        bool exclusive = Monitor.TryEnter(_videoGate, TimeSpan.FromSeconds(2));
+        try
         {
-            _encoder?.Dispose();
+            encoder = _encoder;
+            source = _source;
             _encoder = null;
-            _source?.Dispose();
             _source = null;
         }
+        finally
+        {
+            if (exclusive) Monitor.Exit(_videoGate);
+        }
+
+        // Held the gate and the thread is gone: nothing else can reach them.
+        if (finished && exclusive)
+        {
+            encoder?.Dispose();
+            source?.Dispose();
+        }
+        else ReleaseWhenCaptureLetsGo(encoder, source);
 
         _input?.ReleaseHeldKeys();
         _input = null;
@@ -410,9 +458,36 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         _server.NotifySessionsChanged();
     }
 
+    /// <summary>
+    /// Disposes a detached pipeline once the capture thread is out of it.
+    /// </summary>
+    /// <remarks>
+    /// On a pool thread and with no timeout. A stalled hardware encoder can sit in one
+    /// call for a long time, and the only two honest answers are to wait for it or to
+    /// free its buffers underneath it; the second one corrupts the heap. Waiting costs a
+    /// pool thread and, in the worst case where the encoder never returns at all, one
+    /// leaked object for the life of the process.
+    /// </remarks>
+    private void ReleaseWhenCaptureLetsGo(IVideoEncoder? encoder, IScreenSource? source)
+    {
+        if (encoder is null && source is null) return;
+
+        Task.Run(() =>
+        {
+            lock (_videoGate)
+            {
+                try { encoder?.Dispose(); }
+                catch (Exception ex) { Logger.WriteLine("Remote encoder release: " + ex.Message); }
+
+                try { source?.Dispose(); }
+                catch (Exception ex) { Logger.WriteLine("Remote capture release: " + ex.Message); }
+            }
+        });
+    }
+
     // ---- Capture -----------------------------------------------------------------
 
-    private void CaptureLoop()
+    private void CaptureLoop(int generation)
     {
         var frame = new CapturedFrame();
         var encoded = new EncodedVideoFrame();
@@ -422,35 +497,19 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
 
         try
         {
-            while (_streaming && !_stopping.IsCancellationRequested)
+            while (_streaming
+                   && !_stopping.IsCancellationRequested
+                   && generation == Volatile.Read(ref _captureGeneration))
             {
                 long tickStart = stopwatch.ElapsedMilliseconds;
                 int targetMs = Math.Max(8, 1000 / Math.Max(1, _quality.FrameRate));
-
-                IScreenSource? source;
-                IVideoEncoder? encoder;
-                lock (_videoGate)
-                {
-                    source = _source;
-                    encoder = _encoder;
-                }
-                if (source is null || encoder is null) break;
-
-                // An encoder that has stopped asking for frames is not coming back, and
-                // waiting on it shows the phone a black screen for as long as the
-                // session lasts. Swap it for the tile encoder, which needs no hardware
-                // and cannot fail this way.
-                if (encoder is MediaFoundationVideoEncoder { HasStalled: true })
-                {
-                    encoder = SwapToTiles(source);
-                    if (encoder is null) break;
-                }
 
                 // The sign-in screen, a UAC prompt and Ctrl+Alt+Del all run on a desktop
                 // this process cannot read. Capture does not fail there, it returns
                 // black, so without asking first the phone shows a frozen picture and no
                 // reason for it.
                 bool readable = RemoteNative.IsInputDesktopReadable();
+                bool returned = readable && readable != _surfaceReadable;
                 if (readable != _surfaceReadable)
                 {
                     _surfaceReadable = readable;
@@ -458,7 +517,6 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
                         "surface",
                         readable ? "live" : "secure",
                         readable ? null : "This PC is showing the Windows sign-in screen. Arsenal runs as you rather than as a service, so it cannot see that screen or type into it. Sign in at the laptop and the session picks up again."));
-                    if (readable) encoder.RequestKeyFrame();
                 }
                 if (!readable)
                 {
@@ -466,28 +524,60 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
                     continue;
                 }
 
+                // Everything that touches the encoder or the screen source happens under
+                // the gate, not just the read of the fields that hold them. Taking a
+                // reference and then using it outside the lock is what let a stop dispose
+                // an encoder this thread was still inside - see StopStream. The gate is
+                // held for one frame, so a stop waits for a frame rather than for a
+                // session; the waiting and the sleeping below stay outside it.
+                bool gone = false;
+                bool haveFrame = false;
                 long captureStart = stopwatch.ElapsedMilliseconds;
-                bool captured = source.TryCapture(frame);
-                _lastCaptureMs = (int)(stopwatch.ElapsedMilliseconds - captureStart);
 
-                if (captured)
+                lock (_videoGate)
                 {
-                    // A phone that joined a still desktop, or one that dropped a frame it
-                    // could not decode, would otherwise wait for something to move before
-                    // it saw anything at all.
-                    if (stopwatch.ElapsedMilliseconds - lastKeyFrameMs > IdleKeyFrameInterval.TotalMilliseconds)
-                    {
-                        encoder.RequestKeyFrame();
-                        lastKeyFrameMs = stopwatch.ElapsedMilliseconds;
-                    }
+                    IScreenSource? source = _source;
+                    IVideoEncoder? encoder = _encoder;
 
-                    long encodeStart = stopwatch.ElapsedMilliseconds;
-                    if (encoder.TryEncode(frame, encoded))
+                    // An encoder that has stopped asking for frames is not coming back,
+                    // and waiting on it shows the phone a black screen for as long as the
+                    // session lasts. Swap it for the tile encoder, which needs no
+                    // hardware and cannot fail this way.
+                    if (source is not null && encoder is MediaFoundationVideoEncoder { HasStalled: true })
+                        encoder = SwapToTiles(source);
+
+                    if (source is null || encoder is null) gone = true;
+                    else
                     {
-                        _lastEncodeMs = (int)(stopwatch.ElapsedMilliseconds - encodeStart);
-                        if ((encoded.Flags & RemoteDesktopProtocol.VideoFlags.KeyFrame) != 0) lastKeyFrameMs = stopwatch.ElapsedMilliseconds;
-                        QueueVideo(encoded);
+                        if (returned) encoder.RequestKeyFrame();
+
+                        bool captured = source.TryCapture(frame);
+                        _lastCaptureMs = (int)(stopwatch.ElapsedMilliseconds - captureStart);
+
+                        if (captured)
+                        {
+                            // A phone that joined a still desktop, or one that dropped a
+                            // frame it could not decode, would otherwise wait for
+                            // something to move before it saw anything at all.
+                            if (stopwatch.ElapsedMilliseconds - lastKeyFrameMs > IdleKeyFrameInterval.TotalMilliseconds)
+                            {
+                                encoder.RequestKeyFrame();
+                                lastKeyFrameMs = stopwatch.ElapsedMilliseconds;
+                            }
+
+                            long encodeStart = stopwatch.ElapsedMilliseconds;
+                            haveFrame = encoder.TryEncode(frame, encoded);
+                            if (haveFrame) _lastEncodeMs = (int)(stopwatch.ElapsedMilliseconds - encodeStart);
+                        }
                     }
+                }
+
+                if (gone) break;
+
+                if (haveFrame)
+                {
+                    if ((encoded.Flags & RemoteDesktopProtocol.VideoFlags.KeyFrame) != 0) lastKeyFrameMs = stopwatch.ElapsedMilliseconds;
+                    QueueVideo(encoded);
                 }
 
                 if (stopwatch.ElapsedMilliseconds >= nextStatsMs)
