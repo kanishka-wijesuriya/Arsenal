@@ -302,11 +302,10 @@
                                      A pinned group is not a subpage and keeps its own
                                      heading: nothing else on the page names it. -->
                                 <StackPanel x:Name="PinnedHeader" Grid.Column="0" Visibility="Collapsed" Margin="0,0,0,12">
+                                    <!-- The name alone, for the reason the other theme's
+                                         heading gives: an icon belongs on a group you
+                                         press, not on one that is already a heading. -->
                                     <StackPanel Orientation="Horizontal">
-                                        <ui:SymbolIcon Symbol="{TemplateBinding Icon}" FontSize="20"
-                                                       Foreground="{DynamicResource AccentPrimary}"
-                                                       VerticalAlignment="Center" Margin="0,0,12,0"
-                                                       Visibility="{TemplateBinding Icon, Converter={StaticResource HideWhenNoIcon}}"/>
                                         <TextBlock Text="{TemplateBinding Header}"
                                                    FontFamily="{DynamicResource FontDisplay}"
                                                    FontSize="19" FontWeight="SemiBold"
@@ -314,9 +313,15 @@
                                                    VerticalAlignment="Center"/>
                                     </StackPanel>
 
+                                    <!-- Flush with the name above it. The 32px this
+                                         carried was the width of the icon and the gap
+                                         after it, so the description would line up with
+                                         the title rather than with the icon; with the
+                                         icon gone it was indenting the description
+                                         against nothing. -->
                                     <TextBlock Text="{TemplateBinding Description}"
                                                Style="{StaticResource SettingDescriptionStyle}"
-                                               Margin="32,4,0,0" MaxWidth="720"
+                                               Margin="0,4,0,0" MaxWidth="720"
                                                HorizontalAlignment="Left"
                                                Visibility="{TemplateBinding Description, Converter={StaticResource HideWhenEmptyText}}"/>
                                 </StackPanel>

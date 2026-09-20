@@ -76,13 +76,6 @@
     </Style>
 
 
-    <Style x:Key="SectionIconStyle" TargetType="ui:SymbolIcon">
-        <Setter Property="FontSize" Value="18"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentPrimary}"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Margin" Value="0,0,10,0"/>
-    </Style>
-
     <Style x:Key="SettingLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource TextBaseStyle}">
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="LineHeight" Value="20"/>

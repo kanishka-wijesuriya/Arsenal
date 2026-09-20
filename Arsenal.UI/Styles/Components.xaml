@@ -182,10 +182,16 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
+                                <!-- The name alone. A section heading with an icon beside
+                                     it and a description underneath puts a glyph in the
+                                     one place nothing else on the page has one: the
+                                     page's own title has no icon, the rows below have
+                                     their own column for theirs, and this sat between
+                                     the two answering to neither. The icon a page gives
+                                     a group still does its work wherever the group is
+                                     something to press - a destination card is a thing
+                                     you pick out of a list, and a heading is not. -->
                                 <StackPanel x:Name="HeaderTitleHost" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <ui:SymbolIcon Symbol="{TemplateBinding Icon}"
-                                                   Style="{StaticResource SectionIconStyle}"
-                                                   Visibility="{TemplateBinding Icon, Converter={StaticResource HideWhenNoIcon}}"/>
                                     <TextBlock Text="{TemplateBinding Header}" Style="{StaticResource SectionTitleStyle}"/>
                                 </StackPanel>
                                 <ContentPresenter x:Name="HeaderContentHost"
