@@ -93,6 +93,13 @@ namespace Arsenal.UI.Views.Windows
             }), true);
             AddHandler(Keyboard.PreviewKeyDownEvent, new System.Windows.Input.KeyEventHandler(OnPreviewKeyDownForOverlays), true);
 
+            // The two side buttons on a mouse. Registered the same way and for the same
+            // reason as the keys above: a preview handler on the window, taking handled
+            // events too, because the title bar and the pages both sit on controls that
+            // consume mouse input before it reaches here.
+            AddHandler(Mouse.PreviewMouseDownEvent, new MouseButtonEventHandler(OnPreviewMouseNavigate), true);
+            AddHandler(Keyboard.PreviewKeyDownEvent, new System.Windows.Input.KeyEventHandler(OnPreviewKeyDownForNavigation), true);
+
             SearchOverlay.Closed += ReleaseSearchPanel;
             SetupOverlay.Closed += ReleaseSetupPanel;
             UpdateOverlay.Closed += ReleaseUpdatePanel;
@@ -1113,6 +1120,59 @@ namespace Arsenal.UI.Views.Windows
         /// Panels that opt out of light dismiss - setup, which would lose the steps
         /// answered so far - are left alone; they close through their own buttons.
         /// </summary>
+        /// <summary>
+        /// The back and forward buttons on a mouse, driving the same navigation the
+        /// arrows in the title bar do.
+        /// </summary>
+        /// <remarks>
+        /// Windows sends these as ordinary mouse buttons and nothing routes them to
+        /// anything by default, so an application that does not look for them simply
+        /// does nothing when they are pressed. This one has a history and a way back out
+        /// of a subpage already; this is the same two steps under the thumb.
+        ///
+        /// <para>On the press rather than the release, which is where every browser acts
+        /// and therefore where these buttons feel late if you wait. Marked handled so the
+        /// control under the pointer does not also get to interpret it.</para>
+        ///
+        /// <para>Ignored while a panel is open over the page. Navigating behind a search
+        /// palette or a half-finished setup wizard moves a page nobody can see and
+        /// leaves the panel sitting on top of a different one.</para>
+        /// </remarks>
+        private void OnPreviewMouseNavigate(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton is not (MouseButton.XButton1 or MouseButton.XButton2)) return;
+            if (_viewModel.IsCommandPaletteOpen || _viewModel.IsSetupOpen || _viewModel.IsUpdateOpen) return;
+
+            if (e.ChangedButton == MouseButton.XButton1) GoBack();
+            else GoForward();
+
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// The keyboard's ways of saying back and forward.
+        /// </summary>
+        /// <remarks>
+        /// Alt with an arrow is the Windows convention, and the browser keys are what a
+        /// keyboard with a dedicated pair sends. Both are here because the side buttons
+        /// on a mouse do not always arrive as mouse buttons: plenty of vendor drivers
+        /// are configured to send Alt+Left and Alt+Right instead, and a device bound
+        /// that way would otherwise look like one this application ignores.
+        /// </remarks>
+        private void OnPreviewKeyDownForNavigation(object sender, KeyEventArgs e)
+        {
+            if (_viewModel.IsCommandPaletteOpen || _viewModel.IsSetupOpen || _viewModel.IsUpdateOpen) return;
+
+            Key key = e.Key == Key.System ? e.SystemKey : e.Key;
+            bool alt = Keyboard.Modifiers.HasFlag(InputModifierKeys.Alt);
+
+            if (key == Key.BrowserBack || (alt && key == Key.Left)) GoBack();
+            else if (key == Key.BrowserForward || (alt && key == Key.Right)) GoForward();
+            else return;
+
+            e.Handled = true;
+        }
+
         private void OnPreviewKeyDownForOverlays(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Escape) return;
