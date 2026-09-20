@@ -887,6 +887,13 @@ namespace Arsenal.UI.Views.Windows
             // Preserve the tray-memory optimization: cached page controls live only for
             // the visible full-window session and become collectible as soon as it hides.
             _pageCache.Clear();
+
+            // These are keyed on the page instances, so leaving them would hold every
+            // page the session visited past the release above and make it pointless. The
+            // originals are read back off the XAML when the pages are rebuilt.
+            _pageTitles.Clear();
+            _pageSubtitles.Clear();
+
             _pageContentReleased = true;
 
             // Dropping the references only makes the pages collectible. Without this the
