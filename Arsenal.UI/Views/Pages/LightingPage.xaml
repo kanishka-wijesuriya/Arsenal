@@ -42,38 +42,119 @@
                 -->
                 <controls:SettingsRow Header="Preview"
                                       Description="{Binding PreviewCaption}"
-                                      Visibility="{Binding HasAuraEffects, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                      Visibility="{Binding HasKeyboardPreviewOrColor, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <controls:SettingsRow.ContentBelow>
-                        <StackPanel>
-                            <Border CornerRadius="{DynamicResource RadiusCard}"
-                                    Background="{DynamicResource SurfaceSunken}"
-                                    BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1"
-                                    Padding="14" HorizontalAlignment="Left" MaxWidth="880">
-                                <controls:KeyboardPreview x:Name="BacklightPreview"
-                                                          Mode="{Binding SelectedMode}"
-                                                          Speed="{Binding Speed}"
-                                                          PrimaryColor="{Binding SelectedColor}"
-                                                          SecondaryColor="{Binding SecondaryColor}"
-                                                          Brightness="{Binding Brightness}"
-                                                          BacklightType="{Binding BacklightZoneType}"
-                                                          ShowKeyEdgeLighting="{Binding PreviewKeyEdgeLighting}"
-                                                          Layout="{Binding PreviewLayout}"/>
-                            </Border>
+                        <!-- The colour and the keyboard it lands on, side by side. The
+                             picker used to be a row of its own further down, so choosing
+                             a colour and seeing it took a scroll between them and the
+                             preview spent that scroll showing the colour you had left
+                             behind. Same reason the preview sits above the effect list.
 
-                            <WrapPanel Margin="0,12,0,0">
-                                <TextBlock Text="Keyboard shape" Style="{StaticResource CaptionStyle}"
-                                           VerticalAlignment="Center" Margin="0,0,14,0"/>
-                                <ui:ToggleSwitch Content="Number pad" Margin="0,0,20,0"
-                                                 IsChecked="{Binding PreviewNumpad, Mode=TwoWay}"/>
-                                <ui:ToggleSwitch Content="Tall Enter key (ISO)" Margin="0,0,20,0"
-                                                 IsChecked="{Binding PreviewIso, Mode=TwoWay}"/>
-                                <ui:ToggleSwitch Content="Light around keycaps"
-                                                 ToolTip="Preview coloured light around each keycap. Turn this off when only the printed legends are backlit."
-                                                 IsChecked="{Binding PreviewKeyEdgeLighting, Mode=TwoWay}"/>
-                            </WrapPanel>
-                            <TextBlock Text="{Binding PreviewShapeSource}" Style="{StaticResource CaptionStyle}"
-                                       TextWrapping="Wrap" MaxWidth="620" HorizontalAlignment="Left" Margin="0,6,0,0"/>
-                        </StackPanel>
+                             The keyboard takes what is left after the picker rather than
+                             the picker taking what is left after the keyboard: the
+                             picker stops being usable below about 240px, while the
+                             keyboard only gets smaller. -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0"
+                                        Visibility="{Binding HasAuraEffects, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Border CornerRadius="{DynamicResource RadiusCard}"
+                                        Background="{DynamicResource SurfaceSunken}"
+                                        BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1"
+                                        Padding="14" HorizontalAlignment="Left" MaxWidth="880">
+                                    <controls:KeyboardPreview x:Name="BacklightPreview"
+                                                              Mode="{Binding SelectedMode}"
+                                                              Speed="{Binding Speed}"
+                                                              PrimaryColor="{Binding SelectedColor}"
+                                                              SecondaryColor="{Binding SecondaryColor}"
+                                                              Brightness="{Binding Brightness}"
+                                                              BacklightType="{Binding BacklightZoneType}"
+                                                              ShowKeyEdgeLighting="{Binding PreviewKeyEdgeLighting}"
+                                                              Layout="{Binding PreviewLayout}"/>
+                                </Border>
+
+                                <WrapPanel Margin="0,12,0,0">
+                                    <TextBlock Text="Keyboard shape" Style="{StaticResource CaptionStyle}"
+                                               VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                    <ui:ToggleSwitch Content="Number pad" Margin="0,0,20,0"
+                                                     IsChecked="{Binding PreviewNumpad, Mode=TwoWay}"/>
+                                    <ui:ToggleSwitch Content="Tall Enter key (ISO)" Margin="0,0,20,0"
+                                                     IsChecked="{Binding PreviewIso, Mode=TwoWay}"/>
+                                    <ui:ToggleSwitch Content="Light around keycaps"
+                                                     ToolTip="Preview coloured light around each keycap. Turn this off when only the printed legends are backlit."
+                                                     IsChecked="{Binding PreviewKeyEdgeLighting, Mode=TwoWay}"/>
+                                </WrapPanel>
+                                <TextBlock Text="{Binding PreviewShapeSource}" Style="{StaticResource CaptionStyle}"
+                                           TextWrapping="Wrap" MaxWidth="620" HorizontalAlignment="Left" Margin="0,6,0,0"/>
+                            </StackPanel>
+
+                            <!-- Only a gutter, and only when there is something on both
+                                 sides of it. A fixed column would leave 24px of nothing
+                                 down the side of a white-only keyboard. -->
+                            <Border Grid.Column="1" Width="24"
+                                    Visibility="{Binding HasKeyboardColor, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                            <StackPanel Grid.Column="2" Width="248" VerticalAlignment="Top"
+                                        Visibility="{Binding HasKeyboardColor, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <!-- No heading over it. A square of colour beside a
+                                     keyboard that changes as you drag on it does not
+                                     need to be told it is the colour picker, and the
+                                     tooltip carries the one thing the shape does not
+                                     say - which axis is which. -->
+                                <controls:ColorSpectrumPicker SelectedColor="{Binding SelectedColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              Height="196"
+                                                              ToolTip="Choose saturation and brightness, then use the hue strip below"/>
+
+                                <!-- The swatch beside the values rather than over them:
+                                     stacked, this column ran taller than the keyboard it
+                                     stands next to. -->
+                                <Grid Margin="0,12,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Grid.Column="0" Width="44" Height="44" Margin="0,0,12,0"
+                                            CornerRadius="{DynamicResource RadiusCard}"
+                                            Background="{Binding ColorPreviewBrush}"
+                                            BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1"/>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding HexColor}" FontFamily="Cascadia Mono, Consolas"
+                                                   FontSize="15" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock Text="{Binding RgbColor}" Style="{StaticResource CaptionStyle}" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Text="Presets" Style="{StaticResource CaptionStyle}" Margin="0,14,0,0"/>
+                                <WrapPanel Margin="0,8,-6,-6">
+                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#FF3B30" ToolTip="Red" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#FF3B30"/></ui:Button>
+                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#FF9F0A" ToolTip="Orange" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#FF9F0A"/></ui:Button>
+                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#32D74B" ToolTip="Green" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#32D74B"/></ui:Button>
+                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#0A84FF" ToolTip="Blue" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#0A84FF"/></ui:Button>
+                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#BF5AF2" ToolTip="Purple" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#BF5AF2"/></ui:Button>
+                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#FFFFFF" ToolTip="White" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#FFFFFF"/></ui:Button>
+                                </WrapPanel>
+
+                                <!-- Under the picker, not in the group's footer. The
+                                     picker used to be the last row before that footer,
+                                     so the button sat directly beneath it; from up here
+                                     the same button is below the effect list and the
+                                     speed, and choosing a colour would mean scrolling
+                                     past two unrelated rows to commit it. -->
+                                <ui:Button Content="Apply colour" Icon="{ui:SymbolIcon Checkmark24}"
+                                           Command="{Binding ApplyColorCommand}"
+                                           Appearance="Primary"
+                                           HorizontalAlignment="Stretch"
+                                           Margin="0,18,0,0"/>
+                            </StackPanel>
+                        </Grid>
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
 
@@ -112,48 +193,6 @@
                     </StackPanel>
                 </controls:SettingsRow>
 
-                <controls:SettingsRow Header="Colour" Description="Pick saturation and brightness on the square, then hue on the strip below it."
-                                      Visibility="{Binding HasKeyboardColor, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <controls:SettingsRow.ContentBelow>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="24"/>
-                                <ColumnDefinition Width="236"/>
-                            </Grid.ColumnDefinitions>
-
-                            <controls:ColorSpectrumPicker SelectedColor="{Binding SelectedColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                          Height="206"
-                                                          VerticalAlignment="Top"
-                                                          ToolTip="Choose saturation and brightness, then use the hue strip below"/>
-
-                            <StackPanel Grid.Column="2">
-                                <Border Height="72" CornerRadius="{DynamicResource RadiusCard}" Background="{Binding ColorPreviewBrush}"
-                                        BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1"/>
-
-                                <TextBlock Text="{Binding HexColor}" FontFamily="Cascadia Mono, Consolas" FontSize="16" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextPrimary}" Margin="0,12,0,0"/>
-                                <TextBlock Text="{Binding RgbColor}" Style="{StaticResource CaptionStyle}" Margin="0,2,0,0"/>
-
-                                <TextBlock Text="Presets" Style="{StaticResource CaptionStyle}" Margin="0,16,0,0"/>
-                                <WrapPanel Margin="0,8,-6,-6">
-                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#FF3B30" ToolTip="Red" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#FF3B30"/></ui:Button>
-                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#FF9F0A" ToolTip="Orange" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#FF9F0A"/></ui:Button>
-                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#32D74B" ToolTip="Green" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#32D74B"/></ui:Button>
-                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#0A84FF" ToolTip="Blue" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#0A84FF"/></ui:Button>
-                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#BF5AF2" ToolTip="Purple" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#BF5AF2"/></ui:Button>
-                                    <ui:Button Command="{Binding SetPresetColorCommand}" CommandParameter="#FFFFFF" ToolTip="White" Width="32" Height="32" Padding="0" Margin="0,0,6,6"><Border Width="16" Height="16" CornerRadius="8" Background="#FFFFFF"/></ui:Button>
-                                </WrapPanel>
-                            </StackPanel>
-                        </Grid>
-                    </controls:SettingsRow.ContentBelow>
-                </controls:SettingsRow>
-
-                <controls:SettingsGroup.Footer>
-                    <ui:Button Content="Apply colour" Icon="{ui:SymbolIcon Checkmark24}" Command="{Binding ApplyColorCommand}"
-                               Appearance="Primary" HorizontalAlignment="Right"
-                               Visibility="{Binding HasKeyboardColor, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                </controls:SettingsGroup.Footer>
             </controls:SettingsGroup>
 
             <controls:SettingsGroup Header="Lighting power states" Icon="Power24"

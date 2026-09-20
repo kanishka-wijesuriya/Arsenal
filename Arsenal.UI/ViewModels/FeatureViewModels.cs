@@ -2025,7 +2025,23 @@ namespace Arsenal.UI.ViewModels
             ? string.Format("Matched to {0}. Nothing on the machine reports whether it has a number pad, so correct it here if this is wrong. Your choice is remembered.", PreviewChassis)
             : "This chassis is not in Arsenal's keyboard table, so the shape is a generic ROG laptop. Set it here and your choice is remembered.";
 
+        /// <summary>
+        /// The preview row carries the colour picker beside the keyboard, so it has to
+        /// survive either capability on its own.
+        /// </summary>
+        /// <remarks>
+        /// The two are read from different places - a white-only backlight has no
+        /// colour, a machine configured with no Aura has no effects - and a machine can
+        /// have one without the other. Binding the row to the effects flag alone would
+        /// take the colour picker off a machine that has a colour to set.
+        /// </remarks>
+        public bool HasKeyboardPreviewOrColor => HasAuraEffects || HasKeyboardColor;
+
         partial void OnBacklightZoneTypeChanged(int value) => OnPropertyChanged(nameof(PreviewCaption));
+
+        partial void OnHasAuraEffectsChanged(bool value) => OnPropertyChanged(nameof(HasKeyboardPreviewOrColor));
+
+        partial void OnHasKeyboardColorChanged(bool value) => OnPropertyChanged(nameof(HasKeyboardPreviewOrColor));
 
         partial void OnPreviewChassisChanged(string value) => OnPropertyChanged(nameof(PreviewShapeSource));
 
