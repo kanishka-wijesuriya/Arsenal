@@ -493,11 +493,16 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ui:ToggleSwitch}">
                     <Grid Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
                         <!-- Wider than it is tall, with the state written in it. A bare
                              block that slides tells you something changed but not which
                              way; the word does, and it is the part that survives being
                              read quickly or at a glance from across the desk. -->
-                        <controls:AngularBorder x:Name="Track"
+                        <controls:AngularBorder x:Name="Track" Grid.Column="1"
                                                 Width="76" Height="30"
                                                 Cut="8" Corners="TopRight,BottomLeft"
                                                 ClipsContent="True"
@@ -521,9 +526,37 @@
                                            Fill="{DynamicResource TextTertiary}"/>
                             </Grid>
                         </controls:AngularBorder>
+
+                        <!-- The toggle's own label, for the toggles that carry one.
+                             Most sit in a settings row and are named by the row, so this
+                             template was written without anywhere to put Content - and a
+                             template that drops a property fails silently: the label was
+                             set, the binding resolved, and it was simply never realised.
+                             That left the toggles on the keyboard preview and the AniMe
+                             text panels as unlabelled switches.
+
+                             Inside the Grid's transparent background, so the words are
+                             part of the control and pressing them works the switch.
+
+                             Ahead of the track, not after it: the switch already writes
+                             ON or OFF inside itself at its trailing end, and a label
+                             after that put the name of the setting downstream of its own
+                             state, so a row of them read as a column of values with the
+                             questions on the wrong side. -->
+                        <ContentPresenter x:Name="Label" Grid.Column="0"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,12,0"
+                                          TextElement.Foreground="{DynamicResource TextPrimary}"
+                                          TextElement.FontSize="13"/>
                     </Grid>
 
                     <ControlTemplate.Triggers>
+                        <!-- Collapsed rather than left empty, so a toggle named by its
+                             row does not carry the label's leading margin. -->
+                        <Trigger Property="Content" Value="{x:Null}">
+                            <Setter TargetName="Label" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentPrimary}"/>
                             <Setter TargetName="Track" Property="Effect" Value="{DynamicResource AccentGlow}"/>

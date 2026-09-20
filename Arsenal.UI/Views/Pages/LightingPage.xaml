@@ -78,19 +78,30 @@
                                                               Layout="{Binding PreviewLayout}"/>
                                 </Border>
 
-                                <WrapPanel Margin="0,12,0,0">
-                                    <TextBlock Text="Keyboard shape" Style="{StaticResource CaptionStyle}"
-                                               VerticalAlignment="Center" Margin="0,0,14,0"/>
-                                    <ui:ToggleSwitch Content="Number pad" Margin="0,0,20,0"
-                                                     IsChecked="{Binding PreviewNumpad, Mode=TwoWay}"/>
-                                    <ui:ToggleSwitch Content="Tall Enter key (ISO)" Margin="0,0,20,0"
-                                                     IsChecked="{Binding PreviewIso, Mode=TwoWay}"/>
-                                    <ui:ToggleSwitch Content="Light around keycaps"
-                                                     ToolTip="Preview coloured light around each keycap. Turn this off when only the printed legends are backlit."
-                                                     IsChecked="{Binding PreviewKeyEdgeLighting, Mode=TwoWay}"/>
+                                <!-- The caption above the switches rather than in line
+                                     with them. Sharing the row made it look like a
+                                     fourth control's label with its switch missing. -->
+                                <TextBlock Text="Keyboard shape" Style="{StaticResource CaptionStyle}"
+                                           Margin="0,14,0,0"/>
+
+                                <WrapPanel Margin="0,8,-10,-10">
+                                    <Border Style="{StaticResource InsetSettingChipStyle}">
+                                        <ui:ToggleSwitch Content="Number pad"
+                                                         IsChecked="{Binding PreviewNumpad, Mode=TwoWay}"/>
+                                    </Border>
+                                    <Border Style="{StaticResource InsetSettingChipStyle}">
+                                        <ui:ToggleSwitch Content="Tall Enter key (ISO)"
+                                                         IsChecked="{Binding PreviewIso, Mode=TwoWay}"/>
+                                    </Border>
+                                    <Border Style="{StaticResource InsetSettingChipStyle}"
+                                            ToolTip="Preview coloured light around each keycap. Turn this off when only the printed legends are backlit.">
+                                        <ui:ToggleSwitch Content="Light around keycaps"
+                                                         IsChecked="{Binding PreviewKeyEdgeLighting, Mode=TwoWay}"/>
+                                    </Border>
                                 </WrapPanel>
+
                                 <TextBlock Text="{Binding PreviewShapeSource}" Style="{StaticResource CaptionStyle}"
-                                           TextWrapping="Wrap" MaxWidth="620" HorizontalAlignment="Left" Margin="0,6,0,0"/>
+                                           TextWrapping="Wrap" MaxWidth="620" HorizontalAlignment="Left" Margin="0,8,0,0"/>
                             </StackPanel>
 
                             <!-- Only a gutter, and only when there is something on both

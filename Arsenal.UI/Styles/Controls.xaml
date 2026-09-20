@@ -655,6 +655,28 @@
          you find without looking up, at the top of the thing you are reading.
          =================================================================== -->
 
+    <!-- A setting standing on its own, outside a settings row.
+
+         Most toggles are named by the row they sit in, and the row's own hairline
+         separates it from the next one. A loose row of them has neither: three
+         switches in a line read as one run of controls, and which label belonged to
+         which switch was a matter of counting. Each one gets its own inset panel
+         instead, so the grouping is drawn rather than inferred, and they wrap onto
+         a second line as whole chips when the column narrows.
+
+         Sunken rather than raised: these sit on a card already, and a second raised
+         surface on top of the first reads as something to press. -->
+    <Style x:Key="InsetSettingChipStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource SurfaceSunken}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource StrokeSubtle}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusCard}"/>
+        <Setter Property="Padding" Value="14,9"/>
+        <!-- Trailing gaps only, cancelled by a negative margin on the panel, so a
+             wrapped row leaves no hanging space at the right or the bottom. -->
+        <Setter Property="Margin" Value="0,0,10,10"/>
+    </Style>
+
     <!-- The page half of the title bar's path. A button rather than text, but it
          has to stay looking like the path: no chrome at rest, and only the ink
          changes under the pointer. Anything more - a fill, a border - would read
