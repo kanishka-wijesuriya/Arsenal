@@ -272,32 +272,17 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Button x:Name="PART_Back" Grid.Column="0" Focusable="False"
-                                        HorizontalAlignment="Left"
-                                        Margin="0,0,0,14"
-                                        Cursor="Hand"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        Padding="0">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <StackPanel Orientation="Horizontal" Background="Transparent">
-                                                <ui:SymbolIcon Symbol="ArrowLeft24" FontSize="16"
-                                                               Foreground="{DynamicResource AccentPrimary}"
-                                                               VerticalAlignment="Center"
-                                                               Margin="0,0,10,0"/>
-                                                <TextBlock Text="{Binding Header, RelativeSource={RelativeSource AncestorType=controls:SettingsGroup}}"
-                                                           FontFamily="{DynamicResource FontDisplay}"
-                                                           FontSize="19" FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource TextPrimary}"
-                                                           VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                                <!-- A drilled-into group states nothing about itself.
+                                     Its name is in the title bar, after the page's, and
+                                     its description has taken the page's description
+                                     line; repeating either here would say the same thing
+                                     three times down the left edge of the window. The
+                                     way back is the title bar's back arrow, which is
+                                     where every other way back in this application
+                                     already is.
 
-                                <!-- A pinned group has no back bar to carry its name, so it
-                                     states it the way a section heading would. -->
+                                     A pinned group is not a subpage and keeps its own
+                                     heading: nothing else on the page names it. -->
                                 <StackPanel x:Name="PinnedHeader" Grid.Column="0" Visibility="Collapsed" Margin="0,0,0,12">
                                     <StackPanel Orientation="Horizontal">
                                         <ui:SymbolIcon Symbol="{TemplateBinding Icon}" FontSize="20"
@@ -310,6 +295,12 @@
                                                    Foreground="{DynamicResource TextPrimary}"
                                                    VerticalAlignment="Center"/>
                                     </StackPanel>
+
+                                    <TextBlock Text="{TemplateBinding Description}"
+                                               Style="{StaticResource SettingDescriptionStyle}"
+                                               Margin="32,4,0,0" MaxWidth="720"
+                                               HorizontalAlignment="Left"
+                                               Visibility="{TemplateBinding Description, Converter={StaticResource HideWhenEmptyText}}"/>
                                 </StackPanel>
 
                                 <!-- Whatever the page put beside the heading. This
@@ -330,12 +321,6 @@
                                                   HorizontalAlignment="Right"
                                                   VerticalAlignment="Center"/>
                             </Grid>
-
-                            <TextBlock Text="{TemplateBinding Description}"
-                                       Style="{StaticResource SettingDescriptionStyle}"
-                                       Margin="26,-10,0,14" MaxWidth="720"
-                                       HorizontalAlignment="Left"
-                                       Visibility="{TemplateBinding Description, Converter={StaticResource HideWhenEmptyText}}"/>
 
                             <controls:AngularBorder Cut="14" Corners="TopRight,BottomLeft"
                                                     Background="{DynamicResource SurfaceCard}"
@@ -441,7 +426,6 @@
                         <Trigger Property="AlwaysOpen" Value="True">
                             <Setter TargetName="Closed" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="Opened" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="PART_Back" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="PinnedHeader" Property="Visibility" Value="Visible"/>
                         </Trigger>
 
@@ -450,12 +434,10 @@
                         <Trigger Property="Header" Value="{x:Null}">
                             <Setter TargetName="Closed" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="Opened" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="PART_Back" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
                         <Trigger Property="Header" Value="">
                             <Setter TargetName="Closed" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="Opened" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="PART_Back" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

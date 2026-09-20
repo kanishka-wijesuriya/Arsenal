@@ -105,6 +105,13 @@ namespace Arsenal.UI.Views.Windows
                 new Action(() => _focusRing.SuppressForActivation(Keyboard.FocusedElement)),
                 DispatcherPriority.Input);
             PreviewKeyDown += RestoreFocusRingOnNavigationKey;
+
+            // The bar is the only thing that names the open subpage now, so it has to
+            // hear about one opening from anywhere on any page. Dropped again on close
+            // because the event is static and would otherwise hold this window for the
+            // life of the process.
+            Controls.SettingsGroup.OpenGroupChanged += OnOpenGroupChanged;
+            Closed += (_, _) => Controls.SettingsGroup.OpenGroupChanged -= OnOpenGroupChanged;
         }
 
         private readonly Controls.FocusRingSuppressor _focusRing = new();
@@ -334,8 +341,22 @@ namespace Arsenal.UI.Views.Windows
 
         private void NavigateForwardButton_Click(object sender, RoutedEventArgs e) => GoForward();
 
+        /// <summary>
+        /// Leaves the open subpage, or the page, in that order.
+        /// </summary>
+        /// <remarks>
+        /// One back control for both, because there is only one place to look for it.
+        /// A subpage used to carry its own, which meant the bar's arrow skipped past
+        /// whatever the user was actually inside and left the page instead.
+        /// </remarks>
         private void GoBack()
         {
+            if (Controls.SettingsGroup.OpenGroup is not null)
+            {
+                Controls.SettingsGroup.Close();
+                return;
+            }
+
             if (_historyIndex <= 0) return;
             _historyIndex--;
             ReplayHistory();
@@ -376,7 +397,9 @@ namespace Arsenal.UI.Views.Windows
 
         private void UpdateHistoryButtons()
         {
-            NavigateBackButton.IsEnabled = _historyIndex > 0;
+            // An open subpage is somewhere to go back from even on the first page of
+            // the session, which is exactly the case where the history says otherwise.
+            NavigateBackButton.IsEnabled = _historyIndex > 0 || Controls.SettingsGroup.OpenGroup is not null;
             NavigateForwardButton.IsEnabled = _historyIndex >= 0 && _historyIndex < _history.Count - 1;
         }
 
@@ -403,11 +426,207 @@ namespace Arsenal.UI.Views.Windows
 
             // Construct the replacement before removing the current page. WPF cannot
             // render between these two operations, so the user never sees an empty host.
+            // Which way the sidebar moved, so the page arrives from the direction the
+            // selection travelled. Taken before ActivePageTag is overwritten.
+            double from = ArrivalOffset(_viewModel.ActivePageTag, tag);
+
             PageContentHost.Children.Clear();
             PageContentHost.Children.Add(page);
-            AnimatePageIn(page);
+            AnimatePageIn(page, from);
             _viewModel.ActivePageTag = tag;
             MarkActiveNavigationItem(tag);
+
+            // A page change closes whatever was drilled into, so the path is just the
+            // page again. Set after the swap, since the close that clears the subpage
+            // segment may have already run.
+            BreadcrumbRoot.Text = PageDisplayName(tag);
+            ShowSubpageCrumb(Controls.SettingsGroup.OpenGroup?.Header);
+        }
+
+        /// <summary>
+        /// How far, and from which side, a destination starts.
+        /// </summary>
+        /// <remarks>
+        /// Vertical, because the list it is chosen from is vertical: picking something
+        /// further down the sidebar and watching the page rise to meet it says which
+        /// way you moved. Sideways is kept for drilling into a subpage, where the
+        /// movement is into the page rather than along the list, so the two reads never
+        /// mean the same thing.
+        /// </remarks>
+        private double ArrivalOffset(string? fromTag, string toTag)
+        {
+            int from = PageOrdinal(fromTag);
+            int to = PageOrdinal(toTag);
+            if (from < 0 || to < 0 || from == to) return PageTravel;
+            return to > from ? PageTravel : -PageTravel;
+        }
+
+        /// <summary>Where a destination sits in the sidebar, or -1 if it is not in it.</summary>
+        /// <remarks>
+        /// Read from the live collections rather than from a list written out here, so
+        /// reordering the sidebar cannot silently reverse a transition.
+        /// </remarks>
+        private int PageOrdinal(string? tag)
+        {
+            if (string.IsNullOrEmpty(tag)) return -1;
+            string wanted = NormalizePageTag(tag);
+            int index = 0;
+
+            foreach (object? item in RootNavigationView.MenuItems.Cast<object?>()
+                         .Concat(RootNavigationView.FooterMenuItems.Cast<object?>()))
+            {
+                if (item is NavigationViewItem entry)
+                {
+                    if (string.Equals(NormalizePageTag(entry.TargetPageTag), wanted, StringComparison.OrdinalIgnoreCase))
+                        return index;
+                    index++;
+                }
+            }
+            return -1;
+        }
+
+        /// <summary>What the sidebar calls a destination, for the path in the bar.</summary>
+        private string PageDisplayName(string tag)
+        {
+            string wanted = NormalizePageTag(tag);
+            foreach (object? item in RootNavigationView.MenuItems.Cast<object?>()
+                         .Concat(RootNavigationView.FooterMenuItems.Cast<object?>()))
+            {
+                if (item is NavigationViewItem entry
+                    && string.Equals(NormalizePageTag(entry.TargetPageTag), wanted, StringComparison.OrdinalIgnoreCase))
+                {
+                    return entry.Content?.ToString() ?? wanted;
+                }
+            }
+            return wanted;
+        }
+
+        /// <summary>How far a destination travels on its way in.</summary>
+        private const double PageTravel = 26;
+
+        // ---- The path in the title bar ------------------------------------------
+
+        private static readonly Duration CrumbIn = new(TimeSpan.FromMilliseconds(260));
+        private static readonly Duration CrumbOut = new(TimeSpan.FromMilliseconds(170));
+
+        /// <summary>
+        /// Each page's own description line, and the words it started with.
+        /// </summary>
+        /// <remarks>
+        /// Found by walking the page once rather than by every page exposing it,
+        /// because the alternative was editing a dozen page headers to say something
+        /// the shared style already says. Keyed on the page instance, which is cached
+        /// and reused, so the original survives any number of trips in and out of a
+        /// subpage.
+        /// </remarks>
+        private readonly Dictionary<UIElement, (System.Windows.Controls.TextBlock Line, string Original)> _pageSubtitles = new();
+
+        private void OnOpenGroupChanged(Controls.SettingsGroup? group)
+        {
+            // Raised from whichever page the group is on, which is this thread, but a
+            // group closing during teardown can arrive while the bar is already gone.
+            if (!IsLoaded) return;
+
+            ShowSubpageCrumb(group?.Header);
+            ShowSubpageDescription(group?.Description);
+            UpdateHistoryButtons();
+        }
+
+        /// <summary>
+        /// Slides the subpage segment in beside the page name, or takes it away.
+        /// </summary>
+        /// <remarks>
+        /// Render-only and released on completion, for the same reason the page
+        /// arrival is: the bar outlives every page, and an animation left holding its
+        /// final value outranks whatever sets opacity on it next.
+        /// </remarks>
+        private void ShowSubpageCrumb(string? subpage)
+        {
+            bool wanted = !string.IsNullOrWhiteSpace(subpage);
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+            if (wanted)
+            {
+                BreadcrumbLeaf.Text = subpage;
+                BreadcrumbTail.Visibility = Visibility.Visible;
+
+                BreadcrumbTail.BeginAnimation(OpacityProperty, new DoubleAnimation(1, CrumbIn) { EasingFunction = ease });
+                BreadcrumbTailShift.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(0, CrumbIn) { EasingFunction = ease });
+                return;
+            }
+
+            if (BreadcrumbTail.Visibility != Visibility.Visible) return;
+
+            var fade = new DoubleAnimation(0, CrumbOut) { EasingFunction = ease };
+            fade.Completed += (_, _) =>
+            {
+                // Only if nothing opened again while this was running, or the segment
+                // that just arrived would be hidden by the departure of the last one.
+                if (Controls.SettingsGroup.OpenGroup is not null) return;
+                BreadcrumbTail.BeginAnimation(OpacityProperty, null);
+                BreadcrumbTail.Opacity = 0;
+                BreadcrumbTail.Visibility = Visibility.Collapsed;
+            };
+
+            BreadcrumbTail.BeginAnimation(OpacityProperty, fade);
+            BreadcrumbTailShift.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(-10, CrumbOut) { EasingFunction = ease });
+        }
+
+        /// <summary>
+        /// Puts the subpage's description on the page's own description line.
+        /// </summary>
+        /// <remarks>
+        /// The subpage no longer has anywhere to say this itself, and the page's line
+        /// is describing something the user has just navigated past. Cross-faded rather
+        /// than swapped, because the words change length and a hard cut reads as the
+        /// header twitching.
+        /// </remarks>
+        private void ShowSubpageDescription(string? description)
+        {
+            if (PageSubtitle() is not { } subtitle) return;
+            string wanted = string.IsNullOrWhiteSpace(description) ? subtitle.Original : description;
+            if (string.Equals(subtitle.Line.Text, wanted, StringComparison.Ordinal)) return;
+
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            var out_ = new DoubleAnimation(0, new Duration(TimeSpan.FromMilliseconds(110))) { EasingFunction = ease };
+            out_.Completed += (_, _) =>
+            {
+                subtitle.Line.BeginAnimation(OpacityProperty, null);
+                subtitle.Line.Text = wanted;
+                subtitle.Line.BeginAnimation(OpacityProperty,
+                    new DoubleAnimation(1, new Duration(TimeSpan.FromMilliseconds(180))) { EasingFunction = ease });
+            };
+            subtitle.Line.BeginAnimation(OpacityProperty, out_);
+        }
+
+        private (System.Windows.Controls.TextBlock Line, string Original)? PageSubtitle()
+        {
+            if (PageContentHost.Children.Count != 1) return null;
+            UIElement page = PageContentHost.Children[0];
+            if (_pageSubtitles.TryGetValue(page, out var known)) return known;
+
+            var style = TryFindResource("PageSubtitleStyle") as Style;
+            if (style is null) return null;
+
+            System.Windows.Controls.TextBlock? found = Descendants(page)
+                .OfType<System.Windows.Controls.TextBlock>()
+                .FirstOrDefault(text => ReferenceEquals(text.Style, style));
+            if (found is null) return null;
+
+            var entry = (found, found.Text);
+            _pageSubtitles[page] = entry;
+            return entry;
+        }
+
+        private static IEnumerable<DependencyObject> Descendants(DependencyObject root)
+        {
+            int count = VisualTreeHelper.GetChildrenCount(root);
+            for (int index = 0; index < count; index++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(root, index);
+                yield return child;
+                foreach (DependencyObject descendant in Descendants(child)) yield return descendant;
+            }
         }
 
         /// <summary>How long a destination takes to arrive.</summary>
@@ -433,7 +652,7 @@ namespace Arsenal.UI.Views.Windows
         /// rather than left holding their final value: pages are cached and shown again,
         /// and a held animation would outrank anything that later set opacity on one.</para>
         /// </remarks>
-        private static void AnimatePageIn(UIElement page)
+        private static void AnimatePageIn(UIElement page, double fromY)
         {
             var shift = new TranslateTransform();
             page.RenderTransform = shift;
@@ -444,7 +663,7 @@ namespace Arsenal.UI.Views.Windows
             // across the same time.
             var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
 
-            var slide = new DoubleAnimation(26, 0, PageArrival) { EasingFunction = ease };
+            var slide = new DoubleAnimation(fromY, 0, PageArrival) { EasingFunction = ease };
             var fade = new DoubleAnimation(0, 1, PageArrival) { EasingFunction = ease };
 
             fade.Completed += (_, _) =>
@@ -454,7 +673,10 @@ namespace Arsenal.UI.Views.Windows
                 page.RenderTransform = Transform.Identity;
             };
 
-            shift.BeginAnimation(TranslateTransform.XProperty, slide);
+            // Y, not X. The sidebar is a column, so a page arriving from the direction
+            // the selection moved says which way you went; sideways is reserved for
+            // drilling into a subpage, which is a different kind of movement.
+            shift.BeginAnimation(TranslateTransform.YProperty, slide);
             page.BeginAnimation(UIElement.OpacityProperty, fade);
         }
 

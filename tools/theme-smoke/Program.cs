@@ -72,6 +72,7 @@ internal static class Program
             AppConfig.Set("theme", (int)Arsenal.UI.Theming.AppTheme.Arsenal);
             App.ApplyConfiguredTheme();
             AssertGroupHeaderContentSurvivesTheTheme();
+            AssertSubpageHasNoHeadingOfItsOwn();
 
             AppConfig.Flush();
             application.Shutdown();
@@ -481,6 +482,108 @@ internal static class Program
             .FirstOrDefault(presenter => presenter.Name == "HeaderContentHost");
         Assert(empty is null || empty.Visibility != Visibility.Visible,
             "A group with no header content still reserves room for it.");
+    }
+
+    /// <summary>
+    /// A drilled-into group states nothing about itself, and says what it is through
+    /// the event the title bar listens to.
+    /// </summary>
+    /// <remarks>
+    /// The subpage used to carry its own name and its own back button. Both are gone:
+    /// the name is in the title bar after the page's, and the way back is the bar's
+    /// arrow. If the back bar ever returns, the window grows a second back control two
+    /// inches below the first and the same words appear twice, which is exactly the
+    /// state this is here to prevent.
+    /// </remarks>
+    private static void AssertSubpageHasNoHeadingOfItsOwn()
+    {
+        string? announced = "not raised";
+        void Heard(SettingsGroup? group) => announced = group?.Header;
+        SettingsGroup.OpenGroupChanged += Heard;
+
+        try
+        {
+            var group = new SettingsGroup
+            {
+                Header = "CPU power & thermals",
+                Description = "What the processor is allowed to draw.",
+                DrillIn = true,
+                Width = 800,
+            };
+            group.Items.Add(new SettingsRow { Header = "Sustained power" });
+
+            // A real window, off screen. A group only starts listening for the open
+            // signal in its Loaded handler, so one that was merely measured never
+            // opens at all and this would pass against any template whatsoever.
+            var host = new Border { Child = group, Width = 800 };
+            var window = new Window
+            {
+                Content = host,
+                Width = 900,
+                Height = 700,
+                Left = -20000,
+                Top = -20000,
+                WindowStyle = WindowStyle.None,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+            };
+
+            window.Show();
+            Pump();
+
+            group.Open();
+            Pump();
+            host.UpdateLayout();
+
+            Assert(group.IsOpen, "The group did not open, so nothing below is being tested.");
+
+            Assert(announced == "CPU power & thermals",
+                "Opening a subpage did not announce itself, so the title bar cannot name it.");
+
+            // The heading text must not also be on the page. A back bar or a repeated
+            // title would both show up as the header string inside the group.
+            //
+            // Effective visibility, not just presence: the closed card is still in the
+            // tree while the group is open, collapsed, carrying the same header. IsVisible
+            // cannot answer this because nothing here is connected to a window, so the
+            // chain of Visibility up to the host is walked instead.
+            bool repeatsItsName = VisualDescendants(host)
+                .OfType<TextBlock>()
+                .Where(text => string.Equals(text.Text, "CPU power & thermals", StringComparison.Ordinal))
+                .Any(text => IsShown(text, host));
+            Assert(!repeatsItsName, "An open subpage is still printing its own name on the page.");
+
+            Assert(group.Template.FindName("PART_Back", group) is null,
+                "The subpage back button is back; the title bar arrow is the only way out now.");
+
+            SettingsGroup.Close();
+            Pump();
+            Assert(announced is null, "Closing a subpage did not announce it, so the title bar keeps the old path.");
+
+            window.Close();
+        }
+        finally
+        {
+            SettingsGroup.OpenGroupChanged -= Heard;
+            SettingsGroup.Close();
+        }
+    }
+
+    /// <summary>Lets queued layout and Loaded work run before the next assertion.</summary>
+    private static void Pump() =>
+        Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Loaded);
+
+    /// <summary>Whether an element and every ancestor up to <paramref name="root"/> are visible.</summary>
+    private static bool IsShown(DependencyObject element, DependencyObject root)
+    {
+        DependencyObject? node = element;
+        while (node is not null)
+        {
+            if (node is UIElement visual && visual.Visibility != Visibility.Visible) return false;
+            if (ReferenceEquals(node, root)) return true;
+            node = VisualTreeHelper.GetParent(node);
+        }
+        return true;
     }
 
     private static IEnumerable<DependencyObject> VisualDescendants(DependencyObject root)

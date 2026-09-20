@@ -230,12 +230,27 @@ namespace Arsenal.UI.Controls
 
         private static SettingsGroup? _open;
 
+        /// <summary>The subpage currently open anywhere in the window, or null.</summary>
+        public static SettingsGroup? OpenGroup => _open;
+
+        /// <summary>
+        /// Raised when the open subpage changes, for chrome that lives outside the page.
+        /// </summary>
+        /// <remarks>
+        /// Separate from the private <c>OpenChanged</c> above, which exists so siblings
+        /// can step aside and is nobody else's business. This one is what the title bar
+        /// listens to: it is the only way anything outside a page can know which subpage
+        /// is showing, now that a subpage no longer states its own name.
+        /// </remarks>
+        public static event Action<SettingsGroup?>? OpenGroupChanged;
+
         /// <summary>Opens this group, closing whichever was open.</summary>
         public void Open()
         {
             if (!DrillIn || _open == this) return;
             _open = this;
             OpenChanged?.Invoke(_open);
+            OpenGroupChanged?.Invoke(_open);
         }
 
         /// <summary>Returns the page to the list of groups.</summary>
@@ -244,6 +259,7 @@ namespace Arsenal.UI.Controls
             if (_open is null) return;
             _open = null;
             OpenChanged?.Invoke(null);
+            OpenGroupChanged?.Invoke(null);
         }
 
         private void OnOpenChanged(SettingsGroup? open)
