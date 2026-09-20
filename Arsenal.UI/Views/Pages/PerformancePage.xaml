@@ -19,9 +19,9 @@
                     <TextBlock Text="Profiles, power limits, undervolting, GPU tuning and fan curves" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Style="{StaticResource ActionBarStyle}">
-                    <ui:Button Style="{StaticResource ActionButtonStyle}" Content="New plan" Command="{Binding OpenCreateProfileCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Add24}"/>
-                    <ui:Button Style="{StaticResource ActionButtonStyle}" Content="Reset profile" Command="{Binding ResetSettingsCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowReset24}"/>
-                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="Apply changes" Command="{Binding ApplySettingsCommand}" Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}"/>
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Content="New plan" Command="{Binding OpenCreateProfileCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon Add24}"/>
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Content="Reset profile" Command="{Binding ResetSettingsCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowReset24}"/>
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0" Content="Apply changes" Command="{Binding ApplySettingsCommand}" Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}"/>
                 </StackPanel>
             </Grid>
 
@@ -44,7 +44,7 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <RadioButton Style="{StaticResource RowSegmentStyle}"
+                                    <RadioButton Style="{DynamicResource RowSegmentStyle}"
                                                  GroupName="PerformanceProfile"
                                                  Content="{Binding Name}"
                                                  IsChecked="{Binding IsSelected, Mode=OneWay}"
@@ -190,16 +190,16 @@
                                  bound to whichever curve is chosen, so switching fans no
                                  longer builds three editors either. -->
                             <WrapPanel Style="{StaticResource ChoiceGroupStyle}" Margin="0,0,0,12">
-                                <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="FanCurve"
+                                <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="FanCurve"
                                              Content="CPU fan"
                                              IsChecked="{Binding SelectedFanTab, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                              Command="{Binding SelectFanTabCommand}" CommandParameter="0"/>
-                                <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="FanCurve"
+                                <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="FanCurve"
                                              Content="GPU fan"
                                              IsChecked="{Binding SelectedFanTab, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                              Command="{Binding SelectFanTabCommand}" CommandParameter="1"/>
                                 <!-- Only on chassis that have a third fan. -->
-                                <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="FanCurve"
+                                <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="FanCurve"
                                              Content="Mid fan"
                                              Visibility="{Binding HasMidFan, Converter={StaticResource BooleanToVisibilityConverter}}"
                                              IsChecked="{Binding SelectedFanTab, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"

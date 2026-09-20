@@ -33,7 +33,7 @@
 
                 <controls:SettingsRow Header="Setup"
                                       Description="Startup, notifications, updates and ASUS services, in one place.">
-                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0"
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0"
                                Content="Run setup again" Appearance="Secondary"
                                Command="{Binding RunSetupCommand}"/>
                 </controls:SettingsRow>
@@ -55,16 +55,16 @@
                 <controls:SettingsRow Header="Theme"
                                       Description="Applies immediately. System mode follows Windows from the next theme change.">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="Theme" Content="System"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="Theme" Content="System"
                                      IsChecked="{Binding SelectedTheme, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                      Command="{Binding SetThemeCommand}" CommandParameter="0"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="Theme" Content="Dark"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="Theme" Content="Dark"
                                      IsChecked="{Binding SelectedTheme, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                      Command="{Binding SetThemeCommand}" CommandParameter="1"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="Theme" Content="Light"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="Theme" Content="Light"
                                      IsChecked="{Binding SelectedTheme, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                      Command="{Binding SetThemeCommand}" CommandParameter="2"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="Theme" Content="Arsenal"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="Theme" Content="Arsenal"
                                      IsChecked="{Binding SelectedTheme, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
                                      Command="{Binding SetThemeCommand}" CommandParameter="3"/>
                     </WrapPanel>
@@ -83,11 +83,11 @@
                 <controls:SettingsRow Header="Accent colour"
                                       Description="{Binding AccentDescription}">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AccentSource"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="AccentSource"
                                      Content="Windows"
                                      IsChecked="{Binding SelectedAccentSource, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                      Command="{Binding SetAccentSourceCommand}" CommandParameter="0"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AccentSource"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="AccentSource"
                                      Content="Custom"
                                      IsChecked="{Binding SelectedAccentSource, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                      Command="{Binding SetAccentSourceCommand}" CommandParameter="1"/>

@@ -18,7 +18,7 @@
                     <TextBlock Text="ASUS mice, keyboards, Omni Receiver peripherals and handheld controls" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Style="{StaticResource ActionBarStyle}">
-                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="Scan for devices" Command="{Binding RefreshDevicesCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowSync24}"/>
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0" Content="Scan for devices" Command="{Binding RefreshDevicesCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowSync24}"/>
                 </StackPanel>
             </Grid>
 

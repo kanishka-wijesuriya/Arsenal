@@ -109,7 +109,7 @@
                                Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Style="{StaticResource ActionBarStyle}">
-                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="Scan again"
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0" Content="Scan again"
                                Command="{Binding CheckUpdatesCommand}" Appearance="Primary" Icon="{ui:SymbolIcon ArrowSync24}"
                                IsEnabled="{Binding IsChecking, Converter={StaticResource InverseBoolConverter}}"/>
                 </StackPanel>
@@ -184,16 +184,16 @@
                     </StackPanel>
                 </StackPanel>
                 <WrapPanel Grid.Column="1" VerticalAlignment="Center" Style="{StaticResource ChoiceGroupStyle}">
-                    <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="DriverFilter"
+                    <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="DriverFilter"
                                  Content="{Binding AllDriversFilterText}" IsChecked="{Binding SelectedDriverFilter, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                  Command="{Binding SetDriverFilterCommand}" CommandParameter="0"/>
-                    <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="DriverFilter"
+                    <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="DriverFilter"
                                  Content="{Binding OutdatedDriversFilterText}" IsChecked="{Binding SelectedDriverFilter, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                  Command="{Binding SetDriverFilterCommand}" CommandParameter="1"/>
-                    <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="DriverFilter"
+                    <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="DriverFilter"
                                  Content="{Binding CurrentDriversFilterText}" IsChecked="{Binding SelectedDriverFilter, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                  Command="{Binding SetDriverFilterCommand}" CommandParameter="2"/>
-                    <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="DriverFilter"
+                    <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="DriverFilter"
                                  Content="{Binding OptionalDriversFilterText}" IsChecked="{Binding SelectedDriverFilter, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
                                  Command="{Binding SetDriverFilterCommand}" CommandParameter="3"/>
                 </WrapPanel>

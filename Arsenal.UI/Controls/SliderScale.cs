@@ -18,6 +18,8 @@ namespace Arsenal.UI.Controls
     /// </summary>
     public class SliderScale : FrameworkElement
     {
+        public SliderScale() => ThemeRepaint.Follow(this);
+
         public static readonly DependencyProperty MinimumProperty =
             DependencyProperty.Register(nameof(Minimum), typeof(double), typeof(SliderScale),
                 new FrameworkPropertyMetadata(0d, FrameworkPropertyMetadataOptions.AffectsRender));

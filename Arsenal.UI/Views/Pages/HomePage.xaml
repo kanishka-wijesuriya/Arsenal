@@ -30,13 +30,13 @@
                                   Description="Applied to the BIOS and the Windows power mode.">
                 <StackPanel Orientation="Horizontal">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomePerformance" Content="Silent"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomePerformance" Content="Silent"
                                      IsChecked="{Binding DataContext.CurrentPerformanceMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                      Command="{Binding DataContext.SelectPerformanceModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="2"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomePerformance" Content="Balanced"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomePerformance" Content="Balanced"
                                      IsChecked="{Binding DataContext.CurrentPerformanceMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                      Command="{Binding DataContext.SelectPerformanceModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="0"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomePerformance" Content="Turbo"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomePerformance" Content="Turbo"
                                      IsChecked="{Binding DataContext.CurrentPerformanceMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                      Command="{Binding DataContext.SelectPerformanceModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="1"/>
                     </WrapPanel>
@@ -50,16 +50,16 @@
                                   Description="{Binding DataContext.GpuModeDescription, RelativeSource={RelativeSource AncestorType=UserControl}}">
                 <StackPanel Orientation="Horizontal">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeGpu" Content="Eco"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomeGpu" Content="Eco"
                                      IsChecked="{Binding DataContext.CurrentGpuMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                      Command="{Binding DataContext.SelectGpuModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="0"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeGpu" Content="Standard"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomeGpu" Content="Standard"
                                      IsChecked="{Binding DataContext.CurrentGpuMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                      Command="{Binding DataContext.SelectGpuModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="1"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeGpu" Content="Ultimate"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomeGpu" Content="Ultimate"
                                      IsChecked="{Binding DataContext.CurrentGpuMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                      Command="{Binding DataContext.SelectGpuModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="2"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeGpu" Content="Optimized"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomeGpu" Content="Optimized"
                                      IsChecked="{Binding DataContext.CurrentGpuMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
                                      Command="{Binding DataContext.SelectGpuModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="3"/>
                     </WrapPanel>
@@ -96,13 +96,13 @@
                              the number, and the same min/max/max_od parameters, so one
                              panel cannot be described two ways by the two pages. The
                              overdrive chip appears only where the panel has overdrive. -->
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MinimumRefreshRateLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MinimumRefreshRateLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                      IsChecked="{Binding DataContext.IsAtMinimumRefreshRate, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
                                      Command="{Binding DataContext.SelectRefreshRateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="min"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MaximumRefreshRateLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MaximumRefreshRateLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                      IsChecked="{Binding DataContext.IsAtMaximumRefreshRate, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
                                      Command="{Binding DataContext.SelectRefreshRateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="max"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MaximumRefreshRateWithOverdriveLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomeRefresh" Content="{Binding DataContext.MaximumRefreshRateWithOverdriveLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                      Visibility="{Binding DataContext.IsOverdriveAvailable, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"
                                      IsChecked="{Binding DataContext.IsAtMaximumRefreshRateWithOverdrive, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
                                      Command="{Binding DataContext.SelectRefreshRateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="max_od"/>
@@ -125,16 +125,16 @@
             <controls:SettingsRow Icon="Keyboard24" Header="Keyboard light" Description="Set the built-in keyboard backlight.">
                 <StackPanel Orientation="Horizontal">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeKeyboard" Content="Off" CommandParameter="0"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomeKeyboard" Content="Off" CommandParameter="0"
                                      Command="{Binding DataContext.SelectKeyboardBrightnessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                      IsChecked="{Binding DataContext.KeyboardBrightness, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeKeyboard" Content="1" CommandParameter="1"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomeKeyboard" Content="1" CommandParameter="1"
                                      Command="{Binding DataContext.SelectKeyboardBrightnessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                      IsChecked="{Binding DataContext.KeyboardBrightness, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeKeyboard" Content="2" CommandParameter="2"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomeKeyboard" Content="2" CommandParameter="2"
                                      Command="{Binding DataContext.SelectKeyboardBrightnessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                      IsChecked="{Binding DataContext.KeyboardBrightness, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="HomeKeyboard" Content="3" CommandParameter="3"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="HomeKeyboard" Content="3" CommandParameter="3"
                                      Command="{Binding DataContext.SelectKeyboardBrightnessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                      IsChecked="{Binding DataContext.KeyboardBrightness, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"/>
                     </WrapPanel>
@@ -296,7 +296,7 @@
                 </controls:SettingsGroup.HeaderContent>
             </controls:SettingsGroup>
 
-            <Border Style="{StaticResource CardSurfaceStyle}" Padding="16" Margin="0,0,0,16"
+            <Border Style="{DynamicResource CardSurfaceStyle}" Padding="16" Margin="0,0,0,16"
                     Visibility="{Binding IsEditingControls, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel>
                     <TextBlock Text="Add controls" Style="{StaticResource SettingLabelStyle}"/>

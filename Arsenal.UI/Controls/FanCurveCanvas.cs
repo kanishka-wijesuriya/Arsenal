@@ -50,6 +50,7 @@ namespace Arsenal.UI.Controls
         public FanCurveCanvas()
         {
             ClipToBounds = true;
+            ThemeRepaint.Follow(this);
             _handleBorderPen = new Pen(_handleBorderBrush, 2.0);
             _linePen.Freeze();
             _areaBrush.Freeze();

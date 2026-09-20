@@ -925,7 +925,7 @@
                              border, which put a box around the one control here that is
                              asking not to be pressed - next to a filled primary button it
                              read as the second of two offers. -->
-                        <ui:Button Grid.Column="0" Style="{StaticResource ActionButtonStyle}"
+                        <ui:Button Grid.Column="0" Style="{DynamicResource ActionButtonStyle}"
                                    Content="Skip setup" Appearance="Transparent" Margin="-8,0,0,0"
                                    Background="Transparent" BorderThickness="0"
                                    Foreground="{DynamicResource TextTertiary}"
@@ -938,14 +938,14 @@
                                    TextTrimming="CharacterEllipsis"/>
 
                         <StackPanel Grid.Column="2" Orientation="Horizontal">
-                            <ui:Button Style="{StaticResource ActionButtonStyle}" Content="Back"
+                            <ui:Button Style="{DynamicResource ActionButtonStyle}" Content="Back"
                                        Appearance="Secondary" MinWidth="88"
                                        Icon="{ui:SymbolIcon ArrowLeft24}"
                                        Visibility="{Binding CanGoBack, Converter={StaticResource BooleanToVisibilityConverter}}"
                                        IsEnabled="{Binding CanAdvance}"
                                        Command="{Binding BackCommand}"/>
 
-                            <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0"
+                            <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0"
                                        Content="{Binding NextLabel}"
                                        Appearance="Primary" MinWidth="132"
                                        IsEnabled="{Binding CanAdvance}"

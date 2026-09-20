@@ -24,18 +24,18 @@
                 <controls:SettingsRow Header="Mode"
                                       Description="{Binding GpuModeDescription}">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="DisplayGpu" Content="Eco"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="DisplayGpu" Content="Eco"
                                      Visibility="{Binding IsEcoSupported, Converter={StaticResource BooleanToVisibilityConverter}}"
                                      IsChecked="{Binding CurrentGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                      Command="{Binding SetGpuModeCommand}" CommandParameter="0"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="DisplayGpu" Content="Standard"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="DisplayGpu" Content="Standard"
                                      IsChecked="{Binding CurrentGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                      Command="{Binding SetGpuModeCommand}" CommandParameter="1"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="DisplayGpu" Content="Ultimate"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="DisplayGpu" Content="Ultimate"
                                      Visibility="{Binding IsMuxSupported, Converter={StaticResource BooleanToVisibilityConverter}}"
                                      IsChecked="{Binding CurrentGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                      Command="{Binding SetGpuModeCommand}" CommandParameter="2"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="DisplayGpu" Content="Optimized"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="DisplayGpu" Content="Optimized"
                                      IsChecked="{Binding CurrentGpuMode, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
                                      Command="{Binding SetGpuModeCommand}" CommandParameter="3"/>
                     </WrapPanel>
@@ -44,8 +44,8 @@
                 <controls:SettingsRow Header="Applications holding the dGPU"
                                       Description="Close them before switching to Eco, or hand the display over to an XG Mobile dock.">
                     <StackPanel Orientation="Horizontal">
-                        <ui:Button Style="{StaticResource ActionButtonStyle}" Content="Stop dGPU apps" Command="{Binding StopGpuAppsCommand}" Appearance="Secondary"/>
-                        <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="Toggle XG Mobile" Command="{Binding ToggleXgmCommand}" Appearance="Secondary"
+                        <ui:Button Style="{DynamicResource ActionButtonStyle}" Content="Stop dGPU apps" Command="{Binding StopGpuAppsCommand}" Appearance="Secondary"/>
+                        <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0" Content="Toggle XG Mobile" Command="{Binding ToggleXgmCommand}" Appearance="Secondary"
                                    Visibility="{Binding IsXgmConnected, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     </StackPanel>
                 </controls:SettingsRow>
@@ -66,17 +66,17 @@
                          under it. The Row* variants are the same chips sized for a
                          vertically centred row. -->
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}" IsEnabled="{Binding IsInternalPanelActive}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="RefreshRate"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="RefreshRate"
                                      IsChecked="{Binding IsLowRefreshRate, Mode=OneWay}"
                                      Command="{Binding SetRefreshRateCommand}" CommandParameter="min">
                             <TextBlock Text="{Binding MinRefreshRateLabel}"/>
                         </RadioButton>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="RefreshRate"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="RefreshRate"
                                      IsChecked="{Binding IsMaximumRefreshRate, Mode=OneWay}"
                                      Command="{Binding SetRefreshRateCommand}" CommandParameter="max">
                             <TextBlock Text="{Binding MaxRefreshRateLabel}"/>
                         </RadioButton>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="RefreshRate"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="RefreshRate"
                                      IsChecked="{Binding IsMaximumRefreshRateWithOverdrive, Mode=OneWay}"
                                      Visibility="{Binding IsOverdriveAvailable, Converter={StaticResource BooleanToVisibilityConverter}}"
                                      Command="{Binding SetRefreshRateCommand}" CommandParameter="max_od">
@@ -117,9 +117,9 @@
                                       Description="Switch the panel between its native and scaled modes, or hand HDR back to Windows."
                                       Visibility="{Binding IsPanelModeRowVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <StackPanel Orientation="Horizontal">
-                        <ui:Button Style="{StaticResource ActionButtonStyle}" Content="Toggle FHD / UHD" Command="{Binding ToggleResolutionCommand}" Appearance="Secondary"
+                        <ui:Button Style="{DynamicResource ActionButtonStyle}" Content="Toggle FHD / UHD" Command="{Binding ToggleResolutionCommand}" Appearance="Secondary"
                                    Visibility="{Binding IsResolutionToggleSupported, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                        <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="Toggle HDR control" Command="{Binding ToggleHdrControlCommand}" Appearance="Secondary"
+                        <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0" Content="Toggle HDR control" Command="{Binding ToggleHdrControlCommand}" Appearance="Secondary"
                                    Visibility="{Binding IsHdrControlSupported, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     </StackPanel>
                 </controls:SettingsRow>
@@ -155,16 +155,16 @@
                 <controls:SettingsRow Header="GameVisual profile">
                     <controls:SettingsRow.ContentBelow>
                         <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Default" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=11}" Command="{Binding SetSplendidCommand}" CommandParameter="11"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Racing" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=21}" Command="{Binding SetSplendidCommand}" CommandParameter="21"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Scenery" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=22}" Command="{Binding SetSplendidCommand}" CommandParameter="22"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="RTS / RPG" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=23}" Command="{Binding SetSplendidCommand}" CommandParameter="23"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="FPS" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=24}" Command="{Binding SetSplendidCommand}" CommandParameter="24"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Cinema" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=25}" Command="{Binding SetSplendidCommand}" CommandParameter="25"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Vivid" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=13}" Command="{Binding SetSplendidCommand}" CommandParameter="13"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Eyecare" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=17}" Command="{Binding SetSplendidCommand}" CommandParameter="17"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="E-Reading" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=212}" Command="{Binding SetSplendidCommand}" CommandParameter="212"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Disabled" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=18}" Command="{Binding SetSplendidCommand}" CommandParameter="18"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Default" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=11}" Command="{Binding SetSplendidCommand}" CommandParameter="11"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Racing" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=21}" Command="{Binding SetSplendidCommand}" CommandParameter="21"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Scenery" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=22}" Command="{Binding SetSplendidCommand}" CommandParameter="22"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="RTS / RPG" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=23}" Command="{Binding SetSplendidCommand}" CommandParameter="23"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="FPS" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=24}" Command="{Binding SetSplendidCommand}" CommandParameter="24"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Cinema" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=25}" Command="{Binding SetSplendidCommand}" CommandParameter="25"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Vivid" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=13}" Command="{Binding SetSplendidCommand}" CommandParameter="13"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Eyecare" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=17}" Command="{Binding SetSplendidCommand}" CommandParameter="17"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="E-Reading" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=212}" Command="{Binding SetSplendidCommand}" CommandParameter="212"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Splendid" Content="Disabled" IsChecked="{Binding SelectedSplendidProfile, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=18}" Command="{Binding SetSplendidCommand}" CommandParameter="18"/>
                         </WrapPanel>
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
@@ -172,10 +172,10 @@
                 <controls:SettingsRow Header="Colour gamut" IsEnabled="{Binding IsColorPipelineEnabled}">
                     <controls:SettingsRow.ContentBelow>
                         <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Gamut" Content="Native" IsChecked="{Binding SelectedGamut, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=50}" Command="{Binding SetGamutCommand}" CommandParameter="50"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Gamut" Content="sRGB" IsChecked="{Binding SelectedGamut, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=51}" Command="{Binding SetGamutCommand}" CommandParameter="51"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Gamut" Content="DCI-P3" IsChecked="{Binding SelectedGamut, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=53}" Command="{Binding SetGamutCommand}" CommandParameter="53"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="Gamut" Content="Display P3" IsChecked="{Binding SelectedGamut, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=54}" Command="{Binding SetGamutCommand}" CommandParameter="54"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Gamut" Content="Native" IsChecked="{Binding SelectedGamut, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=50}" Command="{Binding SetGamutCommand}" CommandParameter="50"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Gamut" Content="sRGB" IsChecked="{Binding SelectedGamut, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=51}" Command="{Binding SetGamutCommand}" CommandParameter="51"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Gamut" Content="DCI-P3" IsChecked="{Binding SelectedGamut, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=53}" Command="{Binding SetGamutCommand}" CommandParameter="53"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="Gamut" Content="Display P3" IsChecked="{Binding SelectedGamut, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=54}" Command="{Binding SetGamutCommand}" CommandParameter="54"/>
                         </WrapPanel>
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
@@ -183,13 +183,13 @@
                 <controls:SettingsRow Header="White point" IsEnabled="{Binding IsColorPipelineEnabled}">
                     <controls:SettingsRow.ContentBelow>
                         <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Warmest" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="0"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Warmer" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=15}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="15"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Warm" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=30}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="30"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Neutral" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=50}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="50"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Cold" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=70}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="70"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Colder" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=85}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="85"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Coldest" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=100}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="100"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Warmest" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="0"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Warmer" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=15}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="15"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Warm" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=30}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="30"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Neutral" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=50}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="50"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Cold" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=70}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="70"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Colder" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=85}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="85"/>
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="WhitePoint" Content="Coldest" IsChecked="{Binding ColorTemperature, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=100}" Command="{Binding SetColorTemperatureValueCommand}" CommandParameter="100"/>
                         </WrapPanel>
                     </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>

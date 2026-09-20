@@ -19,16 +19,16 @@
                                     Description="Brightness, Aura effect, colour and speed for the keyboard and the lightbar.">
                 <controls:SettingsRow Header="Brightness" Description="Keyboard and lightbar illumination level.">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Off"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Off"
                                      IsChecked="{Binding Brightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                      Command="{Binding SetBrightnessLevelCommand}" CommandParameter="0"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Low"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Low"
                                      IsChecked="{Binding Brightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                      Command="{Binding SetBrightnessLevelCommand}" CommandParameter="1"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Medium"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Medium"
                                      IsChecked="{Binding Brightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                      Command="{Binding SetBrightnessLevelCommand}" CommandParameter="2"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Max"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="KeyboardBrightness" Content="Max"
                                      IsChecked="{Binding Brightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
                                      Command="{Binding SetBrightnessLevelCommand}" CommandParameter="3"/>
                     </WrapPanel>
@@ -180,7 +180,7 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="AuraMode"
+                                    <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="AuraMode"
                                                  Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=OneWay}"
                                                  Command="{Binding DataContext.SetAuraModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                  CommandParameter="{Binding Value}"/>
@@ -192,13 +192,13 @@
 
                 <controls:SettingsRow Header="Animation speed" Description="Used by the animated Aura effects.">
                     <StackPanel Orientation="Horizontal">
-                        <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" Margin="0,0,8,0" MinWidth="84" GroupName="AuraSpeed" Content="Slow"
+                        <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" Margin="0,0,8,0" MinWidth="84" GroupName="AuraSpeed" Content="Slow"
                                      IsChecked="{Binding Speed, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                      Command="{Binding SetSpeedCommand}" CommandParameter="0"/>
-                        <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" Margin="0,0,8,0" MinWidth="84" GroupName="AuraSpeed" Content="Normal"
+                        <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" Margin="0,0,8,0" MinWidth="84" GroupName="AuraSpeed" Content="Normal"
                                      IsChecked="{Binding Speed, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                      Command="{Binding SetSpeedCommand}" CommandParameter="1"/>
-                        <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" Margin="0" MinWidth="84" GroupName="AuraSpeed" Content="Fast"
+                        <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" Margin="0" MinWidth="84" GroupName="AuraSpeed" Content="Fast"
                                      IsChecked="{Binding Speed, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                      Command="{Binding SetSpeedCommand}" CommandParameter="2"/>
                     </StackPanel>
@@ -233,7 +233,7 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixMode"
+                                    <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="MatrixMode"
                                                  Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=OneWay}"
                                                  Command="{Binding DataContext.SetMatrixRunningModeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                  CommandParameter="{Binding Value}"/>
@@ -246,16 +246,16 @@
                 <controls:SettingsRow Header="Brightness">
                     <controls:SettingsRow.ContentBelow>
                         <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="Off"
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="Off"
                                          IsChecked="{Binding MatrixBrightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"
                                          Command="{Binding SetMatrixBrightnessLevelCommand}" CommandParameter="0"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="Low"
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="Low"
                                          IsChecked="{Binding MatrixBrightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"
                                          Command="{Binding SetMatrixBrightnessLevelCommand}" CommandParameter="1"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="Medium"
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="Medium"
                                          IsChecked="{Binding MatrixBrightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"
                                          Command="{Binding SetMatrixBrightnessLevelCommand}" CommandParameter="2"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="High"
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="MatrixBrightness" Content="High"
                                          IsChecked="{Binding MatrixBrightness, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=3}"
                                          Command="{Binding SetMatrixBrightnessLevelCommand}" CommandParameter="3"/>
                         </WrapPanel>

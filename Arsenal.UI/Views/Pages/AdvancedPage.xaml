@@ -17,7 +17,7 @@
                     <TextBlock Text="Power-user controls for firmware, Windows power policy and ASUS services" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Style="{StaticResource ActionBarStyle}">
-                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="Save changes" Command="{Binding SaveSystemTweaksCommand}" Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}"/>
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0" Content="Save changes" Command="{Binding SaveSystemTweaksCommand}" Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}"/>
                 </StackPanel>
             </Grid>
 
@@ -31,7 +31,7 @@
                                     Visibility="{Binding NeedsElevation, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <controls:SettingsRow Header="Running without administrator rights"
                                       Description="The battery icon's smart-charging shield, the charge-limit startup task and the panel refresh flag all need elevation. The charge limit itself still applies without it.">
-                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0" Content="Restart as administrator"
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0" Content="Restart as administrator"
                                Command="{Binding RestartAsAdministratorCommand}" Appearance="Primary"/>
                 </controls:SettingsRow>
             </controls:SettingsGroup>

@@ -14,6 +14,8 @@ namespace Arsenal.UI.Controls
     /// </summary>
     public class BarMarker : FrameworkElement
     {
+        public BarMarker() => ThemeRepaint.Follow(this);
+
         public static readonly DependencyProperty PositionProperty =
             DependencyProperty.Register(nameof(Position), typeof(double), typeof(BarMarker),
                 new FrameworkPropertyMetadata(0d, FrameworkPropertyMetadataOptions.AffectsRender));

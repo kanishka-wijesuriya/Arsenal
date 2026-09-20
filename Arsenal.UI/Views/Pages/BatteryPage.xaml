@@ -45,7 +45,7 @@
                 <controls:SettingsRow Header="Windows is not showing smart charging"
                                       Description="The limit below is applied to the battery firmware and is working. Reporting it to Windows, which is what puts the leaf on the battery icon, writes to a machine-wide setting that needs administrator rights."
                                       Visibility="{Binding NeedsElevation, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <ui:Button Style="{StaticResource ActionButtonStyle}" Margin="0"
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0"
                                Content="Restart as administrator"
                                Command="{Binding RestartAsAdministratorCommand}" Appearance="Primary"/>
                 </controls:SettingsRow>
@@ -63,13 +63,13 @@
                 <controls:SettingsRow Header="Presets">
                     <controls:SettingsRow.ContentBelow>
                         <WrapPanel Style="{StaticResource ChoiceGroupStyle}">
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="ChargeLimit" Content="60% · desk" MinWidth="150"
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="ChargeLimit" Content="60% · desk" MinWidth="150"
                                          IsChecked="{Binding ChargeLimit, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=60}"
                                          Command="{Binding SetLimitCommand}" CommandParameter="60"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="ChargeLimit" Content="80% · recommended" MinWidth="150"
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="ChargeLimit" Content="80% · recommended" MinWidth="150"
                                          IsChecked="{Binding ChargeLimit, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=80}"
                                          Command="{Binding SetLimitCommand}" CommandParameter="80"/>
-                            <RadioButton Style="{StaticResource SegmentedRadioButtonStyle}" GroupName="ChargeLimit" Content="100% · travel" MinWidth="150"
+                            <RadioButton Style="{DynamicResource SegmentedRadioButtonStyle}" GroupName="ChargeLimit" Content="100% · travel" MinWidth="150"
                                          IsChecked="{Binding ChargeLimit, Mode=OneWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=100}"
                                          Command="{Binding SetLimitCommand}" CommandParameter="100"/>
                         </WrapPanel>

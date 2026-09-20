@@ -15,7 +15,7 @@
                 </StackPanel>
             </Grid>
 
-            <Border Style="{StaticResource CardSurfaceStyle}" Padding="24">
+            <Border Style="{DynamicResource CardSurfaceStyle}" Padding="24">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -151,7 +151,7 @@
                  heading over a single control, and in a theme that files settings one
                  level down it became a destination you had to open to find one button.
                  This is a note with an action, which is what it always was. -->
-            <Border Style="{StaticResource CardSurfaceStyle}">
+            <Border Style="{DynamicResource CardSurfaceStyle}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>

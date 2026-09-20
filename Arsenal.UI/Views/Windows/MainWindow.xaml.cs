@@ -730,10 +730,12 @@ namespace Arsenal.UI.Views.Windows
 
             if (!_subpageBackButtons.TryGetValue(page, out var button))
             {
-                button = new System.Windows.Controls.Button
-                {
-                    Style = TryFindResource("SubpageBackButtonStyle") as Style
-                };
+                button = new System.Windows.Controls.Button();
+
+                // The key, not the style it resolves to right now. Assigning the object
+                // would pin this button to whichever theme was on when it was made, and
+                // these are kept for the life of the window.
+                button.SetResourceReference(StyleProperty, "SubpageBackButtonStyle");
                 button.Click += SubpageBackButton_Click;
                 _subpageBackButtons[page] = button;
             }

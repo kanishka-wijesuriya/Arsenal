@@ -23,22 +23,22 @@
 
                 <controls:SettingsRow Header="On AC power" IsEnabled="{Binding IsAutoSwitchEnabled}">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AcMode" Content="Silent"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="AcMode" Content="Silent"
                                      IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AcMode" Content="Balanced"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="AcMode" Content="Balanced"
                                      IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="AcMode" Content="Turbo"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="AcMode" Content="Turbo"
                                      IsChecked="{Binding AcMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"/>
                     </WrapPanel>
                 </controls:SettingsRow>
 
                 <controls:SettingsRow Header="On battery" IsEnabled="{Binding IsAutoSwitchEnabled}">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="BatteryMode" Content="Silent"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="BatteryMode" Content="Silent"
                                      IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2}"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="BatteryMode" Content="Balanced"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="BatteryMode" Content="Balanced"
                                      IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0}"/>
-                        <RadioButton Style="{StaticResource RowSegmentStyle}" GroupName="BatteryMode" Content="Turbo"
+                        <RadioButton Style="{DynamicResource RowSegmentStyle}" GroupName="BatteryMode" Content="Turbo"
                                      IsChecked="{Binding BatteryMode, Mode=TwoWay, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1}"/>
                     </WrapPanel>
                 </controls:SettingsRow>

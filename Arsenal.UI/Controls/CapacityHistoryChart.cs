@@ -48,6 +48,7 @@ namespace Arsenal.UI.Controls
         public CapacityHistoryChart()
         {
             MinHeight = 120;
+            ThemeRepaint.Follow(this);
         }
 
         private static void OnPointsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

@@ -307,6 +307,23 @@ namespace Arsenal.UI
         /// <summary>The palette in force. Read by anything that has to branch on it.</summary>
         public static Theming.ThemePalette Palette { get; private set; } = Theming.ThemePalette.Dark;
 
+        /// <summary>
+        /// Raised once a theme has been applied in full.
+        /// </summary>
+        /// <remarks>
+        /// For the handful of controls that draw themselves. A template picks its
+        /// colours up through DynamicResource and repaints on its own, but a control
+        /// that reads a brush inside OnRender only reads it again when something asks it
+        /// to redraw, and swapping a theme asks nothing of anybody: the fan curve, the
+        /// slider scales and the capacity chart all kept the colours of the theme they
+        /// were last drawn under until they were resized or their data changed.
+        ///
+        /// <para>Subscribe on Loaded and drop it on Unloaded. This is static and lives
+        /// as long as the process, so a control that holds on to it holds its whole page
+        /// with it.</para>
+        /// </remarks>
+        public static event Action? ThemeChanged;
+
         public static void ApplyConfiguredTheme()
         {
             try
@@ -343,6 +360,9 @@ namespace Arsenal.UI
                     ApplyNavigationForeground(palette);
                     ApplyAccentResources(palette);
                     ApplyWindowSurfaces(palette);
+
+                    // Last, once every token and template is in place.
+                    ThemeChanged?.Invoke();
                 }
             }
             catch (Exception ex)
