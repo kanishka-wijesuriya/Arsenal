@@ -426,13 +426,9 @@ namespace Arsenal.UI.Views.Windows
 
             // Construct the replacement before removing the current page. WPF cannot
             // render between these two operations, so the user never sees an empty host.
-            // Which way the sidebar moved, so the page arrives from the direction the
-            // selection travelled. Taken before ActivePageTag is overwritten.
-            double from = ArrivalOffset(_viewModel.ActivePageTag, tag);
-
             PageContentHost.Children.Clear();
             PageContentHost.Children.Add(page);
-            AnimatePageIn(page, from);
+            AnimatePageIn(page);
             _viewModel.ActivePageTag = tag;
             MarkActiveNavigationItem(tag);
 
@@ -441,48 +437,6 @@ namespace Arsenal.UI.Views.Windows
             // segment may have already run.
             BreadcrumbRoot.Text = PageDisplayName(tag);
             ShowSubpageCrumb(Controls.SettingsGroup.OpenGroup?.Header);
-        }
-
-        /// <summary>
-        /// How far, and from which side, a destination starts.
-        /// </summary>
-        /// <remarks>
-        /// Vertical, because the list it is chosen from is vertical: picking something
-        /// further down the sidebar and watching the page rise to meet it says which
-        /// way you moved. Sideways is kept for drilling into a subpage, where the
-        /// movement is into the page rather than along the list, so the two reads never
-        /// mean the same thing.
-        /// </remarks>
-        private double ArrivalOffset(string? fromTag, string toTag)
-        {
-            int from = PageOrdinal(fromTag);
-            int to = PageOrdinal(toTag);
-            if (from < 0 || to < 0 || from == to) return PageTravel;
-            return to > from ? PageTravel : -PageTravel;
-        }
-
-        /// <summary>Where a destination sits in the sidebar, or -1 if it is not in it.</summary>
-        /// <remarks>
-        /// Read from the live collections rather than from a list written out here, so
-        /// reordering the sidebar cannot silently reverse a transition.
-        /// </remarks>
-        private int PageOrdinal(string? tag)
-        {
-            if (string.IsNullOrEmpty(tag)) return -1;
-            string wanted = NormalizePageTag(tag);
-            int index = 0;
-
-            foreach (object? item in RootNavigationView.MenuItems.Cast<object?>()
-                         .Concat(RootNavigationView.FooterMenuItems.Cast<object?>()))
-            {
-                if (item is NavigationViewItem entry)
-                {
-                    if (string.Equals(NormalizePageTag(entry.TargetPageTag), wanted, StringComparison.OrdinalIgnoreCase))
-                        return index;
-                    index++;
-                }
-            }
-            return -1;
         }
 
         /// <summary>What the sidebar calls a destination, for the path in the bar.</summary>
@@ -502,6 +456,14 @@ namespace Arsenal.UI.Views.Windows
         }
 
         /// <summary>How far a destination travels on its way in.</summary>
+        /// <remarks>
+        /// Always the same distance and always the same direction. It used to be signed
+        /// by which way the selection moved down the sidebar, which meant the same act -
+        /// choosing a page - looked like two different gestures depending on where the
+        /// last one happened to be, and going back up the list read as the page being
+        /// pushed away. One direction makes arriving somewhere look like arriving
+        /// somewhere.
+        /// </remarks>
         private const double PageTravel = 26;
 
         // ---- The path in the title bar ------------------------------------------
@@ -652,7 +614,7 @@ namespace Arsenal.UI.Views.Windows
         /// rather than left holding their final value: pages are cached and shown again,
         /// and a held animation would outrank anything that later set opacity on one.</para>
         /// </remarks>
-        private static void AnimatePageIn(UIElement page, double fromY)
+        private static void AnimatePageIn(UIElement page)
         {
             var shift = new TranslateTransform();
             page.RenderTransform = shift;
@@ -663,7 +625,7 @@ namespace Arsenal.UI.Views.Windows
             // across the same time.
             var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
 
-            var slide = new DoubleAnimation(fromY, 0, PageArrival) { EasingFunction = ease };
+            var slide = new DoubleAnimation(PageTravel, 0, PageArrival) { EasingFunction = ease };
             var fade = new DoubleAnimation(0, 1, PageArrival) { EasingFunction = ease };
 
             fade.Completed += (_, _) =>
@@ -673,9 +635,9 @@ namespace Arsenal.UI.Views.Windows
                 page.RenderTransform = Transform.Identity;
             };
 
-            // Y, not X. The sidebar is a column, so a page arriving from the direction
-            // the selection moved says which way you went; sideways is reserved for
-            // drilling into a subpage, which is a different kind of movement.
+            // Y, not X, and always upwards: a page rises into place the way a list of
+            // results settles. Sideways is reserved for drilling into a subpage, which
+            // is a different kind of movement.
             shift.BeginAnimation(TranslateTransform.YProperty, slide);
             page.BeginAnimation(UIElement.OpacityProperty, fade);
         }
