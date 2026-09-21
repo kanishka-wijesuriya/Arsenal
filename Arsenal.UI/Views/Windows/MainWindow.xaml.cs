@@ -21,13 +21,16 @@ namespace Arsenal.UI.Views.Windows
     {
         private readonly MainViewModel _viewModel;
         private readonly DispatcherTimer _placementSaveTimer;
+        private const int MaxCachedPages = 3;
         private readonly Dictionary<string, UIElement> _pageCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly LinkedList<string> _pageCacheOrder = new();
         private CommandPaletteView? _searchPanel;
         private SetupView? _setupPanel;
         private UpdateView? _updatePanel;
 
         private bool _allowClose;
         private bool _pageContentReleased;
+        private int _visibilityLogToken;
 
         public MainWindow(MainViewModel viewModel)
         {
@@ -49,7 +52,17 @@ namespace Arsenal.UI.Views.Windows
                 SaveWindowPlacementNow();
             };
 
-            Loaded += (_, _) => { RestoreWindowPlacement(); TrackNavigationPaneWidth(); ApplyResponsivePane(); };
+            Loaded += (_, _) =>
+            {
+                RestoreWindowPlacement();
+                TrackNavigationPaneWidth();
+                ApplyResponsivePane();
+
+                // A window left open is a working set held for as long as it is open.
+                // Started here rather than at launch because with nothing on screen the
+                // quiet release already does more than this would.
+                Services.BackgroundMemoryRelease.WatchOpenWindows();
+            };
             LocationChanged += (_, _) => ScheduleWindowPlacementSave();
             SizeChanged += (_, e) =>
             {
@@ -69,6 +82,17 @@ namespace Arsenal.UI.Views.Windows
             {
                 if ((bool)e.NewValue) RestorePageContent();
                 else ReleasePageContent();
+
+                // The window being up is the state anybody looking at Task Manager is
+                // looking at, so it is the one worth a line. Debounced so rapid open
+                // and close toggles do not spawn repeated virtual memory sweeps.
+                int logToken = Interlocked.Increment(ref _visibilityLogToken);
+                _ = System.Threading.Tasks.Task.Run(async () =>
+                {
+                    await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+                    if (Volatile.Read(ref _visibilityLogToken) != logToken) return;
+                    Arsenal.Helpers.MemoryHelper.LogReport((bool)e.NewValue ? "window shown" : "window hidden");
+                });
             };
 
             // Keybindings (Ctrl+K for Command Palette)
@@ -946,7 +970,12 @@ namespace Arsenal.UI.Views.Windows
 
         private UIElement GetOrCreatePage(string tag)
         {
-            if (_pageCache.TryGetValue(tag, out UIElement? page)) return page;
+            if (_pageCache.TryGetValue(tag, out UIElement? page))
+            {
+                _pageCacheOrder.Remove(tag);
+                _pageCacheOrder.AddFirst(tag);
+                return page;
+            }
 
             page = tag switch
             {
@@ -965,8 +994,60 @@ namespace Arsenal.UI.Views.Windows
                 _ => new HomePage(App.Services.GetRequiredService<HomeViewModel>())
             };
 
+            UIElement? currentOnScreen = PageContentHost.Children.Count > 0 ? PageContentHost.Children[0] : null;
+            while (_pageCache.Count >= MaxCachedPages && _pageCacheOrder.Count > 0)
+            {
+                LinkedListNode<string>? node = _pageCacheOrder.Last;
+                while (node is not null && _pageCache.TryGetValue(node.Value, out UIElement? candidate)
+                    && ReferenceEquals(candidate, currentOnScreen))
+                {
+                    node = node.Previous;
+                }
+
+                if (node is null) break;
+
+                string evictTag = node.Value;
+                _pageCacheOrder.Remove(node);
+                if (_pageCache.Remove(evictTag, out UIElement? evicted))
+                {
+                    EvictPage(evicted);
+                }
+            }
+
             _pageCache[tag] = page;
+            _pageCacheOrder.AddFirst(tag);
             return page;
+        }
+
+        private void EvictPage(UIElement page)
+        {
+            if (_subpageBackButtons.Remove(page, out System.Windows.Controls.Button? button))
+            {
+                button.Click -= SubpageBackButton_Click;
+            }
+            _pageTitles.Remove(page);
+            _pageSubtitles.Remove(page);
+            DisposeSubtree(page);
+            GC.Collect(1, GCCollectionMode.Optimized);
+        }
+
+        private static void DisposeSubtree(UIElement element)
+        {
+            if (element is IDisposable disposable)
+            {
+                try { disposable.Dispose(); } catch { }
+            }
+
+            if (element is DependencyObject parent)
+            {
+                foreach (DependencyObject child in Descendants(parent))
+                {
+                    if (child is IDisposable childDisposable)
+                    {
+                        try { childDisposable.Dispose(); } catch { }
+                    }
+                }
+            }
         }
 
         private static string NormalizePageTag(string? tag) => tag switch
@@ -990,26 +1071,27 @@ namespace Arsenal.UI.Views.Windows
             if (PageContentHost.Children.Count > 0)
                 PageContentHost.Children.Clear();
 
-            // Preserve the tray-memory optimization: cached page controls live only for
-            // the visible full-window session and become collectible as soon as it hides.
-            _pageCache.Clear();
+            // Retain the active page in the cache so reopening the window or toggling
+            // the tray repeatedly reuses the existing visual tree rather than allocating
+            // and rebuilding it on every open. Inactive pages visited during the session
+            // are evicted and disposed immediately.
+            string activeTag = NormalizePageTag(_viewModel.ActivePageTag);
+            var inactive = _pageCache.Keys
+                .Where(k => !string.Equals(k, activeTag, StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
-            // These are keyed on the page instances, so leaving them would hold every
-            // page the session visited past the release above and make it pointless. The
-            // originals are read back off the XAML when the pages are rebuilt.
-            _pageTitles.Clear();
-            _pageSubtitles.Clear();
-
-            foreach (var button in _subpageBackButtons.Values) button.Click -= SubpageBackButton_Click;
-            _subpageBackButtons.Clear();
+            foreach (string tag in inactive)
+            {
+                if (_pageCache.Remove(tag, out UIElement? evicted))
+                {
+                    _pageCacheOrder.Remove(tag);
+                    EvictPage(evicted);
+                }
+            }
 
             _pageContentReleased = true;
 
-            // Dropping the references only makes the pages collectible. Without this the
-            // collection happens whenever the GC next feels like it - which, for a tray
-            // application that then sits idle allocating almost nothing, can be never -
-            // so the window's whole visual tree stayed resident for the rest of the
-            // session.
+            GC.Collect(1, GCCollectionMode.Optimized);
             Services.BackgroundMemoryRelease.Schedule();
         }
 

@@ -607,16 +607,8 @@ namespace Arsenal.UI.Views.Windows
 
         private static void SetTransitionCache(FrameworkElement view, bool cached)
         {
-            if (cached && view.CacheMode is null)
-            {
-                System.Windows.Media.RenderOptions.SetCachingHint(view, System.Windows.Media.CachingHint.Cache);
-                view.CacheMode = new System.Windows.Media.BitmapCache { SnapsToDevicePixels = true };
-            }
-            else if (!cached && view.CacheMode is not null)
-            {
-                view.CacheMode = null;
-                System.Windows.Media.RenderOptions.SetCachingHint(view, System.Windows.Media.CachingHint.Unspecified);
-            }
+            // Transitions are animated natively without allocating and tearing down
+            // intermediate bitmap caches.
         }
 
         /// <summary>
@@ -626,7 +618,8 @@ namespace Arsenal.UI.Views.Windows
         private void ResetToMainView()
         {
             EndTileDrag();
-            SetTileBitmapCache(true);
+            if (IsVisible) SetTileBitmapCache(true);
+            else SetTileBitmapCache(false);
 
             _detailShown = false;
             _viewTransitionRunning = false;
@@ -1424,28 +1417,15 @@ namespace Arsenal.UI.Views.Windows
         /// </remarks>
         private void OnPanelVisibilityChanged(bool visible)
         {
-            if (visible)
-            {
-                SetTileBitmapCache(true);
-                return;
-            }
-
-            SetTileBitmapCache(false);
+            if (visible) return;
             Services.BackgroundMemoryRelease.Schedule();
         }
 
         private void SetTileBitmapCache(bool cached)
         {
-            if (cached && QuickTilesGrid.CacheMode is null)
-            {
-                System.Windows.Media.RenderOptions.SetCachingHint(QuickTilesGrid, System.Windows.Media.CachingHint.Cache);
-                QuickTilesGrid.CacheMode = new System.Windows.Media.BitmapCache { SnapsToDevicePixels = true };
-            }
-            else if (!cached && QuickTilesGrid.CacheMode is not null)
-            {
-                QuickTilesGrid.CacheMode = null;
-                System.Windows.Media.RenderOptions.SetCachingHint(QuickTilesGrid, System.Windows.Media.CachingHint.Unspecified);
-            }
+            // Retained as a no-op method so call sites remain clean.
+            // Hardware acceleration renders the vector tiles directly without the
+            // 27MB offscreen DirectX bitmap texture and working set spike.
         }
 
         private Controls.QuickTile? _draggingTile;
@@ -1651,12 +1631,12 @@ namespace Arsenal.UI.Views.Windows
                     completed: () =>
                     {
                         System.Windows.Controls.Panel.SetZIndex(container, 0);
-                        if (!_dragActive && _draggingTile is null) SetTileBitmapCache(true);
+                        if (!_dragActive && _draggingTile is null && IsVisible) SetTileBitmapCache(true);
                     });
             }
             else if (wasDragging)
             {
-                SetTileBitmapCache(true);
+                if (IsVisible) SetTileBitmapCache(true);
             }
 
             if (wasDragging && DataContext is QuickPanelViewModel vm) vm.CommitTileOrder();
