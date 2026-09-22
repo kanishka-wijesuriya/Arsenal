@@ -223,6 +223,27 @@
             <controls:SettingsGroup Header="{Binding LightingDeviceTitle}" Icon="Diversity24"
                                     Description="Choose the running visual, when the display is allowed to run, and how it behaves."
                                     Visibility="{Binding HasMatrixOrSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                <!-- Above the effect list for the same reason the keyboard sits above
+                     its own: choosing a visual and seeing what it does should not take
+                     a scroll between them. Slash only, because there is nothing here
+                     that would portray an AniMe Matrix. -->
+                <controls:SettingsRow Header="Preview"
+                                      Description="The lid as the selected effect draws it. Reproduced from the effect, not read back from the bar, so it runs alongside the hardware rather than in step with it."
+                                      Visibility="{Binding HasSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow.ContentBelow>
+                        <Border CornerRadius="{DynamicResource RadiusCard}"
+                                Background="{DynamicResource SurfaceSunken}"
+                                BorderBrush="{DynamicResource StrokeSubtle}" BorderThickness="1"
+                                Padding="14" HorizontalAlignment="Left" MaxWidth="560">
+                            <controls:SlashPreview x:Name="SlashLidPreview"
+                                                   Mode="{Binding MatrixMode}"
+                                                   Brightness="{Binding MatrixBrightness}"
+                                                   Segments="{Binding SlashSegments}"/>
+                        </Border>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
+
                 <controls:SettingsRow Header="Visual">
                     <controls:SettingsRow.ContentBelow>
                         <ItemsControl ItemsSource="{Binding MatrixModes}">

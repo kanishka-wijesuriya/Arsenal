@@ -2083,6 +2083,14 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty] private bool _hasAnimeMatrix;
         [ObservableProperty] private bool _hasSlash;
         [ObservableProperty] private bool _hasMatrixOrSlash;
+
+        /// <summary>
+        /// Addressable LEDs behind the Slash bar on this chassis, which the preview
+        /// has to draw and the device has to be sent. Read from the same place
+        /// <see cref="Arsenal.AnimeMatrix.SlashDevice"/> reads it, so the two cannot
+        /// end up disagreeing about the hardware.
+        /// </summary>
+        [ObservableProperty] private int _slashSegments = 7;
         [ObservableProperty] private bool _hasKeyboardColor = true;
         [ObservableProperty] private bool _hasAuraEffects = true;
         [ObservableProperty] private int _matrixBrightness;
@@ -2264,6 +2272,7 @@ namespace Arsenal.UI.ViewModels
             if (HasSlash)
             {
                 LightingDeviceTitle = "Slash lighting";
+                SlashSegments = AppConfig.IsSlashLong() ? 35 : 7;
                 foreach (var pair in Arsenal.AnimeMatrix.SlashDevice.Modes)
                     MatrixModes.Add(new SelectableIntOption((int)pair.Key, pair.Value, (int)pair.Key == MatrixMode));
                 LoadSlashSettings();
