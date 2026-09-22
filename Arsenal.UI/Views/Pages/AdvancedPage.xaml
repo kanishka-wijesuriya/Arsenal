@@ -194,16 +194,6 @@
                     <controls:ValueSlider Minimum="0" Maximum="{Binding HibernateAfterMaximum}" TickFrequency="5" IsSnapToTickEnabled="True"
                                           Value="{Binding HibernateAfterMinutes}" Format="{}{0} min"/>
                 </controls:SettingsRow>
-
-                <controls:SettingsRow Header="Backlight timeout · battery">
-                    <controls:ValueSlider Minimum="0" Maximum="{Binding KeyboardTimeoutMaximum}" TickFrequency="15" IsSnapToTickEnabled="True"
-                                          Value="{Binding KeyboardTimeoutSeconds}" Format="{}{0} s"/>
-                </controls:SettingsRow>
-
-                <controls:SettingsRow Header="Backlight timeout · AC">
-                    <controls:ValueSlider Minimum="0" Maximum="{Binding KeyboardAcTimeoutMaximum}" TickFrequency="15" IsSnapToTickEnabled="True"
-                                          Value="{Binding KeyboardAcTimeoutSeconds}" Format="{}{0} s"/>
-                </controls:SettingsRow>
             </controls:SettingsGroup>
 
             <controls:SettingsGroup Header="Diagnostics" Icon="Document24"

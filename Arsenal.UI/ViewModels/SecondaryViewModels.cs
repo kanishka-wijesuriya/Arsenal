@@ -649,8 +649,6 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty] private bool _bootSoundEnabled;
         [ObservableProperty] private bool _autoClamshellEnabled;
         [ObservableProperty] private int _hibernateAfterMinutes;
-        [ObservableProperty] private int _keyboardTimeoutSeconds;
-        [ObservableProperty] private int _keyboardAcTimeoutSeconds;
         [ObservableProperty] private bool _hardwareOverlayEnabled;
         [ObservableProperty] private bool _overlayGameOnly;
         [ObservableProperty] private bool _hasHandheldControls;
@@ -679,11 +677,6 @@ namespace Arsenal.UI.ViewModels
         /// user's hibernate delay just by opening the page.
         /// </summary>
         public int HibernateAfterMaximum { get; private set; } = 720;
-
-        /// <summary>Same reasoning for the backlight timeouts, which are ours to store.</summary>
-        public int KeyboardTimeoutMaximum { get; private set; } = 600;
-
-        public int KeyboardAcTimeoutMaximum { get; private set; } = 600;
 
         public AdvancedViewModel()
         {
@@ -714,13 +707,9 @@ namespace Arsenal.UI.ViewModels
             BootSoundEnabled = bootSound is >= 0 and <= ushort.MaxValue ? bootSound == 1 : AppConfig.Is("boot_sound");
             AutoClamshellEnabled = AppConfig.Is("toggle_clamshell_mode");
             HibernateAfterMinutes = Math.Max(0, PowerNative.GetHibernateAfter());
-            KeyboardTimeoutSeconds = Math.Max(0, AppConfig.Get("keyboard_timeout", 60));
-            KeyboardAcTimeoutSeconds = Math.Max(0, AppConfig.Get("keyboard_ac_timeout", 0));
 
             // Widened before the page binds, so nothing already in force is out of reach.
             HibernateAfterMaximum = Math.Max(HibernateAfterMaximum, HibernateAfterMinutes);
-            KeyboardTimeoutMaximum = Math.Max(KeyboardTimeoutMaximum, KeyboardTimeoutSeconds);
-            KeyboardAcTimeoutMaximum = Math.Max(KeyboardAcTimeoutMaximum, KeyboardAcTimeoutSeconds);
             HardwareOverlayEnabled = AppConfig.IsOverlay();
             OverlayGameOnly = AppConfig.IsOverlayGameOnly();
             HasHandheldControls = AppConfig.IsAlly();
@@ -807,13 +796,10 @@ namespace Arsenal.UI.ViewModels
             AppConfig.Set("force_overdrive", ForceOverdrive ? 1 : 0);
             AppConfig.Set("topmost", AlwaysOnTop ? 1 : 0);
             AppConfig.Set("toggle_clamshell_mode", AutoClamshellEnabled ? 1 : 0);
-            AppConfig.Set("keyboard_timeout", KeyboardTimeoutSeconds);
-            AppConfig.Set("keyboard_ac_timeout", KeyboardAcTimeoutSeconds);
             PowerNative.SetHibernateAfter(HibernateAfterMinutes);
             Arsenal.Input.InputDispatcher.SetStatusLED(StatusLedEnabled);
             AppConfig.Set("status_led", StatusLedEnabled ? 1 : 0);
             Arsenal.Input.NumberPad.Set(NumberPadEnabled);
-            Program.inputDispatcher?.InitBacklightTimer();
             Program.acpi.DeviceSet(AsusACPI.BootSound, BootSoundEnabled ? 1 : 0, "BootSound");
             AppConfig.Set("boot_sound", BootSoundEnabled ? 1 : 0);
             if (AutoClamshellEnabled) Program.clamshellControl?.ToggleLidAction();
@@ -838,8 +824,6 @@ namespace Arsenal.UI.ViewModels
         partial void OnBootSoundEnabledChanged(bool value) { if (!_isReady) return; AppConfig.Set("boot_sound", value ? 1 : 0); Program.acpi.DeviceSet(AsusACPI.BootSound, value ? 1 : 0, "BootSound"); }
         partial void OnAutoClamshellEnabledChanged(bool value) { if (!_isReady) return; AppConfig.Set("toggle_clamshell_mode", value ? 1 : 0); if (value) Program.clamshellControl?.ToggleLidAction(); else ClamshellModeControl.DisableClamshellMode(); }
         partial void OnHibernateAfterMinutesChanged(int value) { if (_isReady) PowerNative.SetHibernateAfter(Math.Max(0, value)); }
-        partial void OnKeyboardTimeoutSecondsChanged(int value) { if (!_isReady) return; AppConfig.Set("keyboard_timeout", Math.Max(0, value)); Program.inputDispatcher?.InitBacklightTimer(); }
-        partial void OnKeyboardAcTimeoutSecondsChanged(int value) { if (!_isReady) return; AppConfig.Set("keyboard_ac_timeout", Math.Max(0, value)); Program.inputDispatcher?.InitBacklightTimer(); }
 
         [RelayCommand]
         public void OpenLog()

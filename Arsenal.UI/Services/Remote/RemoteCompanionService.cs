@@ -1385,8 +1385,8 @@ public sealed class RemoteCompanionService : IDisposable
             case "advanced.fpsLimit": _services.GetRequiredService<AdvancedViewModel>().CycleFpsLimit(); break;
             case "advanced.bootSound": SetAdvanced(vm => vm.BootSoundEnabled = Bool(value)); break;
             case "advanced.hibernate": SetAdvanced(vm => vm.HibernateAfterMinutes = Int(value)); break;
-            case "advanced.backlightBattery": SetAdvanced(vm => vm.KeyboardTimeoutSeconds = Int(value)); break;
-            case "advanced.backlightAc": SetAdvanced(vm => vm.KeyboardAcTimeoutSeconds = Int(value)); break;
+            case "advanced.backlightBattery": SetLighting(vm => vm.KeyboardTimeoutSeconds = Int(value)); break;
+            case "advanced.backlightAc": SetLighting(vm => vm.KeyboardAcTimeoutSeconds = Int(value)); break;
             case "advanced.powerOptions": _services.GetRequiredService<AdvancedViewModel>().OpenPowerPlanSettings(); break;
             case "advanced.log": _services.GetRequiredService<AdvancedViewModel>().OpenLog(); break;
             case "app.startup": SetSettings(vm => vm.RunOnStartup = Bool(value)); break;

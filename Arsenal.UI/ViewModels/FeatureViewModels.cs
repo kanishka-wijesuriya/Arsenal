@@ -2080,6 +2080,23 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty]
         private bool _shutdown = false;
 
+        /// <summary>
+        /// Idle seconds before the keyboard backlight goes out, kept separately for
+        /// battery and for AC because the reason to have one differs: saving charge on
+        /// battery, and only taste on the wall. Zero leaves the backlight on.
+        /// </summary>
+        [ObservableProperty] private int _keyboardTimeoutSeconds;
+
+        [ObservableProperty] private int _keyboardAcTimeoutSeconds;
+
+        /// <summary>
+        /// The track has to reach whatever is already stored, or opening the page would
+        /// clamp a longer delay down to the end of a slider that cannot draw it.
+        /// </summary>
+        public int KeyboardTimeoutMaximum { get; private set; } = 600;
+
+        public int KeyboardAcTimeoutMaximum { get; private set; } = 600;
+
         [ObservableProperty] private bool _hasAnimeMatrix;
         [ObservableProperty] private bool _hasSlash;
         [ObservableProperty] private bool _hasMatrixOrSlash;
@@ -2310,6 +2327,12 @@ namespace Arsenal.UI.ViewModels
                 SelectedMode = mode;
                 UpdateSelection(AuraModes, mode);
             });
+            KeyboardTimeoutSeconds = Math.Max(0, AppConfig.Get("keyboard_timeout", 60));
+            KeyboardAcTimeoutSeconds = Math.Max(0, AppConfig.Get("keyboard_ac_timeout", 0));
+
+            // Widened before the page binds, so nothing already in force is out of reach.
+            KeyboardTimeoutMaximum = Math.Max(KeyboardTimeoutMaximum, KeyboardTimeoutSeconds);
+            KeyboardAcTimeoutMaximum = Math.Max(KeyboardAcTimeoutMaximum, KeyboardAcTimeoutSeconds);
             LoadPreviewLayout();
             _isReady = true;
         }
@@ -2377,6 +2400,9 @@ namespace Arsenal.UI.ViewModels
         {
             if (_isReady) _lightingService.SetShutdown(value);
         }
+
+        partial void OnKeyboardTimeoutSecondsChanged(int value) { if (!_isReady) return; AppConfig.Set("keyboard_timeout", Math.Max(0, value)); Program.inputDispatcher?.InitBacklightTimer(); }
+        partial void OnKeyboardAcTimeoutSecondsChanged(int value) { if (!_isReady) return; AppConfig.Set("keyboard_ac_timeout", Math.Max(0, value)); Program.inputDispatcher?.InitBacklightTimer(); }
 
         partial void OnMatrixDisableOnBatteryChanged(bool value)
         {
