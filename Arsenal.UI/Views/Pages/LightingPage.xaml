@@ -220,7 +220,7 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
-            <controls:SettingsGroup Header="{Binding LightingDeviceTitle}" Icon="Diversity24"
+            <controls:SettingsGroup Header="{Binding LightingDeviceTitle}" Icon="{Binding LightingDeviceIcon}"
                                     Description="Choose the running visual, when the display is allowed to run, and how it behaves."
                                     Visibility="{Binding HasMatrixOrSlash, Converter={StaticResource BooleanToVisibilityConverter}}">
 

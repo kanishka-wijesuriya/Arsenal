@@ -2110,6 +2110,12 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty] private bool _matrixClockBattery;
         [ObservableProperty] private int _matrixAudioMode;
         [ObservableProperty] private string _lightingDeviceTitle = "Anime Matrix";
+
+        /// <summary>
+        /// The glyph beside the heading, naming the device the same way the title does:
+        /// a dot grid for the AniMe Matrix, a diagonal stroke for the Slash bar.
+        /// </summary>
+        [ObservableProperty] private SymbolRegular _lightingDeviceIcon = SymbolRegular.GridDots24;
         [ObservableProperty] private int _slashInterval;
         [ObservableProperty] private bool _slashBootAnimation;
         [ObservableProperty] private bool _slashSleepAnimation;
@@ -2272,6 +2278,7 @@ namespace Arsenal.UI.ViewModels
             if (HasSlash)
             {
                 LightingDeviceTitle = "Slash lighting";
+                LightingDeviceIcon = SymbolRegular.Line24;
                 SlashSegments = AppConfig.IsSlashLong() ? 35 : 7;
                 foreach (var pair in Arsenal.AnimeMatrix.SlashDevice.Modes)
                     MatrixModes.Add(new SelectableIntOption((int)pair.Key, pair.Value, (int)pair.Key == MatrixMode));
