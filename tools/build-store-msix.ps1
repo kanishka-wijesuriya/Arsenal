@@ -1,5 +1,14 @@
 [CmdletBinding()]
-param()
+param(
+    # Test is the default channel, as everywhere else. A stable package is built for
+    # an upload to Partner Center and belongs beside the stable build it came from.
+    [switch] $Stable,
+
+    # The stable folder's slug, so the package lands in the release it belongs to
+    # rather than in one of its own.
+    [ValidatePattern('^[a-z0-9]+(?:-[a-z0-9]+)*$')]
+    [string] $Slug
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -17,9 +26,24 @@ if ($version -notmatch '^\d+\.\d+\.\d+$') {
 }
 
 $packageVersion = "$version.0"
-$releaseDirectory = Join-Path $repositoryRoot "releases\test\${version}t-store-msix"
+if ($Stable -and -not $Slug) {
+    throw 'A stable package needs -Slug, naming the stable release folder it belongs in.'
+}
+$releaseDirectory = if ($Stable) {
+    Join-Path $repositoryRoot "releases\stable\$version-$Slug"
+} else {
+    Join-Path $repositoryRoot "releases\test\${version}t-store-msix"
+}
 $packagePath = Join-Path $releaseDirectory "Arsenal-$version-x64.msix"
-if (Test-Path -LiteralPath $releaseDirectory) {
+
+# A stable package joins a folder the stable build already made, so only the package
+# itself has to be absent. A test package owns its folder outright.
+$releaseDirectoryExisted = Test-Path -LiteralPath $releaseDirectory
+if ($Stable) {
+    if (Test-Path -LiteralPath $packagePath) {
+        throw "The package already exists and will not be overwritten: $packagePath"
+    }
+} elseif ($releaseDirectoryExisted) {
     throw "The release folder already exists and will not be overwritten: $releaseDirectory"
 }
 
@@ -56,7 +80,7 @@ try {
     Copy-Item -LiteralPath (Join-Path $windowsRoot 'LICENSE') -Destination $packageRoot
     Copy-Item -LiteralPath (Join-Path $windowsRoot 'NOTICE.md') -Destination $packageRoot
 
-    New-Item -ItemType Directory -Path $releaseDirectory | Out-Null
+    New-Item -ItemType Directory -Path $releaseDirectory -Force | Out-Null
     & $makeAppx pack /d $packageRoot /p $packagePath /o
     if ($LASTEXITCODE -ne 0) { throw 'MakeAppx failed to create the MSIX.' }
 
@@ -85,10 +109,14 @@ try {
     Write-Output "Executable ProductVersion: $publishedVersion"
 }
 catch {
-    if (Test-Path -LiteralPath $releaseDirectory) {
+    # Undo only what this run made. A stable package joins a folder that already holds
+    # the build it belongs to, so there the half-written package goes and the folder
+    # and its executable stay.
+    if (Test-Path -LiteralPath $packagePath) { Remove-Item -LiteralPath $packagePath -Force }
+    if (-not $releaseDirectoryExisted -and (Test-Path -LiteralPath $releaseDirectory)) {
         $resolvedRelease = [System.IO.Path]::GetFullPath($releaseDirectory)
-        $resolvedTestRoot = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot 'releases\test'))
-        if ($resolvedRelease.StartsWith($resolvedTestRoot + [System.IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        $resolvedReleases = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot 'releases'))
+        if ($resolvedRelease.StartsWith($resolvedReleases + [System.IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
             Remove-Item -LiteralPath $resolvedRelease -Recurse -Force
         }
     }
