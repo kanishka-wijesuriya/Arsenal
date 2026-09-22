@@ -224,22 +224,11 @@ namespace Arsenal.AnimeMatrix
             }
         }
 
+        // One definition, shared with the on-screen preview. The preview of a mode
+        // Arsenal computes should be the bytes Arsenal sends, not a second opinion
+        // about them, and two copies of this arithmetic would eventually disagree.
         private byte[] GetPercentagePattern(int brightness, double percentage)
-        {
-            double step = 100.0 / Length;
-            int bracket = (int)Math.Floor(percentage / step);
-            if (bracket >= Length) return Enumerable.Repeat((byte)(brightness * 85.333), Length).ToArray();
-
-            byte[] batteryPattern = new byte[Length];
-            for (int i = Length - 1; i > Length - 1 - bracket; i--)
-            {
-                batteryPattern[i] = (byte)(brightness * 85.333);
-            }
-
-            batteryPattern[Length - 1 - bracket] = (byte)(((percentage % step) * brightness * 85.333) / step);
-
-            return batteryPattern;
-        }
+            => SlashEffectSimulator.Percentage(Length, brightness, percentage);
 
         public void SetBatteryPattern(int brightness)
         {
