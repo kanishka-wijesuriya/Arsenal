@@ -17,19 +17,19 @@ internal sealed record RemotePeer(string DeviceId, string DeviceName, string Add
 /// </summary>
 /// <remarks>
 /// Owns the socket for as long as somebody is watching, and everything hanging off it:
-/// the capture thread, the encoder, audio, clipboard, files and the privacy guard. When
-/// it ends, for any reason including the network simply going away, it puts all of them
-/// back - held keys released, local input unblocked, covers removed - because a session
-/// that leaves the desktop in its own state is worse than one that never started.
+/// the disposable media worker, input, clipboard, files and the privacy guard. When it
+/// ends, for any reason including the network simply going away, it puts all of them
+/// back: worker stopped, held keys released, local input unblocked and covers removed.
+/// A session that leaves the desktop in its own state is worse than one that never
+/// started.
 ///
 /// <para>Three loops, deliberately separate:</para>
 /// <list type="bullet">
 /// <item><b>Read</b> takes frames off the socket. Input is applied inline because a
 /// pointer move that waits for a queue is a pointer move somebody can feel.</item>
-/// <item><b>Capture</b> runs on a thread of its own, paced to the requested frame rate.
-/// It is a thread rather than a timer because it holds a GDI device context and does
-/// blocking work every tick, and a thread pool thread doing that starves everything
-/// else on the pool.</item>
+/// <item><b>Capture</b> normally runs in a disposable worker process, paced to the
+/// requested frame rate. The local thread remains as a compatibility fallback when a
+/// worker cannot start or exits unexpectedly.</item>
 /// <item><b>Write</b> drains one queue to the socket. One writer, because two tasks
 /// interleaving frames on the same stream produces a stream neither end can parse.</item>
 /// </list>
@@ -72,6 +72,8 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         });
 
     private readonly object _videoGate = new();
+    private MediaWorkerClient? _mediaWorker;
+    private string _workerEncoder = "none";
     private IScreenSource? _source;
     private IVideoEncoder? _encoder;
     private RemoteInputInjector? _input;
@@ -228,7 +230,10 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
             case "stop": StopStream(); break;
             case "quality": await ChangeQualityAsync(root); break;
             case "monitor": await ChangeMonitorAsync(root); break;
-            case "keyframe": _encoder?.RequestKeyFrame(); break;
+            case "keyframe":
+                if (_mediaWorker is { } worker) worker.RequestKeyFrame();
+                else _encoder?.RequestKeyFrame();
+                break;
             case "cursor": _cursorWanted = Bool(root, "enabled"); await RestartCaptureAsync(); break;
             case "privacy": SetPrivacy(root); break;
             case "lock": PrivacyGuard.LockWorkstation(); break;
@@ -289,8 +294,60 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         };
     }
 
-    private async Task BeginCaptureAsync()
+    private async Task BeginCaptureAsync(bool preferWorker = true)
     {
+        MediaWorkerClient? worker = null;
+        if (preferWorker)
+        {
+            try
+            {
+                var configuration = new MediaWorkerConfiguration(
+                    _monitor.Index,
+                    _quality.MaxWidth,
+                    _quality.MaxHeight,
+                    _quality.FrameRate,
+                    _quality.BitrateKbps,
+                    _quality.JpegQuality,
+                    _cursorWanted,
+                    RemoteDesktopSettings.AllowAudio && _audioRequested,
+                    _quality.Id == RemoteQualityPreset.Economy.Id,
+                    _codecs.ToArray());
+
+                worker = await MediaWorkerClient.StartAsync(
+                    configuration,
+                    OnWorkerPayload,
+                    OnWorkerReady,
+                    OnWorkerStats,
+                    OnWorkerSurface,
+                    OnWorkerDisconnected,
+                    _stopping.Token);
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine("Remote media worker unavailable, using the local capture path: " + ex.Message);
+            }
+        }
+
+        if (worker is not null)
+        {
+            _mediaWorker = worker;
+            _workerEncoder = worker.Ready.Encoder;
+
+            PrepareSessionServices();
+            await SendControlAsync(new RemoteStarted(
+                "started",
+                worker.Ready.Codec,
+                worker.Ready.Width,
+                worker.Ready.Height,
+                worker.Ready.FrameRate,
+                _monitor.Index,
+                _viewOnly,
+                worker.Ready.Audio));
+
+            StartStreaming();
+            return;
+        }
+
         IScreenSource source;
         IVideoEncoder encoder;
         try
@@ -317,15 +374,7 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
             _encoder = encoder;
         }
 
-        _input = new RemoteInputInjector(_monitor, !_viewOnly);
-        _privacy ??= new PrivacyGuard(_dispatcher);
-        _files ??= new RemoteFileService(this, RemoteDesktopSettings.AllowFiles, _stopping.Token);
-
-        if (RemoteDesktopSettings.AllowClipboard && _clipboard is null)
-        {
-            _clipboard = new RemoteClipboardBridge(_dispatcher, text => _ = SendClipboardAsync(text));
-            _clipboard.Start();
-        }
+        PrepareSessionServices();
 
         RemoteAudioFormat? audioFormat = null;
         if (RemoteDesktopSettings.AllowAudio && _audioRequested && _audio is null)
@@ -341,13 +390,7 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
 
         await SendControlAsync(new RemoteStarted("started", encoder.Codec, source.Width, source.Height, _quality.FrameRate, _monitor.Index, _viewOnly, audioFormat));
 
-        _streaming = true;
-        _everStreamed = true;
-        _server.NotifySessionsChanged();
-
-        // Keeps the machine awake while somebody is driving it. Without this a session
-        // over a long download watches the display time out and then the machine sleep.
-        RemoteNative.SetThreadExecutionState(RemoteNative.ES_CONTINUOUS | RemoteNative.ES_SYSTEM_REQUIRED | RemoteNative.ES_DISPLAY_REQUIRED);
+        StartStreaming();
 
         // Which run of the capture loop this is. A loop that outlived its stop - the
         // encoder was slow to return and the join gave up on it - would otherwise see
@@ -362,6 +405,30 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
             Priority = ThreadPriority.AboveNormal,
         };
         _captureThread.Start();
+    }
+
+    private void PrepareSessionServices()
+    {
+        _input = new RemoteInputInjector(_monitor, !_viewOnly);
+        _privacy ??= new PrivacyGuard(_dispatcher);
+        _files ??= new RemoteFileService(this, RemoteDesktopSettings.AllowFiles, _stopping.Token);
+
+        if (RemoteDesktopSettings.AllowClipboard && _clipboard is null)
+        {
+            _clipboard = new RemoteClipboardBridge(_dispatcher, text => _ = SendClipboardAsync(text));
+            _clipboard.Start();
+        }
+    }
+
+    private void StartStreaming()
+    {
+        _streaming = true;
+        _everStreamed = true;
+        _server.NotifySessionsChanged();
+
+        // Keeps the machine awake while somebody is driving it. Without this a session
+        // over a long download watches the display time out and then the machine sleep.
+        RemoteNative.SetThreadExecutionState(RemoteNative.ES_CONTINUOUS | RemoteNative.ES_SYSTEM_REQUIRED | RemoteNative.ES_DISPLAY_REQUIRED);
     }
 
     private int _captureGeneration;
@@ -417,6 +484,14 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
     private void StopStream()
     {
         _streaming = false;
+        _input?.ReleaseHeldKeys();
+        _input = null;
+
+        MediaWorkerClient? worker = _mediaWorker;
+        _mediaWorker = null;
+        _workerEncoder = "none";
+        worker?.Dispose();
+
         Thread? thread = _captureThread;
         _captureThread = null;
 
@@ -450,8 +525,6 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         }
         else ReleaseWhenCaptureLetsGo(encoder, source);
 
-        _input?.ReleaseHeldKeys();
-        _input = null;
         _audio?.Dispose();
         _audio = null;
         RemoteNative.SetThreadExecutionState(RemoteNative.ES_CONTINUOUS);
@@ -670,6 +743,82 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         }
     }
 
+    private void OnWorkerPayload(MediaWorkerProtocol.Message message, byte flags, byte[] buffer, int length)
+    {
+        RemoteDesktopProtocol.Channel channel = message == MediaWorkerProtocol.Message.Video
+            ? RemoteDesktopProtocol.Channel.Video
+            : RemoteDesktopProtocol.Channel.Audio;
+
+        if (_streaming && _outbound.Writer.TryWrite(new Outgoing(channel, flags, 0, buffer, length, true)))
+        {
+            if (channel == RemoteDesktopProtocol.Channel.Video) Interlocked.Increment(ref _framesSent);
+            return;
+        }
+
+        ArrayPool<byte>.Shared.Return(buffer);
+        if (channel == RemoteDesktopProtocol.Channel.Video) _mediaWorker?.RequestKeyFrame();
+    }
+
+    private void OnWorkerReady(MediaWorkerReady ready)
+    {
+        _workerEncoder = ready.Encoder;
+        if (!_streaming) return;
+        _ = SendControlAsync(new RemoteStarted(
+            "started", ready.Codec, ready.Width, ready.Height, ready.FrameRate, _monitor.Index, _viewOnly, ready.Audio));
+    }
+
+    private void OnWorkerStats(MediaWorkerStats stats)
+    {
+        _workerEncoder = stats.Encoder;
+        Interlocked.Exchange(ref _framesSent, 0);
+        long bytes = Interlocked.Exchange(ref _bytesSent, 0);
+        _ = SendControlAsync(new RemoteStats(
+            "stats",
+            stats.Fps,
+            (long)Math.Round(bytes / StatsInterval.TotalSeconds),
+            stats.EncodeMs,
+            stats.CaptureMs,
+            _outbound.Reader.Count,
+            stats.Encoder));
+    }
+
+    private void OnWorkerSurface(bool readable)
+    {
+        _ = SendControlAsync(new RemoteSurfaceState(
+            "surface",
+            readable ? "live" : "secure",
+            readable ? null : "This PC is showing the Windows sign-in screen. Arsenal runs as you rather than as a service, so it cannot see that screen or type into it. Sign in at the laptop and the session picks up again."));
+    }
+
+    private int _workerRecovery;
+
+    private void OnWorkerDisconnected(MediaWorkerClient worker)
+    {
+        if (!_streaming || !ReferenceEquals(_mediaWorker, worker) || _stopping.IsCancellationRequested) return;
+
+        _ = Task.Run(async () =>
+        {
+            if (Interlocked.CompareExchange(ref _workerRecovery, 1, 0) != 0) return;
+            try
+            {
+                if (!_streaming || !ReferenceEquals(_mediaWorker, worker) || _stopping.IsCancellationRequested) return;
+                Logger.WriteLine("Remote media worker exited; continuing with the local capture path.");
+                StopStream();
+                if (!_stopping.IsCancellationRequested) await BeginCaptureAsync(preferWorker: false);
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine("Remote media recovery: " + ex.Message);
+                try { await SendControlAsync(new RemoteError("error", "Screen capture stopped unexpectedly.", "capture")); }
+                catch { }
+            }
+            finally
+            {
+                Volatile.Write(ref _workerRecovery, 0);
+            }
+        });
+    }
+
     private void PublishStats()
     {
         int frames = Interlocked.Exchange(ref _framesSent, 0);
@@ -692,6 +841,7 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
     /// </remarks>
     private string EncoderLabel()
     {
+        if (_mediaWorker is not null) return _workerEncoder;
         lock (_videoGate)
         {
             return _encoder switch

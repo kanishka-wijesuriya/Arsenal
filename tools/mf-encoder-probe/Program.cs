@@ -1,4 +1,5 @@
 using Arsenal.UI.Services.Remote.Desktop;
+using System.Diagnostics;
 
 // Reproduces what a quality change does to the video encoder, which is not simply
 // building one encoder after another.
@@ -29,6 +30,7 @@ int rounds = args.Length > 0 && int.TryParse(args[0], out int parsed) ? parsed :
 string[] codecs = ["hevc", "h264"];
 
 Console.WriteLine($"Overlapping encoder rounds: {rounds}");
+ReportMemory("before Media Foundation");
 
 int overlapped = 0;
 MediaFoundationVideoEncoder? holding = null;
@@ -65,7 +67,10 @@ for (int round = 0; round < rounds; round++)
 }
 
 holding?.Dispose();
+ReportMemory("encoders disposed, platform started");
 MediaFoundationVideoEncoder.ReleasePlatformIfIdle();
+SettleMemory();
+ReportMemory("platform released");
 
 // A later session must be able to start the platform again after idle cleanup.
 var restarted = MediaFoundationVideoEncoder.TryCreate(codecs, 1280, 720, 30, 5000);
@@ -77,6 +82,25 @@ if (restarted is null)
 Console.WriteLine($"Restart after idle release: {restarted.EncoderName}");
 restarted.Dispose();
 MediaFoundationVideoEncoder.ReleasePlatformIfIdle();
+SettleMemory();
+ReportMemory("platform restarted and released again");
 
 Console.WriteLine($"Survived {rounds} rounds, {overlapped} of them enumerated while another encoder was being released.");
 return 0;
+
+static void SettleMemory()
+{
+    GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
+    GC.WaitForPendingFinalizers();
+    GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
+    Arsenal.Helpers.MemoryHelper.TrimWorkingSet();
+    Thread.Sleep(500);
+}
+
+static void ReportMemory(string stage)
+{
+    using Process process = Process.GetCurrentProcess();
+    process.Refresh();
+    Console.WriteLine($"  {stage}: private {process.PrivateMemorySize64 / (1024 * 1024)}MB, "
+        + $"working set {process.WorkingSet64 / (1024 * 1024)}MB, handles {process.HandleCount}");
+}

@@ -8,8 +8,14 @@ namespace Arsenal.UI;
 internal static class DpiAwareEntryPoint
 {
     [STAThread]
-    public static void Main()
+    public static void Main(string[] args)
     {
+        if (args is ["--media-worker", string pipeName, string configuration])
+        {
+            Environment.ExitCode = Services.Remote.Desktop.MediaWorkerHost.Run(pipeName, configuration);
+            return;
+        }
+
         ApplicationConfiguration.Initialize();
 
         // Before anything draws. Windows reads this when the first Direct3D device is
