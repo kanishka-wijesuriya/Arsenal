@@ -138,6 +138,26 @@ namespace Arsenal.UI.Controls
             set => SetValue(IconProperty, value);
         }
 
+        public static readonly DependencyProperty MirrorIconProperty =
+            DependencyProperty.Register(nameof(MirrorIcon), typeof(bool), typeof(SettingsGroup),
+                new PropertyMetadata(false));
+
+        /// <summary>
+        /// Draws <see cref="Icon"/> flipped left to right.
+        /// </summary>
+        /// <remarks>
+        /// The icon set ships one handedness of diagonal: Line24 and LineDashes24 both
+        /// run bottom left to top right, and there is no mirrored twin to select
+        /// instead. A section standing for hardware that leans the other way, such as
+        /// the Slash bar down the lid, would otherwise have to point the wrong way or
+        /// give up the glyph that actually portrays it.
+        /// </remarks>
+        public bool MirrorIcon
+        {
+            get => (bool)GetValue(MirrorIconProperty);
+            set => SetValue(MirrorIconProperty, value);
+        }
+
         public static readonly DependencyProperty HeaderContentProperty =
             DependencyProperty.Register(nameof(HeaderContent), typeof(object), typeof(SettingsGroup),
                 new PropertyMetadata(null));

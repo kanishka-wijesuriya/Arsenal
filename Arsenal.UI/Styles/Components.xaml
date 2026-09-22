@@ -144,11 +144,13 @@
                             </Grid.ColumnDefinitions>
 
                             <ui:SymbolIcon Grid.Column="0"
+                                           x:Name="ClosedIcon"
                                            Symbol="{TemplateBinding Icon}"
                                            FontSize="22"
                                            Foreground="{DynamicResource AccentPrimary}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,16,0"
+                                           RenderTransformOrigin="0.5,0.5"
                                            Visibility="{TemplateBinding Icon, Converter={StaticResource HideWhenNoIcon}}"/>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -224,6 +226,16 @@
                     </Grid>
 
                     <ControlTemplate.Triggers>
+
+                        <!-- The icon set only draws a diagonal one way round. A section
+                             whose hardware leans the other way flips the glyph. -->
+                        <Trigger Property="MirrorIcon" Value="True">
+                            <Setter TargetName="ClosedIcon" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="-1"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
                         <Trigger Property="Header" Value="{x:Null}">
                             <Setter TargetName="HeaderHost" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
