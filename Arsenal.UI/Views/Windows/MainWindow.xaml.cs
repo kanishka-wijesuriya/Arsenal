@@ -389,6 +389,17 @@ namespace Arsenal.UI.Views.Windows
         /// <summary>Set while replaying history, so the trip is not recorded as a new one.</summary>
         private bool _navigatingHistory;
 
+        /// <summary>
+        /// The subpage <see cref="GoBack"/> last stepped out of, so that forward can
+        /// step back into it. Null once anything else has happened.
+        /// </summary>
+        /// <remarks>
+        /// Weak on purpose. A subpage belongs to a page, and pages are kept warm while
+        /// detached and then dropped once the window has been away, so a strong
+        /// reference here would hold one alive for a trip the user may never make.
+        /// </remarks>
+        private WeakReference<Controls.SettingsGroup>? _subpageBackedOutOf;
+
         private void NavigateBackButton_Click(object sender, RoutedEventArgs e) => GoBack();
 
         /// <summary>
@@ -418,8 +429,9 @@ namespace Arsenal.UI.Views.Windows
         /// </remarks>
         private void GoBack()
         {
-            if (Controls.SettingsGroup.OpenGroup is not null)
+            if (Controls.SettingsGroup.OpenGroup is { } leaving)
             {
+                _subpageBackedOutOf = new WeakReference<Controls.SettingsGroup>(leaving);
                 Controls.SettingsGroup.Close();
                 return;
             }
@@ -429,11 +441,39 @@ namespace Arsenal.UI.Views.Windows
             ReplayHistory();
         }
 
+        /// <summary>
+        /// Steps back into the subpage back stepped out of, or on to the next page, in
+        /// that order.
+        /// </summary>
+        /// <remarks>
+        /// The mirror of <see cref="GoBack"/>, which was missing its first half. The
+        /// history holds pages and a subpage is not one, so leaving a subpage was the
+        /// single step forward could not undo: it sailed past it to the next page.
+        /// </remarks>
         private void GoForward()
         {
+            if (ReopenableSubpage() is { } returning)
+            {
+                returning.Open();
+                return;
+            }
+
             if (HistoryIndex < 0 || HistoryIndex >= History.Count - 1) return;
             HistoryIndex++;
             ReplayHistory();
+        }
+
+        /// <summary>The subpage forward would return to, or null when there is none.</summary>
+        private Controls.SettingsGroup? ReopenableSubpage()
+        {
+            if (Controls.SettingsGroup.OpenGroup is not null) return null;
+            if (_subpageBackedOutOf is null ||
+                !_subpageBackedOutOf.TryGetTarget(out Controls.SettingsGroup? group)) return null;
+
+            // Its page has to be the one on screen. A group on a page that is detached
+            // but kept warm is not loaded, and drilling into that would open a subpage
+            // of a page nobody is looking at.
+            return group.IsLoaded ? group : null;
         }
 
         private void ReplayHistory()
@@ -467,12 +507,18 @@ namespace Arsenal.UI.Views.Windows
             // An open subpage is somewhere to go back from even on the first page of
             // the session, which is exactly the case where the history says otherwise.
             NavigateBackButton.IsEnabled = HistoryIndex > 0 || Controls.SettingsGroup.OpenGroup is not null;
-            NavigateForwardButton.IsEnabled = HistoryIndex >= 0 && HistoryIndex < History.Count - 1;
+            NavigateForwardButton.IsEnabled = (HistoryIndex >= 0 && HistoryIndex < History.Count - 1)
+                                              || ReopenableSubpage() is not null;
         }
 
         public void NavigateToTag(string tag)
         {
             tag = NormalizePageTag(tag);
+
+            // A page change retires the subpage forward was offering to return to. It
+            // belonged to the page being left, and that page closes its own on the way
+            // out, so there would be nothing loaded to go back into.
+            _subpageBackedOutOf = null;
             _pageContentReleased = false;
             RecordHistory(tag);
 
@@ -555,6 +601,10 @@ namespace Arsenal.UI.Views.Windows
 
         private void OnOpenGroupChanged(Controls.SettingsGroup? group)
         {
+            // Opening anything, including the one forward just returned to, settles
+            // where the user is. Only the close in GoBack leaves an offer standing.
+            if (group is not null) _subpageBackedOutOf = null;
+
             // Raised from whichever page the group is on, which is this thread, but a
             // group closing during teardown can arrive while the bar is already gone.
             if (!IsLoaded) return;
