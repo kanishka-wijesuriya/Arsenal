@@ -20,6 +20,7 @@ namespace Arsenal.UI.Views.Windows
     public partial class MainWindow : FluentWindow
     {
         private readonly MainViewModel _viewModel;
+        private readonly MainWindowState _windowState;
         private readonly DispatcherTimer _placementSaveTimer;
         private const int MaxCachedPages = 3;
         private readonly Dictionary<string, UIElement> _pageCache = new(StringComparer.OrdinalIgnoreCase);
@@ -32,10 +33,11 @@ namespace Arsenal.UI.Views.Windows
         private bool _pageContentReleased;
         private int _visibilityLogToken;
 
-        public MainWindow(MainViewModel viewModel)
+        public MainWindow(MainViewModel viewModel, MainWindowState windowState)
         {
             InitializeComponent();
             _viewModel = viewModel;
+            _windowState = windowState;
             DataContext = _viewModel;
 
             // The theme is applied before any window exists, so this window has to take
@@ -71,8 +73,10 @@ namespace Arsenal.UI.Views.Windows
             };
             StateChanged += (_, _) => ScheduleWindowPlacementSave();
 
-            // Navigate to Home by default
-            NavigateToTag("Home");
+            // Home is the view-model default. A Main Window recreated after a long tray
+            // idle instead returns to the page that was active before its native window
+            // was released.
+            NavigateToTag(string.IsNullOrEmpty(_viewModel.ActivePageTag) ? "Home" : _viewModel.ActivePageTag);
 
             // This is a tray application: the window spends most of its life hidden,
             // and a hidden window still holds every element, brush and cached render
@@ -80,19 +84,26 @@ namespace Arsenal.UI.Views.Windows
             // navigation, then drop it when the full window returns to the tray.
             IsVisibleChanged += (_, e) =>
             {
-                if ((bool)e.NewValue) RestorePageContent();
+                if ((bool)e.NewValue)
+                {
+                    Services.BackgroundMemoryRelease.NotifyActivity();
+                    RestorePageContent();
+                }
                 else ReleasePageContent();
 
                 // The window being up is the state anybody looking at Task Manager is
                 // looking at, so it is the one worth a line. Debounced so rapid open
                 // and close toggles do not spawn repeated virtual memory sweeps.
-                int logToken = Interlocked.Increment(ref _visibilityLogToken);
-                _ = System.Threading.Tasks.Task.Run(async () =>
+                if (MemoryHelper.DetailedReportingEnabled)
                 {
-                    await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
-                    if (Volatile.Read(ref _visibilityLogToken) != logToken) return;
-                    Arsenal.Helpers.MemoryHelper.LogReport((bool)e.NewValue ? "window shown" : "window hidden");
-                });
+                    int logToken = Interlocked.Increment(ref _visibilityLogToken);
+                    _ = System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+                        if (Volatile.Read(ref _visibilityLogToken) != logToken) return;
+                        Arsenal.Helpers.MemoryHelper.LogReport((bool)e.NewValue ? "window shown" : "window hidden");
+                    });
+                }
             };
 
             // Keybindings (Ctrl+K for Command Palette)
@@ -362,12 +373,18 @@ namespace Arsenal.UI.Views.Windows
         }
 
         /// <summary>
-        /// Pages visited in order, with <see cref="_historyIndex"/> pointing at the one on
+        /// Pages visited in order, with the saved index pointing at the one on
         /// screen. Going back moves the index rather than dropping entries, so forward
-        /// stays available until a new destination is chosen.
+        /// stays available until a new destination is chosen. The state is owned outside
+        /// this window so a long tray idle can release the native window without losing
+        /// the user's navigation trail.
         /// </summary>
-        private readonly List<string> _history = new();
-        private int _historyIndex = -1;
+        private List<string> History => _windowState.History;
+        private int HistoryIndex
+        {
+            get => _windowState.HistoryIndex;
+            set => _windowState.HistoryIndex = value;
+        }
 
         /// <summary>Set while replaying history, so the trip is not recorded as a new one.</summary>
         private bool _navigatingHistory;
@@ -407,22 +424,22 @@ namespace Arsenal.UI.Views.Windows
                 return;
             }
 
-            if (_historyIndex <= 0) return;
-            _historyIndex--;
+            if (HistoryIndex <= 0) return;
+            HistoryIndex--;
             ReplayHistory();
         }
 
         private void GoForward()
         {
-            if (_historyIndex < 0 || _historyIndex >= _history.Count - 1) return;
-            _historyIndex++;
+            if (HistoryIndex < 0 || HistoryIndex >= History.Count - 1) return;
+            HistoryIndex++;
             ReplayHistory();
         }
 
         private void ReplayHistory()
         {
             _navigatingHistory = true;
-            try { NavigateToTag(_history[_historyIndex]); }
+            try { NavigateToTag(History[HistoryIndex]); }
             finally { _navigatingHistory = false; }
             UpdateHistoryButtons();
         }
@@ -432,16 +449,16 @@ namespace Arsenal.UI.Views.Windows
             if (_navigatingHistory) return;
 
             // Re-selecting the page already on screen is not a journey.
-            if (_historyIndex >= 0 &&
-                string.Equals(_history[_historyIndex], tag, StringComparison.OrdinalIgnoreCase))
+            if (HistoryIndex >= 0 &&
+                string.Equals(History[HistoryIndex], tag, StringComparison.OrdinalIgnoreCase))
                 return;
 
             // A new destination abandons whatever was ahead of here.
-            if (_historyIndex < _history.Count - 1)
-                _history.RemoveRange(_historyIndex + 1, _history.Count - _historyIndex - 1);
+            if (HistoryIndex < History.Count - 1)
+                History.RemoveRange(HistoryIndex + 1, History.Count - HistoryIndex - 1);
 
-            _history.Add(tag);
-            _historyIndex = _history.Count - 1;
+            History.Add(tag);
+            HistoryIndex = History.Count - 1;
             UpdateHistoryButtons();
         }
 
@@ -449,8 +466,8 @@ namespace Arsenal.UI.Views.Windows
         {
             // An open subpage is somewhere to go back from even on the first page of
             // the session, which is exactly the case where the history says otherwise.
-            NavigateBackButton.IsEnabled = _historyIndex > 0 || Controls.SettingsGroup.OpenGroup is not null;
-            NavigateForwardButton.IsEnabled = _historyIndex >= 0 && _historyIndex < _history.Count - 1;
+            NavigateBackButton.IsEnabled = HistoryIndex > 0 || Controls.SettingsGroup.OpenGroup is not null;
+            NavigateForwardButton.IsEnabled = HistoryIndex >= 0 && HistoryIndex < History.Count - 1;
         }
 
         public void NavigateToTag(string tag)
@@ -471,7 +488,8 @@ namespace Arsenal.UI.Views.Windows
 
             // Creating a XAML page is the expensive part. Keep pages detached but warm
             // while the full window is open, so returning to a page is an allocation-free
-            // swap. ReleasePageContent clears this cache when the window goes to the tray.
+            // swap. A tray return drops inactive pages immediately, then the active page
+            // after the application has remained hidden for the quiet period.
             UIElement page = GetOrCreatePage(tag);
 
             // Leaving a page leaves whatever was drilled into on it. Closed here rather
@@ -1093,6 +1111,45 @@ namespace Arsenal.UI.Views.Windows
 
             GC.Collect(1, GCCollectionMode.Optimized);
             Services.BackgroundMemoryRelease.Schedule();
+        }
+
+        /// <summary>
+        /// Releases the last warm page after the complete application has remained
+        /// hidden for the background quiet period.
+        /// </summary>
+        internal void ReleaseHiddenPageContent()
+        {
+            if (IsVisible) return;
+
+            if (PageContentHost.Children.Count > 0)
+                PageContentHost.Children.Clear();
+
+            foreach (UIElement page in _pageCache.Values.ToList())
+                EvictPage(page);
+
+            _pageCache.Clear();
+            _pageCacheOrder.Clear();
+            _pageContentReleased = true;
+        }
+
+        /// <summary>
+        /// Whether the hidden window can be discarded without interrupting a modal or
+        /// long-running operation that still owns visible state.
+        /// </summary>
+        internal bool CanReleaseHiddenWindow =>
+            !IsVisible &&
+            !_viewModel.IsCommandPaletteOpen &&
+            !_viewModel.IsSetupOpen &&
+            !_viewModel.IsUpdateOpen &&
+            !_viewModel.IsGpuSwitching &&
+            !_viewModel.IsAsusServicesChanging;
+
+        internal void ReleaseOwnedContent()
+        {
+            ReleaseHiddenPageContent();
+            ReleaseSearchPanel();
+            ReleaseSetupPanel();
+            ReleaseUpdatePanel();
         }
 
         private void RestorePageContent()

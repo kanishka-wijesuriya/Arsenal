@@ -1984,14 +1984,30 @@ namespace Arsenal.UI.ViewModels
             return $"{span}. {lost / 1000.0:F1} Wh lower than when the record starts.";
         }
 
+        /// <summary>
+        /// Writes the Windows page and opens it.
+        /// </summary>
+        /// <remarks>
+        /// Written here rather than alongside the scan. It is a second pass of the same
+        /// work and a second file on disk for something the summary above it has already
+        /// answered, so it is paid for by whoever asks for it.
+        /// </remarks>
         [RelayCommand]
-        public void OpenFullReport()
+        public async Task OpenFullReportAsync()
         {
             if (_reportHtmlPath.Length == 0) return;
+
             try
             {
+                string page = await Arsenal.Battery.BatteryReportReader.WriteFullReportAsync(_reportHtmlPath);
+                if (page.Length == 0)
+                {
+                    ReportError = "Windows could not write the full report page. The log has the detail.";
+                    return;
+                }
+
                 System.Diagnostics.Process.Start(
-                    new System.Diagnostics.ProcessStartInfo(_reportHtmlPath) { UseShellExecute = true });
+                    new System.Diagnostics.ProcessStartInfo(page) { UseShellExecute = true });
             }
             catch (Exception ex)
             {

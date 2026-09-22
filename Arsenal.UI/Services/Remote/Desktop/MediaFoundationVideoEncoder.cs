@@ -68,6 +68,20 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
     private static bool _platformStarted;
     private static bool _platformUnavailable;
 
+    /// <summary>How many encoders are alive and using the platform.</summary>
+    /// <remarks>
+    /// Only encoders handed to a session count. The candidates built and thrown away
+    /// during enumeration never do, so a rejected one cannot take the count below what
+    /// is actually running.
+    /// </remarks>
+    private static int _liveEncoders;
+
+    /// <summary>Encoder discovery/configuration operations currently using the platform.</summary>
+    private static int _platformOperations;
+
+    /// <summary>Whether this encoder is one of the counted ones.</summary>
+    private bool _counted;
+
     private readonly MF.IMFTransform _transform;
     private readonly MediaFoundationEventPump? _pump;
     private readonly bool _async;
@@ -148,17 +162,25 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
     {
         if (width <= 0 || height <= 0 || (width & 1) != 0 || (height & 1) != 0) return null;
 
-        foreach (string codec in preferred)
+        Interlocked.Increment(ref _platformOperations);
+        try
         {
-            Guid subtype;
-            if (string.Equals(codec, "hevc", StringComparison.OrdinalIgnoreCase)) subtype = MF.MFVideoFormat_HEVC;
-            else if (string.Equals(codec, "h264", StringComparison.OrdinalIgnoreCase)) subtype = MF.MFVideoFormat_H264;
-            else continue;
+            foreach (string codec in preferred)
+            {
+                Guid subtype;
+                if (string.Equals(codec, "hevc", StringComparison.OrdinalIgnoreCase)) subtype = MF.MFVideoFormat_HEVC;
+                else if (string.Equals(codec, "h264", StringComparison.OrdinalIgnoreCase)) subtype = MF.MFVideoFormat_H264;
+                else continue;
 
-            MediaFoundationVideoEncoder? encoder = TryCreate(codec, subtype, width, height, frameRate, bitrateKbps);
-            if (encoder is not null) return encoder;
+                MediaFoundationVideoEncoder? encoder = TryCreate(codec, subtype, width, height, frameRate, bitrateKbps);
+                if (encoder is not null) return encoder;
+            }
+            return null;
         }
-        return null;
+        finally
+        {
+            Interlocked.Decrement(ref _platformOperations);
+        }
     }
 
     private static MediaFoundationVideoEncoder? TryCreate(string codec, Guid subtype, int width, int height, int frameRate, int bitrateKbps)
@@ -283,6 +305,11 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
             }
 
             configured = true;
+
+            // This one is going to a session, so it is one of the encoders the platform
+            // is being held open for.
+            encoder._counted = true;
+            Interlocked.Increment(ref _liveEncoders);
 
             Logger.WriteLine($"Remote encoder: {name} producing {codec} at {width}x{height}, {frameRate} fps, {bitrateKbps} kbps"
                 + (async ? " (hardware, asynchronous)" : " (synchronous)"));
@@ -808,33 +835,13 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
     // ---- Platform lifetime -------------------------------------------------------
 
     /// <summary>
-    /// Starts Media Foundation, counted.
+    /// Starts the Media Foundation platform on demand.
     /// </summary>
     /// <remarks>
-    /// Two sessions at once would otherwise have the first one to finish shut the
-    /// platform down underneath the second.
-    /// </remarks>
-    /// <summary>
-    /// Starts the Media Foundation platform, once, for the life of the process.
-    /// </summary>
-    /// <remarks>
-    /// There is deliberately no matching shutdown. MFShutdown tears the platform down
-    /// under everything still using it - transforms that are alive, work queue items not
-    /// yet run, async callbacks armed and not yet delivered - and reports nothing when
-    /// it does. It corrupts the heap, and the process dies later somewhere unrelated.
-    ///
-    /// <para>This was counted, and the count was wrong: the enumeration took one
-    /// reference for a whole run of candidates while every rejected candidate gave one
-    /// back as it was disposed, so the first candidate to fail closed the platform that
-    /// the rest of the loop was still enumerating from. Changing quality re-runs that
-    /// enumeration, which is why it showed up there.</para>
-    ///
-    /// <para>Correcting the count was the obvious repair and it is not the one taken
-    /// here, because a correct count still leaves the platform closing and reopening
-    /// around every session, and every one of those closes has to be right about
-    /// everything the platform still owns. Started once and left running, there is
-    /// nothing to be right about. It costs a platform that stays initialised in a tray
-    /// application that is going to open another session anyway.</para>
+    /// Shutdown is not paired to each candidate or session. The background lifetime
+    /// policy waits until no accepted encoder and no discovery/configuration operation
+    /// is alive, so quality changes cannot tear the platform down underneath an async
+    /// callback or the next candidate in the same enumeration.
     /// </remarks>
     private static bool Startup()
     {
@@ -876,6 +883,50 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
 
         try { Marshal.ReleaseComObject(_transform); }
         catch (Exception ex) { Logger.WriteLine("Remote encoder release: " + ex.Message); }
+
+        if (_counted)
+        {
+            _counted = false;
+            Interlocked.Decrement(ref _liveEncoders);
+        }
+    }
+
+    /// <summary>
+    /// Closes the Media Foundation platform if nothing is using it.
+    /// </summary>
+    /// <remarks>
+    /// The platform is started on the first session and, left alone, stays up for the
+    /// life of the process holding the codec libraries with it - which on this class of
+    /// machine is tens of megabytes of vendor media DLLs that a tray application has no
+    /// use for between sessions.
+    ///
+    /// <para>It is closed only from the idle release, which runs five seconds after the
+    /// last activity and only when no window is on screen, and then only when no encoder
+    /// is alive. That is the distinction that matters: closing it underneath something
+    /// still using it corrupts the heap and is what took the process out on a quality
+    /// change. Closing it when nothing has been using it for five seconds does not.</para>
+    ///
+    /// <para>Nothing is remembered about having closed it. The next session starts the
+    /// platform again exactly as the first one did.</para>
+    /// </remarks>
+    internal static void ReleasePlatformIfIdle()
+    {
+        lock (StartupGate)
+        {
+            if (!_platformStarted) return;
+            if (Volatile.Read(ref _liveEncoders) != 0) return;
+            if (Volatile.Read(ref _platformOperations) != 0) return;
+
+            try
+            {
+                MF.MFShutdown();
+                _platformStarted = false;
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine("Media Foundation release: " + ex.Message);
+            }
+        }
     }
 
 }

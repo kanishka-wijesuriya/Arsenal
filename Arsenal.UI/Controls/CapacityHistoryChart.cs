@@ -33,6 +33,8 @@ namespace Arsenal.UI.Controls
     {
         private const double Floor = 0.5;
         private const double LabelHeight = 16;
+        private static readonly Typeface StaticLabelTypeface = new(
+            SystemFonts.MessageFontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
 
         public static readonly DependencyProperty PointsProperty =
             DependencyProperty.Register(nameof(Points), typeof(IEnumerable), typeof(CapacityHistoryChart),
@@ -79,7 +81,9 @@ namespace Arsenal.UI.Controls
 
             double plotHeight = ActualHeight - LabelHeight;
             var pen = new Pen(line, 2) { LineJoin = PenLineJoin.Round };
+            pen.Freeze();
             var gridPen = new Pen(grid, 1);
+            gridPen.Freeze();
 
             // Guides at each tenth of design capacity, so the eye has something to
             // measure the slope against without an axis being drawn.
@@ -113,7 +117,9 @@ namespace Arsenal.UI.Controls
             }
             fill.Freeze();
 
-            context.DrawGeometry(new SolidColorBrush(((SolidColorBrush)line).Color) { Opacity = 0.14 }, null, fill);
+            var fillBrush = new SolidColorBrush(((SolidColorBrush)line).Color) { Opacity = 0.14 };
+            fillBrush.Freeze();
+            context.DrawGeometry(fillBrush, null, fill);
             context.DrawGeometry(null, pen, geometry);
 
             // Only the ends are labelled. A reading every week would crowd into an
@@ -139,7 +145,7 @@ namespace Arsenal.UI.Controls
                 when.ToString("MMM yyyy", CultureInfo.CurrentCulture),
                 CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
-                new Typeface(SystemFonts.MessageFontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
+                StaticLabelTypeface,
                 11,
                 ink,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);

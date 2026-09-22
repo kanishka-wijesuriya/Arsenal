@@ -75,6 +75,11 @@
                     <ui:ToggleSwitch IsChecked="{Binding UseSubpages, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
+                <controls:SettingsRow Header="Draw without the graphics card"
+                                      Description="Roughly halves the memory Arsenal holds while a window is open. It costs a great deal to do it: on a large display, page changes stutter and the quick panel's open and close drop enough frames to look like no animation at all. Take it only if the memory matters more than that. Applies after a restart.">
+                    <ui:ToggleSwitch IsChecked="{Binding SoftwareRendering, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
                 <controls:SettingsRow Header="Disable transparency"
                                       Description="Turns off the Mica backdrop for Arsenal only and paints the window on flat colours. Windows transparency elsewhere is unaffected.">
                     <ui:ToggleSwitch IsChecked="{Binding DisableTransparency, Mode=TwoWay}"/>

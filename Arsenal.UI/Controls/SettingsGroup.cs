@@ -397,15 +397,22 @@ namespace Arsenal.UI.Controls
         /// a strong table here would hold each page that ever carried such content for
         /// the life of the process - the tray release exists to avoid exactly that.
         /// </remarks>
-        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<FrameworkElement, Action<SettingsGroup?>> _hideHandlers = new();
+        private sealed record HideWiring(
+            Action<SettingsGroup?> Apply,
+            RoutedEventHandler Attach,
+            RoutedEventHandler Detach);
+
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<FrameworkElement, HideWiring> _hideHandlers = new();
 
         private static void OnHideInSubpageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not FrameworkElement element) return;
 
-            if (_hideHandlers.TryGetValue(element, out var existing))
+            if (_hideHandlers.TryGetValue(element, out HideWiring? existing))
             {
-                OpenChanged -= existing;
+                OpenChanged -= existing.Apply;
+                element.Loaded -= existing.Attach;
+                element.Unloaded -= existing.Detach;
                 _hideHandlers.Remove(element);
             }
 
@@ -421,12 +428,31 @@ namespace Arsenal.UI.Controls
                 element.Visibility = hidden ? Visibility.Collapsed : Visibility.Visible;
             }
 
-            _hideHandlers.Add(element, Apply);
-            OpenChanged += Apply;
+            // Attached only while the element is on screen. OpenChanged is static and
+            // lives as long as the process, and this handler closes over the element, so
+            // a subscription taken once and never dropped roots the element, its parent
+            // chain and the whole page behind it - which is precisely what the tray
+            // release exists to let go of. It is the same load-and-drop the groups
+            // themselves use.
+            void Attach(object? sender, RoutedEventArgs args)
+            {
+                OpenChanged -= Apply;
+                OpenChanged += Apply;
 
-            // Whatever is open right now, not whatever was open when this page was last
-            // built: a cached page comes back carrying the state it was left in.
-            Apply(_open);
+                // Whatever is open right now, not whatever was open when this page was
+                // last built: a cached page comes back carrying the state it was left in.
+                Apply(_open);
+            }
+
+            void Detach(object? sender, RoutedEventArgs args) => OpenChanged -= Apply;
+
+            element.Loaded += Attach;
+            element.Unloaded += Detach;
+            _hideHandlers.Add(element, new HideWiring(Apply, Attach, Detach));
+
+            // Set in XAML, so the element is normally not loaded yet and Attach will do
+            // this; set on something already on screen, it has to be done now.
+            if (element.IsLoaded) Attach(element, new RoutedEventArgs());
         }
 
         public override void OnApplyTemplate()

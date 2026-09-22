@@ -65,6 +65,18 @@ for (int round = 0; round < rounds; round++)
 }
 
 holding?.Dispose();
+MediaFoundationVideoEncoder.ReleasePlatformIfIdle();
+
+// A later session must be able to start the platform again after idle cleanup.
+var restarted = MediaFoundationVideoEncoder.TryCreate(codecs, 1280, 720, 30, 5000);
+if (restarted is null)
+{
+    Console.Error.WriteLine("No encoder was available after Media Foundation restarted.");
+    return 1;
+}
+Console.WriteLine($"Restart after idle release: {restarted.EncoderName}");
+restarted.Dispose();
+MediaFoundationVideoEncoder.ReleasePlatformIfIdle();
 
 Console.WriteLine($"Survived {rounds} rounds, {overlapped} of them enumerated while another encoder was being released.");
 return 0;

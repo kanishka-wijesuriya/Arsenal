@@ -36,6 +36,7 @@ namespace Arsenal.UI.Controls
             }
         }
 
+        private static readonly Typeface AxisTypeface = new("Segoe UI Variable Display, Segoe UI");
         private int _draggingIndex = -1;
 
         private readonly Pen _linePen = new(new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 150, 255)), 2.5);
@@ -97,7 +98,7 @@ namespace Arsenal.UI.Controls
             double graphW = w - padLeft - padRight;
             double graphH = h - padTop - padBottom;
 
-            var typeFace = new Typeface("Segoe UI Variable Display, Segoe UI");
+            Typeface typeFace = AxisTypeface;
             Pen gridPen = ResolveGridPen();
             Brush axisBrush = ResolveAxisBrush();
             Brush handleBrush = TryFindResource("TextPrimary") as Brush ?? _handleBrush;

@@ -32,7 +32,7 @@ internal static class Program
         {
             // AppConfig prefers a config beside the executable, which keeps this out of
             // the user's real settings the same way the other smoke tools do.
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "config.json"), "{\"theme\":1}");
+            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "config.json"), "{\"theme\":1,\"subpages\":0}");
 
             var application = new App();
             application.InitializeComponent();

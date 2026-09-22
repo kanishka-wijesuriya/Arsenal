@@ -244,6 +244,7 @@ and it is short enough to read in one sitting.
 | `services` | Open advanced ASUS service controls |
 | `colors` | Install the model-specific colour profile and open Display |
 | `autoupdate` | Run the update path |
+| `--memory-diagnostics` | Log detailed managed, native-heap, module and address-space memory reports while reproducing a problem |
 
 `--quick-test` and `--tray-test` are diagnostic variants that expose the quick panel and
 tray menu for automated UI inspection. `--panel-edge=bottom|top|left|right` forces the

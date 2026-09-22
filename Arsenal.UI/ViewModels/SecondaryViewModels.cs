@@ -922,6 +922,10 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty]
         private bool _useSubpages = Controls.SettingsGroup.SubpagesEnabled;
 
+        /// <summary>Draw on the processor rather than the graphics card.</summary>
+        [ObservableProperty]
+        private bool _softwareRendering = AppConfig.Is("software_render");
+
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsCustomAccent))]
         [NotifyPropertyChangedFor(nameof(AccentDescription))]
@@ -1126,6 +1130,19 @@ namespace Arsenal.UI.ViewModels
         {
             if (!_isReady) return;
             Controls.SettingsGroup.SetSubpagesEnabled(value);
+        }
+
+        /// <summary>
+        /// Takes effect on the next start, and says so rather than pretending.
+        /// </summary>
+        /// <remarks>
+        /// WPF fixes its render mode when it composes its first window, so nothing can
+        /// change it while one is on screen.
+        /// </remarks>
+        partial void OnSoftwareRenderingChanged(bool value)
+        {
+            if (!_isReady) return;
+            AppConfig.Set("software_render", value ? 1 : 0);
         }
 
         partial void OnDisableTransparencyChanged(bool value)

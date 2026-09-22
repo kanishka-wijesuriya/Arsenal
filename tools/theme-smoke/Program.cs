@@ -34,11 +34,16 @@ internal static class Program
             // this smoke test a completely isolated settings store and guarantees it
             // never reads or changes the user's real Arsenal preferences.
             string configPath = Path.Combine(AppContext.BaseDirectory, "config.json");
-            File.WriteAllText(configPath, "{\"theme\":1,\"accent_source\":1,\"accent_color\":\"#D83B01\",\"start_minimized\":1}");
+            File.WriteAllText(configPath, "{\"theme\":1,\"accent_source\":1,\"accent_color\":\"#D83B01\",\"start_minimized\":1,\"subpages\":1}");
 
             var application = new App();
             application.InitializeComponent();
+            // Several assertions open and close off-screen windows. Keep the dispatcher
+            // alive between them rather than letting the first close shut the test app
+            // down before later controls can ever receive Loaded.
+            application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             App.ApplyConfiguredTheme();
+            AssertSubpageHasNoHeadingOfItsOwn();
             AssertCustomPerformancePlans();
 
             AssertAccentResources(application, expectedSubtleAlpha: 0x2E);
@@ -72,7 +77,6 @@ internal static class Program
             AppConfig.Set("theme", (int)Arsenal.UI.Theming.AppTheme.Arsenal);
             App.ApplyConfiguredTheme();
             AssertGroupHeaderContentSurvivesTheTheme();
-            AssertSubpageHasNoHeadingOfItsOwn();
 
             AppConfig.Flush();
             application.Shutdown();
@@ -512,30 +516,22 @@ internal static class Program
             };
             group.Items.Add(new SettingsRow { Header = "Sustained power" });
 
-            // A real window, off screen. A group only starts listening for the open
-            // signal in its Loaded handler, so one that was merely measured never
-            // opens at all and this would pass against any template whatsoever.
             var host = new Border { Child = group, Width = 800 };
-            var window = new Window
-            {
-                Content = host,
-                Width = 900,
-                Height = 700,
-                Left = -20000,
-                Top = -20000,
-                WindowStyle = WindowStyle.None,
-                ShowActivated = false,
-                ShowInTaskbar = false,
-            };
-
-            window.Show();
-            Pump();
-
-            group.Open();
-            Pump();
+            host.Measure(new System.Windows.Size(800, 2000));
+            host.Arrange(new System.Windows.Rect(0, 0, 800, 2000));
             host.UpdateLayout();
 
-            Assert(group.IsOpen, "The group did not open, so nothing below is being tested.");
+            // The harness does not enter Application.Run, so drive the control's real
+            // routed lifetime explicitly after its production template is realised.
+            group.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent, group));
+
+            group.Open();
+            host.UpdateLayout();
+
+            Assert(group.IsOpen,
+                $"The group did not open, so nothing below is being tested. " +
+                $"Loaded={group.IsLoaded}, DrillIn={group.DrillIn}, Subpages={SettingsGroup.SubpagesEnabled}, " +
+                $"OpenGroupMatches={ReferenceEquals(SettingsGroup.OpenGroup, group)}.");
 
             Assert(announced == "CPU power & thermals",
                 "Opening a subpage did not announce itself, so the title bar cannot name it.");
@@ -557,10 +553,9 @@ internal static class Program
                 "The subpage back button is back; the title bar arrow is the only way out now.");
 
             SettingsGroup.Close();
-            Pump();
             Assert(announced is null, "Closing a subpage did not announce it, so the title bar keeps the old path.");
 
-            window.Close();
+            group.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent, group));
         }
         finally
         {

@@ -64,6 +64,13 @@ namespace Arsenal.UI
 
             string action = e.Args.FirstOrDefault()?.Trim().ToLowerInvariant() ?? string.Empty;
 
+            // The isolated UI lifetime smoke supplies a minimal service provider before
+            // starting the dispatcher. A normal Arsenal process can never enter this
+            // branch because its provider is built below.
+            if (Services is not null &&
+                Environment.GetEnvironmentVariable("ARSENAL_UI_LIFETIME_SMOKE_HOST") == "1")
+                return;
+
             if (action == "--install-colors")
             {
                 ColorProfileHelper.InstallProfileFilesAsync().GetAwaiter().GetResult();
@@ -815,7 +822,8 @@ namespace Arsenal.UI
             services.AddSingleton<Services.Remote.Desktop.RemoteDesktopServer>();
 
             // Register Windows
-            services.AddSingleton<MainWindow>();
+            services.AddSingleton<MainWindowState>();
+            services.AddTransient<MainWindow>();
             services.AddSingleton<QuickPanelWindow>();
 
             services.AddSingleton<TrayMenuWindow>();
@@ -933,6 +941,9 @@ namespace Arsenal.UI
                 PeripheralsProvider.DetectAllAsusMice();
                 PeripheralsProvider.DetectAllAsusKeyboards();
                 global::Startup.StartupCheck();
+
+                // Release unneeded startup allocations once hardware initialization has settled.
+                Arsenal.UI.Services.BackgroundMemoryRelease.Schedule();
             }
             catch (Exception ex)
             {
@@ -1141,7 +1152,46 @@ namespace Arsenal.UI
             _mainWindow = Services.GetRequiredService<MainWindow>();
             MainWindow = _mainWindow;
             _mainWindow.IsVisibleChanged += OnTelemetrySurfaceVisibilityChanged;
+            _mainWindow.Closed += OnMainWindowClosed;
             return _mainWindow;
+        }
+
+        private void OnMainWindowClosed(object? sender, EventArgs e)
+        {
+            if (sender is not MainWindow window) return;
+            window.IsVisibleChanged -= OnTelemetrySurfaceVisibilityChanged;
+            window.Closed -= OnMainWindowClosed;
+            if (!ReferenceEquals(_mainWindow, window)) return;
+
+            _mainWindow = null;
+            if (ReferenceEquals(MainWindow, window)) MainWindow = null;
+        }
+
+        /// <summary>
+        /// Closes the native Main Window after a long tray idle. The view model and the
+        /// navigation state remain in the resident shell, so reopening creates the same
+        /// page and state without retaining the hidden HWND and its composition target.
+        /// </summary>
+        internal bool ReleaseHiddenMainWindow()
+        {
+            MainWindow? window = _mainWindow;
+            if (window is null || !window.CanReleaseHiddenWindow) return false;
+
+            window.ReleaseOwnedContent();
+            window.AllowClose();
+            window.Close();
+            return true;
+        }
+
+        internal bool HasVisibleOwnedWindow =>
+            _mainWindow?.IsVisible == true ||
+            _quickPanelWindow?.IsVisible == true ||
+            _trayMenuWindow?.IsVisible == true;
+
+        internal void ReleaseHiddenMainWindowPageContent()
+        {
+            if (_mainWindow?.IsVisible == false)
+                _mainWindow.ReleaseHiddenPageContent();
         }
 
         private QuickPanelWindow EnsureQuickPanelWindow()

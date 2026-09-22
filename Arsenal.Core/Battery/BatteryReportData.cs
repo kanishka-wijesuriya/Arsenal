@@ -102,14 +102,12 @@ namespace Arsenal.Battery
                 string htmlPath = Path.Combine(ReportDirectory, "battery-report.html");
 
                 if (!await RunPowercfgAsync(xmlPath, "xml", cancel).ConfigureAwait(false)) return null;
-
-                // Best effort: the summary does not depend on it, and a failure here
-                // should not lose the report that did come back.
-                await RunPowercfgAsync(htmlPath, "html", cancel).ConfigureAwait(false);
-
                 if (!File.Exists(xmlPath)) return null;
-                return Parse(await File.ReadAllTextAsync(xmlPath, cancel).ConfigureAwait(false),
-                             File.Exists(htmlPath) ? htmlPath : "");
+
+                // Only the XML. The HTML page is a second scan and a second file for
+                // something most people never open, so it is written by
+                // WriteFullReportAsync when the button for it is actually pressed.
+                return Parse(await File.ReadAllTextAsync(xmlPath, cancel).ConfigureAwait(false), htmlPath);
             }
             catch (OperationCanceledException)
             {
@@ -149,6 +147,33 @@ namespace Arsenal.Battery
             Logger.WriteLine($"powercfg /batteryreport /{format} exited {process.ExitCode}: "
                 + (await process.StandardError.ReadToEndAsync(cancel).ConfigureAwait(false)).Trim());
             return false;
+        }
+
+        /// <summary>
+        /// Writes the Windows HTML report, for the one person in ten who opens it.
+        /// </summary>
+        /// <remarks>
+        /// Run on demand rather than alongside every scan. It is a second pass of the
+        /// same work and a second file on disk, and the summary in the app does not read
+        /// it. Returns the path, or an empty string if the scan failed.
+        /// </remarks>
+        public static async Task<string> WriteFullReportAsync(string path, CancellationToken cancel = default)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                if (!await RunPowercfgAsync(path, "html", cancel).ConfigureAwait(false)) return "";
+                return File.Exists(path) ? path : "";
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine("Battery report page: " + ex.Message);
+                return "";
+            }
         }
 
         /// <summary>Reads a report that has already been written.</summary>

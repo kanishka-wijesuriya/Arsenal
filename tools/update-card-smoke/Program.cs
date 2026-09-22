@@ -235,6 +235,8 @@ internal static class Program
         public Task<string?> DownloadAsusPackageAsync(string downloadUrl, IProgress<int>? progress,
             CancellationToken cancellationToken, string? expectedSha256 = null) => Task.FromResult<string?>(null);
 
+        public string? FindDownloadedPackage(string downloadUrl) => null;
+
         public string DownloadFolder => AppContext.BaseDirectory;
     }
 }

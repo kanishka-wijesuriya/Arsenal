@@ -60,7 +60,6 @@ namespace Arsenal.Input
                     if (cancellationTokenSource.Token.IsCancellationRequested) break;
                     if (data.Length > 1 && data[0] == AsusHid.INPUT_ID && data[1] > 0 && data[1] != 236)
                     {
-                        Logger.WriteLine($"Key: {data[1]}");
                         _handler(data[1]);
                     }
                     else if (isAlly && data.Length > 1 && data[0] == AsusHid.INPUT_ID && data[1] == 0)

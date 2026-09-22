@@ -2,6 +2,7 @@ using Arsenal.Ally;
 using Arsenal.Helpers;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using CoreProgram = Arsenal.Program;
 
 static void Assert(bool condition, string message)
@@ -46,5 +47,51 @@ GC.Collect();
 int handlesAfter = Process.GetCurrentProcess().HandleCount;
 Assert(handlesAfter <= handlesBefore + 2,
     $"ACPI construct/dispose retained handles: before={handlesBefore}, after={handlesAfter}.");
+
+// Page content that opts into standing aside inside a subpage must not outlive its
+// page. It listens to a static event to hear about a group opening, and a subscription
+// taken and not dropped roots the element, its parent chain and the whole page behind
+// it - which silently undoes the tray release, one page per show-and-hide.
+//
+// On an STA thread of its own because WPF elements cannot be built anywhere else, and
+// through raised Loaded and Unloaded events rather than a real window: the events are
+// what the wiring hangs off, and a harness window never reliably renders.
+string? uiFailure = null;
+var ui = new Thread(() =>
+{
+    try
+    {
+        WeakReference probe = BuildAndDiscardPageContent();
+
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        if (probe.IsAlive)
+            uiFailure = "Page content marked HideInSubpage was still reachable after unloading; "
+                + "something is holding it through the static open-group event.";
+    }
+    catch (Exception ex)
+    {
+        uiFailure = "UI lifetime check failed: " + ex;
+    }
+});
+ui.SetApartmentState(ApartmentState.STA);
+ui.Start();
+ui.Join();
+Assert(uiFailure is null, uiFailure ?? "");
+
+// In its own method so the element is not kept alive by a local still in scope.
+[MethodImpl(MethodImplOptions.NoInlining)]
+static WeakReference BuildAndDiscardPageContent()
+{
+    var content = new System.Windows.Controls.Border();
+    Arsenal.UI.Controls.SettingsGroup.SetHideInSubpage(content, true);
+
+    content.RaiseEvent(new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.LoadedEvent));
+    content.RaiseEvent(new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.UnloadedEvent));
+
+    return new WeakReference(content);
+}
 
 Console.WriteLine($"Memory lifetime smoke passed. Handles {handlesBefore} -> {handlesAfter}; Ally={AppConfig.IsAlly()}.");

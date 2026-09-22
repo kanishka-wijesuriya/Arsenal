@@ -24,7 +24,11 @@ internal static class Program
     {
         try
         {
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "config.json"), "{\"theme\":1}");
+            // Keep every group expanded so the production preview is realised in the
+            // visual tree. Subpage mode deliberately defers row construction until a
+            // group is opened, which is a navigation policy rather than the binding
+            // behavior this harness exists to test.
+            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "config.json"), "{\"theme\":1,\"subpages\":0}");
 
             var app = new App();
             app.InitializeComponent();

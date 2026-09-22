@@ -103,6 +103,7 @@ public static class ToastManager
             // owner cannot close its final child re-entrantly inside that callback.
             System.Windows.Application.Current.Dispatcher.BeginInvoke(CloseTopmostAnchor,
                 System.Windows.Threading.DispatcherPriority.Background);
+            BackgroundMemoryRelease.Schedule();
         }
         RequestReposition();
     }

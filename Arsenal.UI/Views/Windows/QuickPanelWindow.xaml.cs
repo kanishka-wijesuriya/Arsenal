@@ -1417,8 +1417,10 @@ namespace Arsenal.UI.Views.Windows
         /// </remarks>
         private void OnPanelVisibilityChanged(bool visible)
         {
-            if (visible) return;
-            Services.BackgroundMemoryRelease.Schedule();
+            if (visible)
+                Services.BackgroundMemoryRelease.NotifyActivity();
+            else
+                Services.BackgroundMemoryRelease.Schedule();
         }
 
         private void SetTileBitmapCache(bool cached)

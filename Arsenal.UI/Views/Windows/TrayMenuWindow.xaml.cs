@@ -33,9 +33,15 @@ public partial class TrayMenuWindow : Window
         // hidden menu is still open.
         IsVisibleChanged += (_, _) =>
         {
-            if (IsVisible) return;
-            _targetVisible = false;
-            Services.BackgroundMemoryRelease.Schedule();
+            if (IsVisible)
+            {
+                Services.BackgroundMemoryRelease.NotifyActivity();
+            }
+            else
+            {
+                _targetVisible = false;
+                Services.BackgroundMemoryRelease.Schedule();
+            }
         };
     }
 

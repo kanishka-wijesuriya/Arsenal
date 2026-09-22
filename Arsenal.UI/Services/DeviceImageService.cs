@@ -41,7 +41,7 @@ internal static class DeviceImageService
     /// hundred, so decoding at full size would cost a 60 MB intermediate for
     /// detail that is thrown away.
     /// </summary>
-    private const int DecodeWidth = 1024;
+    private const int DecodeWidth = 480;
 
     /// <summary>Alpha at or below this counts as empty when trimming the margins.</summary>
     private const byte AlphaFloor = 8;
@@ -444,6 +444,7 @@ internal static class DeviceImageService
         image.UriSource = new Uri(CacheFile);
         image.CacheOption = BitmapCacheOption.OnLoad;
         image.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+        image.DecodePixelWidth = DecodeWidth;
         image.EndInit();
         image.Freeze();
         return image;

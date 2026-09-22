@@ -27,7 +27,9 @@ internal static class Program
     {
         try
         {
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "config.json"), "{\"theme\":1}");
+            // This harness inspects every row at once. Subpage mode intentionally does
+            // not realise a closed group's row visuals, so keep groups expanded here.
+            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "config.json"), "{\"theme\":1,\"subpages\":0}");
 
             var application = new App();
             application.InitializeComponent();
@@ -754,6 +756,7 @@ internal static class Program
         public Task<string?> DownloadAsusPackageAsync(
             string downloadUrl, IProgress<int>? progress, CancellationToken cancellationToken, string? expectedSha256 = null)
             => Task.FromResult<string?>(null);
+        public string? FindDownloadedPackage(string downloadUrl) => null;
         public string DownloadFolder => Path.GetTempPath();
     }
 

@@ -40,11 +40,10 @@ namespace Arsenal.Application.Services.Implementations
             HardwareControl.readPower = true;
             HardwareControl.readBattery = true;
 
-            // Stopped until something is actually looking. One sample is taken now so
-            // the first surface to open has a value to draw rather than a blank card.
+            // Stopped until something is actually looking. Telemetry is sampled when
+            // ResumePolling is called as a window opens.
             _telemetryTimer = new System.Timers.Timer(VisibleIntervalMs) { AutoReset = true };
             _telemetryTimer.Elapsed += (s, e) => PollHardware();
-            ThreadPool.QueueUserWorkItem(_ => PollHardware());
         }
 
         public void SetPollingInterval(TimeSpan interval)
@@ -66,6 +65,18 @@ namespace Arsenal.Application.Services.Implementations
         {
             _publishUpdates = false;
             _telemetryTimer.Stop();
+
+            // NVML is the most expensive thing the application keeps open, and it is only
+            // open because this timer reads GPU power and VRAM through it. Measured with
+            // the address-space walk, nvml.dll charges this process 18.8MB of private
+            // data - more than any other library, ours or the graphics drivers' - and it
+            // is held for the life of the process for the sake of two numbers that
+            // nothing is currently displaying.
+            //
+            // Every NvmlHelper getter calls Init itself, so this costs one re-initialise
+            // the next time a window asks for GPU telemetry, on the background poll
+            // ResumePolling already queues rather than on the thread drawing the page.
+            NvmlHelper.Shutdown();
         }
 
         public void ResumePolling()

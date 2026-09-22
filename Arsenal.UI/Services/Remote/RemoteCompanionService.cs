@@ -518,6 +518,11 @@ public sealed class RemoteCompanionService : IDisposable
 
     private async Task HandleClientAsync(TcpClient client, IPAddress remote, CancellationToken cancellationToken)
     {
+        // Retire an older idle release before TLS, routing, hardware access or media
+        // setup starts. Scheduling only in finally left a narrow window where cleanup
+        // from the preceding request could run underneath this one.
+        Services.BackgroundMemoryRelease.NotifyActivity();
+
         using (client)
         using (var ssl = new SslStream(client.GetStream(), false))
         {
