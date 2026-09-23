@@ -137,6 +137,10 @@ namespace Arsenal.UI
             // Set UI Bridge
             Program.Bridge = this;
 
+            // Mica is no longer an application option. Remove the retired preference
+            // once so old installations do not carry a setting that has no effect.
+            if (AppConfig.Exists("opaque_window")) AppConfig.Remove("opaque_window");
+
             ApplyConfiguredTheme();
 
             // Initialize Hardware Core
@@ -450,35 +454,6 @@ namespace Arsenal.UI
         }
 
         /// <summary>
-        /// Config key. 1 turns the Mica backdrop off for this app only and paints the
-        /// window on flat colours instead.
-        /// </summary>
-        public const string OpaqueWindowSetting = "opaque_window";
-
-        /// <summary>
-        /// Whether to paint on flat colours rather than let Mica through. On unless the
-        /// key says otherwise, so a fresh install opens opaque.
-        /// </summary>
-        /// <remarks>
-        /// Read through IsNotFalse rather than Is, which is what makes an absent key
-        /// mean opaque. Anyone who has turned transparency on has a stored zero and
-        /// keeps it; only machines that never touched the setting change behaviour.
-        /// </remarks>
-        public static bool IsOpaqueWindow => AppConfig.IsNotFalse(OpaqueWindowSetting);
-
-        /// <summary>
-        /// Paints the window's two grounds and switches the backdrop to match.
-        /// </summary>
-        /// <remarks>
-        /// Transparent grounds let Mica through, which is the default. Turning the
-        /// setting on has to do both halves: flat brushes alone would still be composited
-        /// over a Mica backdrop, and dropping the backdrop alone would leave the window
-        /// painting on whatever the bare FluentWindow ground happens to be.
-        ///
-        /// The dark values are the ones asked for. Light mode gets the equivalents from
-        /// the existing light palette rather than those same near-black colours.
-        /// </remarks>
-        /// <summary>
         /// The library's own foregrounds for a navigation destination, in the order the
         /// template reaches for them. Every state resolves to the same ink.
         /// </summary>
@@ -533,24 +508,8 @@ namespace Arsenal.UI
         {
             if (Current is null) return;
 
-            bool opaque = IsOpaqueWindow;
-
-            System.Windows.Media.Brush sidebar = opaque
-                ? Brush(palette.OpaqueSidebar)
-                : System.Windows.Media.Brushes.Transparent;
-
-            // With Mica on, the navigation ground stays fully transparent so the backdrop
-            // reads through it. The content ground takes a thin wash instead of nothing:
-            // the two grounds have to differ for the content area to have a visible shape
-            // at all, and its top-left corner rounding under the title bar is the whole
-            // point of the collapsed layout. This is the same layer-over-backdrop the
-            // Windows 11 shell uses, not a solid fill.
-            System.Windows.Media.Brush content = opaque
-                ? Brush(palette.OpaqueContent)
-                : Brush(palette.MicaContentWash);
-
-            Current.Resources["AppSidebarBackground"] = sidebar;
-            Current.Resources["AppContentBackground"] = content;
+            Current.Resources["AppSidebarBackground"] = Brush(palette.OpaqueSidebar);
+            Current.Resources["AppContentBackground"] = Brush(palette.OpaqueContent);
 
             // The NavigationView template lays its own wash over the whole content area -
             // NavigationViewContentBackground, a 30% #3A3A3A. It sits above the grounds
@@ -562,35 +521,24 @@ namespace Arsenal.UI
             Current.Resources["NavigationViewContentBackground"] = System.Windows.Media.Brushes.Transparent;
 
             if (Current.MainWindow is Wpf.Ui.Controls.FluentWindow window)
-                ApplyWindowBackdrop(window);
+                ApplyWindowSurface(window);
         }
 
         /// <summary>
-        /// Puts one window's backdrop and ground in step with the transparency setting.
+        /// Applies the solid application ground and matching DWM frame to one window.
         /// </summary>
         /// <remarks>
-        /// Called from the window's own constructor as well as from a theme refresh.
-        /// The theme is applied during startup, before any window exists, so a window
-        /// created later would otherwise keep the Mica backdrop its XAML asks for even
-        /// when the user has turned transparency off.
+        /// Called from the window's own constructor as well as from a theme refresh so
+        /// windows created after startup receive the currently selected palette.
         /// </remarks>
-        public static void ApplyWindowBackdrop(Wpf.Ui.Controls.FluentWindow window)
+        public static void ApplyWindowSurface(Wpf.Ui.Controls.FluentWindow window)
         {
-            bool opaque = IsOpaqueWindow;
+            window.WindowBackdropType = Wpf.Ui.Controls.WindowBackdropType.None;
 
-            window.WindowBackdropType = opaque
-                ? Wpf.Ui.Controls.WindowBackdropType.None
-                : Wpf.Ui.Controls.WindowBackdropType.Mica;
+            window.Background = Current?.Resources["AppContentBackground"] as System.Windows.Media.Brush
+                ?? System.Windows.Media.Brushes.Black;
 
-            // The grounds cover the whole client area, so this only shows during a
-            // resize - but leaving it transparent there flickers through to the desktop
-            // once the backdrop is gone.
-            window.Background = opaque
-                ? (Current?.Resources["AppContentBackground"] as System.Windows.Media.Brush
-                    ?? System.Windows.Media.Brushes.Black)
-                : System.Windows.Media.Brushes.Transparent;
-
-            ApplyCompositionGround(window, opaque);
+            ApplyCompositionGround(window);
             ApplyImmersiveDarkMode(window);
         }
 
@@ -604,11 +552,9 @@ namespace Arsenal.UI
         /// is treated as light, so that strip is drawn light - the white edge that
         /// appears on whichever side is being dragged.
         ///
-        /// The library sets it as part of applying a backdrop, which is why the setting
-        /// had to be toggled after launch to take effect: switching to Mica applied it,
-        /// and switching back to opaque left it applied. Starting opaque never applied
-        /// it at all. Setting it here means the state after launch matches the state
-        /// after a toggle.
+        /// Set explicitly because there is no backdrop operation left to set it as a
+        /// side effect. The native frame must match the selected solid light or dark
+        /// surface from the first window onward.
         /// </remarks>
         private static void ApplyImmersiveDarkMode(Window window)
         {
@@ -629,11 +575,8 @@ namespace Arsenal.UI
         /// resize uncovers before anything has been drawn into the new space.
         /// </summary>
         /// <remarks>
-        /// WPF's default here is opaque white, and it stays white with the backdrop off:
-        /// the Mica path is the only one the library makes transparent, because there the
-        /// point is to let DWM through. So turning transparency off left the clear colour
-        /// white, and dragging an edge outwards showed it along that edge until the next
-        /// frame caught up - the whole of the reported white band.
+        /// WPF's default here is opaque white. Leaving it untouched would make a window
+        /// edge flash white while it is dragged outward, until the next frame catches up.
         ///
         /// The content ground is the right colour to use: the sidebar's differs by four
         /// values, which is not visible, and the content is by far the larger area.
@@ -642,17 +585,16 @@ namespace Arsenal.UI
         /// over it exactly as before, so nothing is drawn twice. Filling the client area
         /// through GDI to achieve the same thing does double-paint, and flickers.
         /// </remarks>
-        private static void ApplyCompositionGround(Window window, bool opaque)
+        private static void ApplyCompositionGround(Window window)
         {
             // Only exists once the window has a handle, so this is a no-op when called
             // from a constructor; the window re-applies it from OnSourceInitialized.
             if (PresentationSource.FromVisual(window) is not HwndSource source) return;
             if (source.CompositionTarget is not { } target) return;
 
-            target.BackgroundColor = opaque
-                ? (Current?.Resources["AppContentBackground"] as System.Windows.Media.SolidColorBrush)?.Color
-                    ?? System.Windows.Media.Colors.Black
-                : System.Windows.Media.Colors.Transparent;
+            target.BackgroundColor =
+                (Current?.Resources["AppContentBackground"] as System.Windows.Media.SolidColorBrush)?.Color
+                ?? System.Windows.Media.Colors.Black;
         }
 
         /// <summary>

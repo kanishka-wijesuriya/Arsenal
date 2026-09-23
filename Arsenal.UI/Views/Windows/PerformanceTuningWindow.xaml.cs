@@ -12,7 +12,7 @@ namespace Arsenal.UI.Views.Windows
             InitializeComponent();
             DataContext = viewModel;
             EditorHost.Content = new PerformancePage(viewModel, compactEditor: true);
-            App.ApplyWindowBackdrop(this);
+            App.ApplyWindowSurface(this);
             PreviewKeyDown += OnPreviewKeyDown;
 
             Closed += (_, _) =>

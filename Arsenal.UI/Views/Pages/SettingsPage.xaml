@@ -51,7 +51,7 @@
             </controls:SettingsGroup>
 
             <controls:SettingsGroup Header="Appearance" Icon="Color24"
-                                    Description="Theme, accent colour and whether the window paints on a transparent backdrop.">
+                                    Description="Theme and accent colour for Arsenal's solid window surfaces.">
                 <controls:SettingsRow Header="Theme"
                                       Description="Applies immediately. System mode follows Windows from the next theme change.">
                     <WrapPanel Style="{StaticResource RowChoiceGroupStyle}">
@@ -78,11 +78,6 @@
                 <controls:SettingsRow Header="Draw without the graphics card"
                                       Description="Roughly halves the memory Arsenal holds while a window is open. It costs a great deal to do it: on a large display, page changes stutter and the quick panel's open and close drop enough frames to look like no animation at all. Take it only if the memory matters more than that. Applies after a restart.">
                     <ui:ToggleSwitch IsChecked="{Binding SoftwareRendering, Mode=TwoWay}"/>
-                </controls:SettingsRow>
-
-                <controls:SettingsRow Header="Disable transparency"
-                                      Description="Turns off the Mica backdrop for Arsenal only and paints the window on flat colours. Windows transparency elsewhere is unaffected.">
-                    <ui:ToggleSwitch IsChecked="{Binding DisableTransparency, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
                 <controls:SettingsRow Header="Accent colour"

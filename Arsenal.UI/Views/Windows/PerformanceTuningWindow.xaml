@@ -5,7 +5,7 @@
                   Title="Custom performance modes"
                   Width="940" Height="760" MinWidth="780" MinHeight="600"
                   WindowStartupLocation="CenterScreen"
-                  WindowBackdropType="Mica">
+                  WindowBackdropType="None">
     <Grid Background="{DynamicResource AppContentBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

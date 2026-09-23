@@ -48,12 +48,9 @@ public sealed record ThemePalette
     public required string StatusCritical { get; init; }
     public required string DividerLine { get; init; }
 
-    /// <summary>The two window grounds when the user has turned transparency off.</summary>
+    /// <summary>The two opaque window grounds.</summary>
     public required string OpaqueSidebar { get; init; }
     public required string OpaqueContent { get; init; }
-
-    /// <summary>The wash over the Mica backdrop when transparency is on.</summary>
-    public required string MicaContentWash { get; init; }
 
     /// <summary>The card colour the selected-row blend is mixed against.</summary>
     public required string AccentBlendGround { get; init; }
@@ -112,7 +109,6 @@ public sealed record ThemePalette
         DividerLine = "#26FFFFFF",
         OpaqueSidebar = "#111111",
         OpaqueContent = "#151515",
-        MicaContentWash = "#12FFFFFF",
         AccentBlendGround = "#252728",
     };
 
@@ -138,7 +134,6 @@ public sealed record ThemePalette
         DividerLine = "#24000000",
         OpaqueSidebar = "#F3F3F3",
         OpaqueContent = "#FAFAFA",
-        MicaContentWash = "#5AFFFFFF",
         AccentBlendGround = "#FFFFFF",
     };
 
@@ -183,7 +178,6 @@ public sealed record ThemePalette
         DividerLine = "#3A00D9FF",
         OpaqueSidebar = "#05070A",
         OpaqueContent = "#080B0F",
-        MicaContentWash = "#B0080B0F",
         AccentBlendGround = "#11161D",
 
         // Radius is left at the shared values on purpose. The hard edge in this theme

@@ -898,10 +898,6 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty]
         private int _selectedTheme = 0; // 0=System, 1=Dark, 2=Light
 
-        /// <summary>Turns the Mica backdrop off for this app only.</summary>
-        [ObservableProperty]
-        private bool _disableTransparency;
-
         /// <summary>Whether a settings section is a place you open or a card already open.</summary>
         [ObservableProperty]
         private bool _useSubpages = Controls.SettingsGroup.SubpagesEnabled;
@@ -970,7 +966,6 @@ namespace Arsenal.UI.ViewModels
             StartMinimized = AppConfig.Is(ApplicationLaunch.StartMinimizedSetting);
             MinimizeToTray = AppConfig.IsNotFalse("minimize_to_tray");
             SelectedTheme = AppConfig.Get("theme", 0);
-            DisableTransparency = Arsenal.UI.App.IsOpaqueWindow;
             SelectedAccentSource = Math.Clamp(AppConfig.Get(AccentColorService.SourceSetting, 0), 0, 1);
             CustomAccentColor = AccentColorService.GetCustomAccent();
             CustomAccentHex = AccentColorService.ToHex(CustomAccentColor);
@@ -1129,13 +1124,6 @@ namespace Arsenal.UI.ViewModels
             AppConfig.Set("software_render", value ? 1 : 0);
         }
 
-        partial void OnDisableTransparencyChanged(bool value)
-        {
-            if (!_isReady) return;
-            AppConfig.Set(Arsenal.UI.App.OpaqueWindowSetting, value ? 1 : 0);
-            // Repaints the grounds and swaps the backdrop in the same pass.
-            Arsenal.UI.App.ApplyConfiguredTheme();
-        }
         partial void OnCheckUpdatesOnStartupChanged(bool value) { if (_isReady) SavePreferences(); }
         partial void OnCustomAccentColorChanged(System.Windows.Media.Color value)
         {

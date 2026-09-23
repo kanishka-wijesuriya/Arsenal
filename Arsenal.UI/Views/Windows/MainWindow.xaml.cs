@@ -40,9 +40,9 @@ namespace Arsenal.UI.Views.Windows
             _windowState = windowState;
             DataContext = _viewModel;
 
-            // The theme is applied before any window exists, so this window has to take
-            // the transparency setting for itself rather than wait for a refresh.
-            App.ApplyWindowBackdrop(this);
+            // The theme is applied before any window exists, so this window takes the
+            // current solid surface colours as soon as it is constructed.
+            App.ApplyWindowSurface(this);
 
             _placementSaveTimer = new DispatcherTimer(DispatcherPriority.Background)
             {
@@ -220,7 +220,7 @@ namespace Arsenal.UI.Views.Windows
         /// 220 wide its right edge is at 224 and a divider placed at 220 draws *inside*
         /// the pane, through the navigation items. The content presenter then starts at
         /// 229, leaving a 5px gap that would show as a stripe of bare window between the
-        /// two grounds once transparency is off. So the seam is taken from where the
+        /// two grounds. So the seam is taken from where the
         /// content actually begins, and the sidebar ground runs all the way to it.
         /// </remarks>
         private void TrackNavigationPaneWidth()
@@ -1390,7 +1390,7 @@ namespace Arsenal.UI.Views.Windows
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
-            App.ApplyWindowBackdrop(this);
+            App.ApplyWindowSurface(this);
         }
 
         protected override void OnClosing(CancelEventArgs e)

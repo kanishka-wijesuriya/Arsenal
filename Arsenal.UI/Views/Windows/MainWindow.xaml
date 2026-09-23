@@ -11,7 +11,7 @@
                   MinWidth="900"
                   MinHeight="620"
                   WindowStartupLocation="CenterScreen"
-                  WindowBackdropType="Mica"
+                  WindowBackdropType="None"
                   ExtendsContentIntoTitleBar="True">
     <Grid>
         <Grid.RowDefinitions>
@@ -26,8 +26,6 @@
              content ground reaches the top edge so it sits behind the status pills and
              the caption buttons rather than stopping below them.
 
-             Both are transparent while the Mica backdrop is on, so this layer is only
-             visible as the divider until the user turns the app's transparency off.
              The column width tracks the navigation pane's real animated width - see
              TrackNavigationPaneWidth in the code-behind. -->
         <Grid Grid.Row="0" Grid.RowSpan="2" x:Name="WindowSurfaceLayer">

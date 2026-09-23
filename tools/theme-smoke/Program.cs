@@ -169,21 +169,15 @@ internal static class Program
     }
 
     /// <summary>
-    /// The config written above deliberately has no opaque_window key, which is the
-    /// state of a machine nobody has visited the setting on. Mica is an opt-in from
-    /// there, so both grounds have to be painted rather than left transparent for a
-    /// backdrop to show through.
+    /// Main application surfaces are always solid. Mica is not an application option.
     /// </summary>
     private static void AssertOpaqueByDefault(App application)
     {
-        Assert(App.IsOpaqueWindow, "A config with no transparency preference did not default to opaque.");
-
         Assert(application.Resources["AppSidebarBackground"] is SolidColorBrush { Color.A: 0xFF },
             "The navigation ground was left transparent with no backdrop behind it.");
 
-        var settings = new SettingsViewModel();
-        Assert(settings.DisableTransparency,
-            "Settings showed transparency as on while the window was painting opaque.");
+        Assert(application.Resources["AppContentBackground"] is SolidColorBrush { Color.A: 0xFF },
+            "The content ground was left transparent with no backdrop behind it.");
     }
 
     private static void AssertQuickPanelSliderGeometry()

@@ -487,9 +487,8 @@ internal static class Program
     /// <summary>
     /// Dragging a window edge outwards exposes area WPF has not drawn into yet, and what
     /// shows there is the composition target's clear colour. WPF's default is opaque
-    /// white, and the library only makes it transparent on the Mica path - so with the
-    /// backdrop off it stays white, and the edge being dragged flashes white until the
-    /// next frame lands.
+    /// white, so it has to be replaced with the active solid surface or the edge being
+    /// dragged flashes white until the next frame lands.
     /// </summary>
     private static void CheckResizeUncoversTheGroundNotWhite()
     {
@@ -526,7 +525,7 @@ internal static class Program
         int darkBefore = 0;
         DwmGetWindowAttribute(hwnd, DwmwaUseImmersiveDarkMode, out darkBefore, sizeof(int));
 
-        App.ApplyWindowBackdrop(window);
+        App.ApplyWindowSurface(window);
 
         Assert(Clear() == ground!.Value,
             $"A resize would uncover {Clear()} rather than the {ground} ground.");

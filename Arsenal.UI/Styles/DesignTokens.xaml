@@ -37,12 +37,10 @@
     <Color x:Key="StatusWarningColor">#F2C94C</Color>
     <Color x:Key="StatusCriticalColor">#FF6B6B</Color>
 
-    <!-- The window's two grounds. Transparent by default so the Mica backdrop shows
-         through; ApplyConfiguredTheme replaces them with flat colours when the user
-         turns the app's transparency off. Declared here so the window still resolves
-         them before any theme has been applied. -->
-    <SolidColorBrush x:Key="AppSidebarBackground" Color="Transparent"/>
-    <SolidColorBrush x:Key="AppContentBackground" Color="Transparent"/>
+    <!-- Cold-start fallbacks for the two solid window grounds. The selected palette
+         replaces both during startup. -->
+    <SolidColorBrush x:Key="AppSidebarBackground" Color="#111111"/>
+    <SolidColorBrush x:Key="AppContentBackground" Color="#151515"/>
 
     <SolidColorBrush x:Key="SurfaceBase" Color="{StaticResource SurfaceBaseColor}"/>
     <SolidColorBrush x:Key="SurfaceLayer" Color="{StaticResource SurfaceLayerColor}"/>
