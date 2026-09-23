@@ -3,20 +3,18 @@ using Microsoft.Win32;
 namespace Arsenal.Helpers
 {
     /// <summary>
-    /// Asks Windows to draw Arsenal on the integrated graphics.
+    /// Asks Windows to draw Arsenal on the adapter that matches the laptop's GPU mode.
     /// </summary>
     /// <remarks>
     /// This is the same per-application preference the Graphics settings page writes, and
     /// the same one Armoury Crate sets for its own executables. Windows reads it when the
     /// process creates its first Direct3D device and hands out the adapter accordingly.
     ///
-    /// <para>A control panel has no business on the discrete card. Rendering a settings
-    /// window there wakes a GPU that draws tens of watts, keeps it awake for as long as a
-    /// window is open, and loads that vendor's shader compiler and D3D driver - on this
-    /// class of machine, over 130MB of libraries - for a job the integrated adapter does
-    /// without noticing. It is also the difference between Arsenal appearing in the
-    /// battery report as an application that used the discrete GPU and not appearing at
-    /// all.</para>
+    /// <para>A control panel has no business waking the discrete card in Eco, Standard
+    /// or Optimized mode. Ultimate is different: the MUX has removed the integrated
+    /// adapter from the display path, so asking for power-saving graphics is both
+    /// misleading and leaves adapter selection to fallback behavior. In that mode the
+    /// app explicitly follows the high-performance adapter.</para>
     ///
     /// <para><b>Keyed on the executable's full path</b>, which is the part worth knowing:
     /// a preference set for one build does not carry to a build in a different folder, so
@@ -24,9 +22,9 @@ namespace Arsenal.Helpers
     /// stale entries are swept - a machine that has run a dozen builds from a dozen
     /// folders otherwise collects a dozen dead registry values.</para>
     ///
-    /// <para>It applies from the next start. By the time a window exists the adapter has
-    /// already been chosen, so writing it changes nothing for the process doing the
-    /// writing.</para>
+    /// <para>This runs before WPF creates its first Direct3D device, so the preference is
+    /// in place for the current launch. Entering or leaving Ultimate already requires a
+    /// restart, and that new launch reads the mode saved by the successful MUX change.</para>
     /// </remarks>
     public static class GpuPreference
     {
@@ -34,21 +32,31 @@ namespace Arsenal.Helpers
 
         /// <summary>Windows' value for "power saving", which is the integrated adapter.</summary>
         private const string PowerSaving = "GpuPreference=1;";
+        private const string HighPerformance = "GpuPreference=2;";
 
-        public static void PreferIntegrated()
+        public static bool ShouldPreferHighPerformance(int gpuMode, bool alwaysUltimate = false) =>
+            alwaysUltimate || gpuMode == AsusACPI.GPUModeUltimate;
+
+        public static void PreferCurrentModeAdapter()
         {
             try
             {
                 string? path = Environment.ProcessPath;
                 if (string.IsNullOrEmpty(path)) return;
 
+                int gpuMode = AppConfig.Get("gpu_mode", AsusACPI.GPUModeStandard);
+                bool highPerformance = ShouldPreferHighPerformance(gpuMode, AppConfig.IsAlwaysUltimate());
+                string preference = highPerformance ? HighPerformance : PowerSaving;
+
                 using RegistryKey preferences = Registry.CurrentUser.CreateSubKey(Key, writable: true);
                 if (preferences is null) return;
 
-                if (preferences.GetValue(path) as string != PowerSaving)
+                if (preferences.GetValue(path) as string != preference)
                 {
-                    preferences.SetValue(path, PowerSaving, RegistryValueKind.String);
-                    Logger.WriteLine("Asked Windows to draw Arsenal on the integrated graphics; it applies from the next start.");
+                    preferences.SetValue(path, preference, RegistryValueKind.String);
+                    Logger.WriteLine(highPerformance
+                        ? "Asked Windows to draw Arsenal on the high-performance graphics adapter for Ultimate mode."
+                        : "Asked Windows to draw Arsenal on the integrated graphics adapter.");
                 }
 
                 SweepMovedBuilds(preferences, path);

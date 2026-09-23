@@ -20,7 +20,7 @@ internal static class DpiAwareEntryPoint
 
         // Before anything draws. Windows reads this when the first Direct3D device is
         // created, and a control panel belongs on the integrated adapter.
-        Arsenal.Helpers.GpuPreference.PreferIntegrated();
+        Arsenal.Helpers.GpuPreference.PreferCurrentModeAdapter();
         ApplyRenderMode();
 
         var app = new App();
