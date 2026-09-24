@@ -385,7 +385,8 @@ namespace Arsenal.Helpers
             cmd.StartInfo.RedirectStandardOutput = true;
             cmd.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             cmd.StartInfo.FileName = SystemPath(name);
-            cmd.StartInfo.Arguments = args;
+            // a user profile script can print, prompt or fail and spoil the output we parse
+            cmd.StartInfo.Arguments = name == "powershell" ? "-NoProfile " + args : args;
             if (directory != null) cmd.StartInfo.WorkingDirectory = directory;
             cmd.Start();
 

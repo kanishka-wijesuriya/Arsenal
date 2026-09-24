@@ -126,7 +126,13 @@ namespace Arsenal.Application.Services.Implementations
                     .FirstOrDefault();
                 if (!members.Any(index => installed[index] is not null) && detected is null) continue;
 
-                foreach (int index in members.Where(index => installed[index] is null))
+                // Once one package matches the installed driver's major version, a sibling
+                // with a different major is another chipset's driver, not an upgrade.
+                bool sameMajor = members.Any(index => installed[index] is string version
+                    && Major(updates[index].LatestVersion) == Major(version));
+
+                foreach (int index in members.Where(index => installed[index] is null
+                    || (sameMajor && Major(updates[index].LatestVersion) != Major(installed[index]!))))
                 {
                     updates[index].IsHidden = true;
                     foreach (string id in updates[index].HardwareIds) stagedIds.Remove(id);
