@@ -90,6 +90,9 @@ namespace Arsenal.Display
             return File.Exists(AppConfig.IsVivoZenPro() ? GetVivobookPath() : GetGameVisualPath() + "\\Asus_Monochrome.icm");
         }
 
+        public static bool IsOledPowerOptimization() => AppConfig.IsOLED() && CpuInfo.IsAMD && HardwareControl.AmdApu().GetOledPowerOptimization();
+        public static bool DisableOledPowerOptimization() => HardwareControl.AmdApu().DisableOledPowerOptimization();
+
         public static Dictionary<SplendidGamut, string> GetGamutModes()
         {
 
@@ -299,11 +302,6 @@ namespace Arsenal.Display
 
         public static void SetVisual(SplendidCommand mode = SplendidCommand.Default, int whiteBalance = DefaultColorTemp, bool init = false)
         {
-            Task.Run(() =>
-            {
-                if (AmdDisplay.IsOledPowerOptimization()) OnAmdOledVisualise?.Invoke(true);
-            });
-
             if (mode == SplendidCommand.None) return;
             if ((mode == SplendidCommand.Default || mode == SplendidCommand.VivoNormal) && whiteBalance == DefaultColorTemp && init) return; // Skip default setting on init
             if (mode == SplendidCommand.Disabled && !CpuInfo.IsAMD && init) return; // Skip disabled setting for Intel devices
@@ -445,17 +443,17 @@ namespace Arsenal.Display
             int? param3 = null,
             bool allowEnableWhenDisabled = true)
         {
-            string splendidPath = GetSplendidPath();
-            string splendidExe = $"{splendidPath}\\AsusSplendid.exe";
-            bool isVivo = AppConfig.IsVivoZenPro();
-            bool isSplenddid = File.Exists(splendidExe);
-
-            if (AmdDisplay.IsOledPowerOptimization())
+            if (IsOledPowerOptimization())
             {
                 Logger.WriteLine("Skipping command due to AMD OLED Power Optimization flag");
                 OnAmdOledVisualise?.Invoke(true);
                 return 0;
             }
+
+            string splendidPath = GetSplendidPath();
+            string splendidExe = $"{splendidPath}\\AsusSplendid.exe";
+            bool isVivo = AppConfig.IsVivoZenPro();
+            bool isSplenddid = File.Exists(splendidExe);
 
             if (ScreenNative.FindLaptopScreen() == null && ScreenNative.IsExternalDisplayConnected())
             {
