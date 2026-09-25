@@ -461,6 +461,7 @@ namespace Arsenal.Application.Services.Implementations
                     IsCharging = dev.Charging,
                     IsConnected = dev.IsDeviceReady,
                     HasBattery = dev.HasBattery(),
+                    HasMousePerformance = dev.DPIProfileCount() > 0,
                     CurrentDpi = dpiList.Count > 0 ? dpiList[0] : 800,
                     PollingRate = PollingRateToHz(dev.PollingRate),
                     DpiProfiles = dpiList,

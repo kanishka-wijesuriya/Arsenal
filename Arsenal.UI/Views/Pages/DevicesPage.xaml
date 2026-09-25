@@ -76,7 +76,7 @@
 
             <controls:SettingsGroup Header="Mouse performance" Icon="Gauge24"
                                     Description="Changes are written to the selected device's onboard profile when you apply them."
-                                    Visibility="{Binding IsMouseSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    Visibility="{Binding IsMousePerformanceSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <!-- Both tracks are drawn from the selected mouse rather than from a range
                      wide enough to cover every mouse: the service clamps DPI to the
                      sensor's own bounds and snaps the rate to one the device reports at,

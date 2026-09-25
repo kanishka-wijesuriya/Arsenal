@@ -80,6 +80,7 @@ namespace Arsenal.UI.ViewModels
             new PeripheralOptionModel { Value = 10, Label = "10 min" }
         };
         public bool IsMouseSelected => SelectedDevice?.IsMouse == true;
+        public bool IsMousePerformanceSelected => SelectedDevice is { IsMouse: true, HasMousePerformance: true };
         public bool IsKeyboardSelected => SelectedDevice?.IsKeyboard == true;
 
         /// <summary>
@@ -150,6 +151,7 @@ namespace Arsenal.UI.ViewModels
         partial void OnSelectedDeviceChanged(PeripheralDeviceModel? value)
         {
             OnPropertyChanged(nameof(IsMouseSelected));
+            OnPropertyChanged(nameof(IsMousePerformanceSelected));
             OnPropertyChanged(nameof(IsKeyboardSelected));
             if (value == null) return;
 

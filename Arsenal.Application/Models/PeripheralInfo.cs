@@ -198,6 +198,9 @@ namespace Arsenal.Application.Models
         public int SleepMinutes { get; set; } = 3;
         public int LowBatteryWarningPercent { get; set; } = 20;
         public bool IsMouse => DeviceType == "Mouse";
+
+        /// <summary>False for mouse pads, which report as a mouse but have no sensor.</summary>
+        public bool HasMousePerformance { get; set; }
         public bool IsKeyboard => DeviceType == "Keyboard";
         public bool HasBattery { get; set; }
         public bool HasKeyboardLighting { get; set; }
@@ -207,7 +210,9 @@ namespace Arsenal.Application.Models
         public string BatteryText => HasBattery && BatteryPercentage >= 0
             ? IsCharging ? $"{BatteryPercentage}% · charging" : $"{BatteryPercentage}%"
             : "Wired";
-        public string SummaryText => IsMouse
+        public string SummaryText => IsMouse && !HasMousePerformance
+            ? "ASUS mouse pad"
+            : IsMouse
             ? $"Polling {PollingRate} Hz"
             : HasBattery ? "Wireless ASUS keyboard" : "ASUS keyboard";
 
