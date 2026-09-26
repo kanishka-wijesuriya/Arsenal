@@ -462,6 +462,9 @@ namespace Arsenal.Application.Services.Implementations
                     IsConnected = dev.IsDeviceReady,
                     HasBattery = dev.HasBattery(),
                     HasMousePerformance = dev.DPIProfileCount() > 0,
+                    HasMouseLighting = dev.HasRGB(),
+                    MaxMouseLightingBrightness = dev.MaxBrightness(),
+                    MouseLightingZones = dev.HasRGB() ? MouseLightingZones(dev) : new List<MouseLightingZoneModel>(),
                     CurrentDpi = dpiList.Count > 0 ? dpiList[0] : 800,
                     PollingRate = PollingRateToHz(dev.PollingRate),
                     DpiProfiles = dpiList,
@@ -584,6 +587,93 @@ namespace Arsenal.Application.Services.Implementations
             mouse.SetEnergySettings(mouse.LowBatteryWarning, setting);
             RefreshDevices();
         }
+
+        public void SetMouseLighting(string deviceId, int zone, int mode, int colorArgb, int brightness, bool randomColor, int speed, int direction)
+        {
+            AsusMouse? mouse;
+            lock (_devicesGate) _mice.TryGetValue(deviceId, out mouse);
+            if (mouse is null || !mouse.HasRGB() || !mouse.IsDeviceReady) return;
+
+            var lightingZone = (LightingZone)zone;
+            if (lightingZone != LightingZone.All && !mouse.SupportedLightingZones().Contains(lightingZone)) return;
+            var lightingMode = (LightingMode)mode;
+            if (!mouse.IsLightingModeSupported(lightingMode) || !mouse.IsLightingModeSupportedForZone(lightingMode, lightingZone)) return;
+
+            // A fresh setting rather than the cached one: SetLightingSetting shares a single
+            // instance across every zone when writing All, so editing the cache in place
+            // would change the other zones' readouts before the write had happened.
+            var current = mouse.LightingSettingForZone(lightingZone) ?? new LightingSetting();
+            var setting = new LightingSetting
+            {
+                LightingMode = lightingMode,
+                Brightness = Math.Clamp(brightness, 0, mouse.MaxBrightness()),
+                RGBColor = mouse.SupportsColorSetting(lightingMode) ? System.Drawing.Color.FromArgb(colorArgb) : current.RGBColor,
+                RandomColor = mouse.SupportsRandomColor(lightingMode) && randomColor,
+                AnimationSpeed = SpeedFromIndex(speed),
+                AnimationDirection = direction == 1 ? AnimationDirection.CounterClockwise : AnimationDirection.Clockwise,
+            };
+
+            mouse.SetLightingSetting(setting, lightingZone);
+            RefreshDevices();
+        }
+
+        private static List<MouseLightingZoneModel> MouseLightingZones(AsusMouse mouse)
+        {
+            var zones = new List<MouseLightingZoneModel> { MouseLightingZone(mouse, LightingZone.All) };
+            LightingZone[] supported = mouse.SupportedLightingZones();
+            if (supported.Length > 1)
+                zones.AddRange(supported.Select(zone => MouseLightingZone(mouse, zone)));
+            return zones;
+        }
+
+        private static MouseLightingZoneModel MouseLightingZone(AsusMouse mouse, LightingZone zone)
+        {
+            LightingSetting setting = mouse.LightingSettingForZone(zone) ?? new LightingSetting();
+            return new MouseLightingZoneModel
+            {
+                Zone = (int)zone,
+                Label = MouseZoneLabel(zone),
+                Modes = Enum.GetValues<LightingMode>()
+                    .Where(mode => mouse.IsLightingModeSupported(mode) && mouse.IsLightingModeSupportedForZone(mode, zone))
+                    .Select(mode => new MouseLightingModeOption
+                    {
+                        Value = (int)mode,
+                        Label = MouseModeLabel(mode),
+                        HasColor = mouse.SupportsColorSetting(mode),
+                        HasRandomColor = mouse.SupportsRandomColor(mode),
+                        HasSpeed = mouse.SupportsAnimationSpeed(mode),
+                        HasDirection = mouse.SupportsAnimationDirection(mode),
+                    })
+                    .ToList(),
+                Mode = (int)setting.LightingMode,
+                ColorArgb = setting.RGBColor.ToArgb(),
+                Brightness = Math.Clamp(setting.Brightness, 0, mouse.MaxBrightness()),
+                RandomColor = setting.RandomColor,
+                Speed = setting.AnimationSpeed switch { AnimationSpeed.Slow => 0, AnimationSpeed.Fast => 2, _ => 1 },
+                Direction = setting.AnimationDirection == AnimationDirection.CounterClockwise ? 1 : 0,
+            };
+        }
+
+        private static AnimationSpeed SpeedFromIndex(int index) => index switch
+        {
+            0 => AnimationSpeed.Slow,
+            2 => AnimationSpeed.Fast,
+            _ => AnimationSpeed.Medium
+        };
+
+        private static string MouseZoneLabel(LightingZone zone) => zone switch
+        {
+            LightingZone.All => "All zones",
+            LightingZone.Scrollwheel => "Scroll wheel",
+            _ => zone.ToString()
+        };
+
+        private static string MouseModeLabel(LightingMode mode) => mode switch
+        {
+            LightingMode.ColorCycle => "Color cycle",
+            LightingMode.BatteryState => "Battery level",
+            _ => mode.ToString()
+        };
 
         public void SetKeyboardLighting(string deviceId, int mode, int primaryArgb, int secondaryArgb, int speed, int brightness)
         {

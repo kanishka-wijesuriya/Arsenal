@@ -201,6 +201,19 @@ namespace Arsenal.Application.Models
 
         /// <summary>False for mouse pads, which report as a mouse but have no sensor.</summary>
         public bool HasMousePerformance { get; set; }
+        public bool HasMouseLighting { get; set; }
+        public int MaxMouseLightingBrightness { get; set; } = 100;
+
+        /// <summary>Most mice take a percentage; a Balteus has four steps, and "4%" would misread.</summary>
+        public string MouseLightingBrightnessFormat => MaxMouseLightingBrightness == 100 ? "{0}%" : $"{{0}} of {MaxMouseLightingBrightness}";
+
+        /// <summary>
+        /// One entry per zone the mouse lights independently, with "All zones" first when
+        /// there is more than one. A single-zone mouse has just the "All zones" entry.
+        /// </summary>
+        public List<MouseLightingZoneModel> MouseLightingZones { get; set; } = new();
+        public bool HasMouseLightingZones => MouseLightingZones.Count > 1;
+
         public bool IsKeyboard => DeviceType == "Keyboard";
         public bool HasBattery { get; set; }
         public bool HasKeyboardLighting { get; set; }
@@ -232,6 +245,38 @@ namespace Arsenal.Application.Models
         public int KeyboardOledMode { get; set; }
         public int KeyboardOledAnimationCount { get; set; }
         public bool KeyboardOledClock { get; set; }
+    }
+
+    /// <summary>What one mouse lighting zone is showing, and which effects it can take.</summary>
+    public class MouseLightingZoneModel
+    {
+        public int Zone { get; set; }
+        public string Label { get; set; } = string.Empty;
+        public List<MouseLightingModeOption> Modes { get; set; } = new();
+        public int Mode { get; set; }
+        public int ColorArgb { get; set; } = unchecked((int)0xFFFF0000);
+        public int Brightness { get; set; }
+        public bool RandomColor { get; set; }
+
+        /// <summary>0 slow, 1 medium, 2 fast.</summary>
+        public int Speed { get; set; } = 1;
+
+        /// <summary>0 clockwise, 1 counter-clockwise.</summary>
+        public int Direction { get; set; }
+    }
+
+    /// <summary>
+    /// A mouse effect and the settings it reads. Each model decides these for itself: a
+    /// Balteus takes random colour on Breathing where most mice take it on Comet.
+    /// </summary>
+    public class MouseLightingModeOption
+    {
+        public int Value { get; set; }
+        public string Label { get; set; } = string.Empty;
+        public bool HasColor { get; set; }
+        public bool HasRandomColor { get; set; }
+        public bool HasSpeed { get; set; }
+        public bool HasDirection { get; set; }
     }
 
     public class PeripheralOptionModel

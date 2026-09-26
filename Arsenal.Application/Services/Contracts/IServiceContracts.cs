@@ -278,6 +278,7 @@ namespace Arsenal.Application.Services.Contracts
         void SetDpi(string deviceId, int dpi);
         void SetPollingRate(string deviceId, int rateHz);
         void SetSleepTimeout(string deviceId, int minutes);
+        void SetMouseLighting(string deviceId, int zone, int mode, int colorArgb, int brightness, bool randomColor, int speed, int direction);
         void SetKeyboardLighting(string deviceId, int mode, int primaryArgb, int secondaryArgb, int speed, int brightness);
         void SetKeyboardProfile(string deviceId, int profile);
         void SetKeyboardEnergy(string deviceId, int sleepMinutes, int lowBatteryWarningPercent);

@@ -105,6 +105,58 @@
                 </controls:SettingsGroup.Footer>
             </controls:SettingsGroup>
 
+            <controls:SettingsGroup Header="Mouse lighting" Icon="Color24"
+                                    Description="Written to the selected device's onboard memory, so it stays after Arsenal closes."
+                                    Visibility="{Binding SelectedDevice.HasMouseLighting, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <controls:SettingsRow Header="Sync with laptop Aura" Description="Every connected ASUS mouse and pad follows the laptop keyboard's effect and colour.">
+                    <ui:ToggleSwitch IsChecked="{Binding MouseAuraSync, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="Zone" Visibility="{Binding SelectedDevice.HasMouseLightingZones, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ComboBox IsEnabled="{Binding IsMouseManualLighting}" ItemsSource="{Binding SelectedDevice.MouseLightingZones}" DisplayMemberPath="Label"
+                              SelectedItem="{Binding SelectedMouseZone, Mode=TwoWay}" MinWidth="240"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="Lighting Mode">
+                    <ComboBox IsEnabled="{Binding IsMouseManualLighting}" ItemsSource="{Binding MouseLightingModes}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding MouseLightingMode, Mode=TwoWay}" MinWidth="240"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="Brightness">
+                    <controls:ValueSlider IsEnabled="{Binding IsMouseManualLighting}" Minimum="0" Maximum="{Binding SelectedDevice.MaxMouseLightingBrightness}"
+                                          TickFrequency="1" IsSnapToTickEnabled="True"
+                                          Value="{Binding MouseLightingBrightness}" Format="{Binding SelectedDevice.MouseLightingBrightnessFormat}"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="Random colour" Visibility="{Binding MouseShowsRandomColor, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsEnabled="{Binding IsMouseManualLighting}" IsChecked="{Binding MouseRandomColor, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="Animation Speed" Visibility="{Binding MouseShowsSpeed, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ComboBox IsEnabled="{Binding IsMouseManualLighting}" SelectedIndex="{Binding MouseLightingSpeed, Mode=TwoWay}" MinWidth="240">
+                        <ComboBoxItem Content="Slow"/>
+                        <ComboBoxItem Content="Medium"/>
+                        <ComboBoxItem Content="Fast"/>
+                    </ComboBox>
+                </controls:SettingsRow>
+                <controls:SettingsRow Header="Direction" Visibility="{Binding MouseShowsDirection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ComboBox IsEnabled="{Binding IsMouseManualLighting}" SelectedIndex="{Binding MouseLightingDirection, Mode=TwoWay}" MinWidth="240">
+                        <ComboBoxItem Content="Clockwise"/>
+                        <ComboBoxItem Content="Counter-clockwise"/>
+                    </ComboBox>
+                </controls:SettingsRow>
+                <controls:SettingsRow IsEnabled="{Binding IsMouseManualLighting}" Header="Colour"
+                                      Visibility="{Binding MouseShowsColor, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow.ContentBelow>
+                        <StackPanel Margin="0,8,0,0" MaxWidth="360" HorizontalAlignment="Left">
+                            <controls:ColorSpectrumPicker SelectedColor="{Binding MouseLightingColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="170"/>
+                            <Border Height="42" Margin="0,8,0,0" CornerRadius="{DynamicResource RadiusControl}" Background="{Binding MouseLightingBrush}">
+                                <TextBlock Text="{Binding MouseLightingHex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </Border>
+                        </StackPanel>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
+                <controls:SettingsGroup.Footer>
+                    <ui:Button IsEnabled="{Binding IsMouseManualLighting}" Content="Apply lighting" Command="{Binding ApplyMouseLightingCommand}"
+                               Appearance="Primary" HorizontalAlignment="Right" Icon="{ui:SymbolIcon Save24}"/>
+                </controls:SettingsGroup.Footer>
+            </controls:SettingsGroup>
+
             <controls:SettingsGroup Header="Keyboard lighting" Icon="Color24"
                                     Description="Configure the selected keyboard's onboard lighting mode, colors, speed and brightness."
                                     Visibility="{Binding SelectedDevice.HasKeyboardLighting, Converter={StaticResource BooleanToVisibilityConverter}}">

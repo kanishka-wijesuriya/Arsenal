@@ -54,6 +54,30 @@ namespace Arsenal.UI.ViewModels
         private MediaColor _keyboardSecondaryColor = MediaColor.FromRgb(0, 0, 0);
 
         [ObservableProperty]
+        private bool _mouseAuraSync;
+
+        [ObservableProperty]
+        private MouseLightingZoneModel? _selectedMouseZone;
+
+        [ObservableProperty]
+        private int _mouseLightingMode;
+
+        [ObservableProperty]
+        private MediaColor _mouseLightingColor = MediaColor.FromRgb(255, 0, 0);
+
+        [ObservableProperty]
+        private int _mouseLightingBrightness;
+
+        [ObservableProperty]
+        private bool _mouseRandomColor;
+
+        [ObservableProperty]
+        private int _mouseLightingSpeed = 1;
+
+        [ObservableProperty]
+        private int _mouseLightingDirection;
+
+        [ObservableProperty]
         private int _keyboardProfile;
 
         [ObservableProperty]
@@ -68,6 +92,7 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty]
         private int _keyboardOledMode;
 
+        public ObservableCollection<MouseLightingModeOption> MouseLightingModes { get; } = new();
         public ObservableCollection<PeripheralOptionModel> KeyboardProfileOptions { get; } = new();
         public ObservableCollection<PeripheralOptionModel> KeyboardOledOptions { get; } = new();
         public IReadOnlyList<PeripheralOptionModel> SleepTimeoutOptions { get; } = new[]
@@ -106,6 +131,15 @@ namespace Arsenal.UI.ViewModels
         public System.Windows.Media.SolidColorBrush KeyboardPrimaryBrush => new(KeyboardPrimaryColor);
         public System.Windows.Media.SolidColorBrush KeyboardSecondaryBrush => new(KeyboardSecondaryColor);
 
+        public bool IsMouseManualLighting => !MouseAuraSync;
+        private MouseLightingModeOption? SelectedMouseMode => SelectedMouseZone?.Modes.FirstOrDefault(m => m.Value == MouseLightingMode);
+        public bool MouseShowsRandomColor => SelectedMouseMode?.HasRandomColor == true;
+        public bool MouseShowsColor => SelectedMouseMode?.HasColor == true && !(MouseShowsRandomColor && MouseRandomColor);
+        public bool MouseShowsSpeed => SelectedMouseMode?.HasSpeed == true;
+        public bool MouseShowsDirection => SelectedMouseMode?.HasDirection == true;
+        public string MouseLightingHex => $"#{MouseLightingColor.R:X2}{MouseLightingColor.G:X2}{MouseLightingColor.B:X2}";
+        public System.Windows.Media.SolidColorBrush MouseLightingBrush => new(MouseLightingColor);
+
         [ObservableProperty]
         private bool _isAllyDevice = false;
 
@@ -123,16 +157,20 @@ namespace Arsenal.UI.ViewModels
             _peripheralService = peripheralService;
             IsAllyDevice = AppConfig.IsAlly();
             KeyboardAuraSync = Arsenal.Peripherals.PeripheralsProvider.IsKeyboardAuraSync;
+            MouseAuraSync = Arsenal.Peripherals.PeripheralsProvider.IsAuraSync;
 
             _peripheralService.DevicesChanged += () =>
             {
                 System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
                 {
+                    // Every write refreshes the list with new instances, and clearing it
+                    // drops the selection; without this, applying a setting on the second
+                    // device would jump the page back to the first.
+                    string? selectedId = SelectedDevice?.Id;
                     Devices.Clear();
                     foreach (var d in _peripheralService.Devices)
                         Devices.Add(d);
-                    if (SelectedDevice == null && Devices.Count > 0)
-                        SelectedDevice = Devices[0];
+                    SelectedDevice = Devices.FirstOrDefault(d => d.Id == selectedId) ?? Devices.FirstOrDefault();
                 });
             };
 
@@ -172,6 +210,7 @@ namespace Arsenal.UI.ViewModels
             KeyboardLightingSpeed = value.LightingSpeed;
             KeyboardPrimaryColor = ToMediaColor(value.PrimaryColorArgb);
             KeyboardSecondaryColor = ToMediaColor(value.SecondaryColorArgb);
+            SelectedMouseZone = value.MouseLightingZones.FirstOrDefault(z => z.Zone == _mouseZone) ?? value.MouseLightingZones.FirstOrDefault();
             KeyboardProfile = value.Profile;
             KeyboardOledEnabled = value.KeyboardOledEnabled;
             KeyboardOledBrightness = value.KeyboardOledBrightness;
@@ -201,6 +240,67 @@ namespace Arsenal.UI.ViewModels
             OnPropertyChanged(nameof(KeyboardSecondaryBrush));
         }
 
+        /// <summary>
+        /// The zone to reopen after a refresh. Not read from SelectedMouseZone: the refresh
+        /// clears the device list, the zone picker loses its items and pushes null back
+        /// before the new device arrives, so that property no longer knows.
+        /// </summary>
+        private int? _mouseZone;
+
+        partial void OnSelectedMouseZoneChanged(MouseLightingZoneModel? value)
+        {
+            // The list is refilled here, before the mode is set, rather than bound to the
+            // zone's own list: that binding swaps the items after the mode is already in
+            // place, and when two zones share the mode number nothing re-selects it, so the
+            // box sat empty in a validation error.
+            MouseLightingModes.Clear();
+            foreach (var mode in value?.Modes ?? Enumerable.Empty<MouseLightingModeOption>())
+                MouseLightingModes.Add(mode);
+
+            if (value is not null)
+            {
+                _mouseZone = value.Zone;
+                MouseLightingMode = value.Mode;
+                MouseLightingColor = ToMediaColor(value.ColorArgb);
+                MouseLightingBrightness = value.Brightness;
+                MouseRandomColor = value.RandomColor;
+                MouseLightingSpeed = value.Speed;
+                MouseLightingDirection = value.Direction;
+                OnPropertyChanged(nameof(MouseLightingMode));
+            }
+            NotifyMouseModeOptions();
+        }
+
+        partial void OnMouseLightingModeChanged(int value) => NotifyMouseModeOptions();
+
+        partial void OnMouseRandomColorChanged(bool value) => OnPropertyChanged(nameof(MouseShowsColor));
+
+        partial void OnMouseLightingColorChanged(MediaColor value)
+        {
+            OnPropertyChanged(nameof(MouseLightingHex));
+            OnPropertyChanged(nameof(MouseLightingBrush));
+        }
+
+        private void NotifyMouseModeOptions()
+        {
+            OnPropertyChanged(nameof(MouseShowsColor));
+            OnPropertyChanged(nameof(MouseShowsRandomColor));
+            OnPropertyChanged(nameof(MouseShowsSpeed));
+            OnPropertyChanged(nameof(MouseShowsDirection));
+        }
+
+        partial void OnMouseAuraSyncChanged(bool value)
+        {
+            OnPropertyChanged(nameof(IsMouseManualLighting));
+            if (value == Arsenal.Peripherals.PeripheralsProvider.IsAuraSync) return;
+            Arsenal.Peripherals.PeripheralsProvider.SetAuraSync(value);
+            if (value) _ = Task.Run(() =>
+            {
+                Arsenal.Peripherals.PeripheralsProvider.SyncMiceWithKeyboardAura();
+                _peripheralService.RefreshDevices();
+            });
+        }
+
         partial void OnKeyboardAuraSyncChanged(bool value)
         {
             OnPropertyChanged(nameof(IsKeyboardManualLighting));
@@ -219,6 +319,21 @@ namespace Arsenal.UI.ViewModels
                 _peripheralService.SetPollingRate(id, DevicePollingRate);
                 _peripheralService.SetSleepTimeout(id, DeviceSleepMinutes);
             });
+        }
+
+        [RelayCommand]
+        public async Task ApplyMouseLighting()
+        {
+            if (SelectedDevice is not { HasMouseLighting: true } device || SelectedMouseZone is null || MouseAuraSync) return;
+            string id = device.Id;
+            int zone = SelectedMouseZone.Zone;
+            int mode = MouseLightingMode;
+            int color = ToDrawingArgb(MouseLightingColor);
+            int brightness = MouseLightingBrightness;
+            bool random = MouseRandomColor;
+            int speed = MouseLightingSpeed;
+            int direction = MouseLightingDirection;
+            await Task.Run(() => _peripheralService.SetMouseLighting(id, zone, mode, color, brightness, random, speed, direction));
         }
 
         [RelayCommand]
