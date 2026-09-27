@@ -1,6 +1,8 @@
+using Arsenal.Application.Models;
 using Arsenal.Helpers;
 using System.Buffers;
 using System.Buffers.Binary;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -100,6 +102,15 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
     private IReadOnlyList<string> _codecs = Array.Empty<string>();
     private long _bytesSent;
     private int _framesSent;
+
+    /// <summary>Time the socket write spent blocked since the last measurement.</summary>
+    private long _writeStallUs;
+
+    /// <summary>Video frames thrown away because the writer was behind.</summary>
+    private int _videoDropped;
+
+    private AdaptiveQuality? _adaptive;
+    private long _lastQualityTicks;
     private int _lastEncodeMs;
     private int _lastCaptureMs;
     private bool _disposed;
@@ -296,6 +307,17 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
 
     private async Task BeginCaptureAsync(bool preferWorker = true)
     {
+        // A fresh controller per capture, because the preset it is bounded by can have
+        // changed. It starts from a guess at the link and is corrected by measurement
+        // within a couple of seconds - see AdaptiveQuality.
+        _adaptive = new AdaptiveQuality(
+            _quality.BitrateKbps,
+            _quality.FrameRate,
+            AdaptiveQuality.EstimateStartingKbps(_quality.BitrateKbps));
+        Interlocked.Exchange(ref _lastQualityTicks, 0);
+        Interlocked.Exchange(ref _writeStallUs, 0);
+        Interlocked.Exchange(ref _videoDropped, 0);
+
         MediaWorkerClient? worker = null;
         if (preferWorker)
         {
@@ -724,6 +746,7 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         }
 
         ArrayPool<byte>.Shared.Return(buffer);
+        Interlocked.Increment(ref _videoDropped);
         lock (_videoGate) _encoder?.RequestKeyFrame();
     }
 
@@ -819,10 +842,52 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
         });
     }
 
+    /// <summary>
+    /// Looks at what the link did and moves the target if it has to.
+    /// </summary>
+    /// <remarks>
+    /// Runs on the statistics tick rather than on a timer of its own: the counters it
+    /// reads are the ones the statistics already reset, and two clocks sampling the same
+    /// counters would each see part of the picture.
+    /// </remarks>
+    private void AdaptQuality(long bytes)
+    {
+        var quality = _adaptive;
+        if (quality is null) return;
+
+        long now = Stopwatch.GetTimestamp();
+        long previous = Interlocked.Exchange(ref _lastQualityTicks, now);
+        if (previous == 0) return;
+
+        var sample = new LinkSample(
+            bytes,
+            Interlocked.Exchange(ref _writeStallUs, 0),
+            (now - previous) * 1_000_000L / Stopwatch.Frequency,
+            Interlocked.Exchange(ref _videoDropped, 0),
+            _outbound.Reader.Count);
+
+        QualityTarget before = quality.Current;
+        QualityTarget target = quality.Observe(sample);
+        if (!target.Differs(before)) return;
+
+        if (quality.LastChange is { Length: > 0 } reason) Logger.WriteLine("Remote quality: " + reason);
+
+        // The encoder lives in the worker process on the path that is normally taken, so
+        // the new target is a message rather than a call. The local path is the fallback
+        // and is set directly.
+        _mediaWorker?.SetTarget(target.BitrateKbps, target.FrameRate);
+
+        lock (_videoGate)
+        {
+            if (_encoder is MediaFoundationVideoEncoder hardware) hardware.TrySetBitrate(target.BitrateKbps);
+        }
+    }
+
     private void PublishStats()
     {
         int frames = Interlocked.Exchange(ref _framesSent, 0);
         long bytes = Interlocked.Exchange(ref _bytesSent, 0);
+        AdaptQuality(bytes);
         _ = SendControlAsync(new RemoteStats(
             "stats",
             (int)Math.Round(frames / StatsInterval.TotalSeconds),
@@ -891,8 +956,17 @@ internal sealed class RemoteDesktopSession : IRemoteFrameWriter, IDisposable
                     try
                     {
                         RemoteDesktopProtocol.WriteHeader(header, frame.Channel, frame.Flags, frame.Stream, frame.Length);
+
+                        // Timed, because how long this blocks is the whole of the
+                        // congestion signal. A TCP write returns immediately while the
+                        // socket buffer has room and only waits once the link is the
+                        // bottleneck, so time spent here is time the network could not
+                        // take what this session was producing. See AdaptiveQuality.
+                        long before = Stopwatch.GetTimestamp();
                         await _stream.WriteAsync(header.AsMemory(0, RemoteDesktopProtocol.HeaderSize), _stopping.Token);
                         if (frame.Length > 0) await _stream.WriteAsync(frame.Buffer.AsMemory(0, frame.Length), _stopping.Token);
+                        Interlocked.Add(ref _writeStallUs, (Stopwatch.GetTimestamp() - before) * 1_000_000L / Stopwatch.Frequency);
+
                         Interlocked.Add(ref _bytesSent, frame.Length + RemoteDesktopProtocol.HeaderSize);
                     }
                     finally

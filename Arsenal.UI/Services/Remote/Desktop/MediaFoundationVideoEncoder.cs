@@ -322,6 +322,45 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
     }
 
     /// <summary>
+    /// Changes the bitrate ceiling on an encoder that is already running.
+    /// </summary>
+    /// <remarks>
+    /// Live rather than by rebuilding. Rebuilding an encoder costs a fresh enumeration,
+    /// a keyframe and a decoder restart on the phone - a visible stutter - and a session
+    /// that adapts is going to do this every few seconds. Every hardware encoder accepts
+    /// the mean and maximum rate while streaming; the ones that do not simply report the
+    /// property unsupported and keep their old ceiling, which is the right failure.
+    ///
+    /// <para>No keyframe is requested afterwards. The new ceiling applies from the next
+    /// picture, and asking for a keyframe on every rate change would spend most of the
+    /// bitrate that was just taken away.</para>
+    /// </remarks>
+    internal bool TrySetBitrate(int bitrateKbps)
+    {
+        if (_disposed || _transform is not MF.ICodecAPI codec) return false;
+
+        uint bitrate = (uint)Math.Clamp(bitrateKbps, 200, 100_000) * 1000;
+        bool applied = false;
+
+        foreach (Guid api in new[] { MF.CODECAPI_AVEncCommonMeanBitRate, MF.CODECAPI_AVEncCommonMaxBitRate })
+        {
+            try
+            {
+                Guid key = api;
+                if (codec.IsSupported(ref key) != MF.S_OK) continue;
+                MF.VARIANT variant = MF.VARIANT.FromUInt32(bitrate);
+                if (codec.SetValue(ref key, ref variant) == MF.S_OK) applied = true;
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine("Remote encoder bitrate: " + ex.Message);
+            }
+        }
+
+        return applied;
+    }
+
+    /// <summary>
     /// Asks the codec to spend bits on movement rather than on filling a quota.
     /// </summary>
     /// <remarks>

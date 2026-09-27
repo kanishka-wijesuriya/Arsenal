@@ -96,6 +96,24 @@ internal sealed class MediaWorkerClient : IDisposable
 
     internal void RequestKeyFrame() => SendCommand(MediaWorkerProtocol.Command.KeyFrame);
 
+    /// <summary>Tells the worker what the link will currently carry.</summary>
+    internal void SetTarget(int bitrateKbps, int frameRate)
+    {
+        try
+        {
+            if (Volatile.Read(ref _disposed) != 0 || !_pipe.IsConnected) return;
+
+            Span<byte> message = stackalloc byte[9];
+            message[0] = (byte)MediaWorkerProtocol.Command.Target;
+            System.Buffers.Binary.BinaryPrimitives.WriteInt32BigEndian(message[1..], bitrateKbps);
+            System.Buffers.Binary.BinaryPrimitives.WriteInt32BigEndian(message[5..], frameRate);
+            _pipe.Write(message);
+            _pipe.Flush();
+        }
+        catch (IOException) { }
+        catch (ObjectDisposedException) { }
+    }
+
     private void SendCommand(MediaWorkerProtocol.Command command, bool allowDisposing = false)
     {
         try

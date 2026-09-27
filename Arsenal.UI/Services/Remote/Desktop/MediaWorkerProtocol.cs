@@ -49,6 +49,16 @@ internal static class MediaWorkerProtocol
     {
         Stop = 1,
         KeyFrame = 2,
+
+        /// <summary>
+        /// A new bitrate and frame rate, as two big-endian 32-bit values.
+        /// </summary>
+        /// <remarks>
+        /// The session owns the socket and therefore the only honest view of what the
+        /// link will carry, while the encoder lives out here. So the decision crosses the
+        /// pipe as a target rather than the measurement crossing it as a report.
+        /// </remarks>
+        Target = 3,
     }
 
     internal static string EncodeConfiguration(MediaWorkerConfiguration configuration)

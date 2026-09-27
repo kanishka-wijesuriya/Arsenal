@@ -123,7 +123,21 @@ internal static class MediaWorkerHost
         {
             writer.WriteJson(MediaWorkerProtocol.Message.Ready, Ready(encoder, source, configuration, audioFormat));
             int keyFrameWanted = 0;
-            Task commands = Task.Run(() => ReadCommands(pipe, () => Interlocked.Exchange(ref keyFrameWanted, 1), stopping));
+            // Volatile rather than applied on the command thread: the encoder and the
+            // pipeline are owned by the capture loop, and reaching into them from the
+            // pipe reader would be a second thread on a transform that is mid frame.
+            int targetKbps = 0;
+            int targetFps = 0;
+
+            Task commands = Task.Run(() => ReadCommands(
+                pipe,
+                () => Interlocked.Exchange(ref keyFrameWanted, 1),
+                (kbps, fps) =>
+                {
+                    Interlocked.Exchange(ref targetKbps, kbps);
+                    Interlocked.Exchange(ref targetFps, fps);
+                },
+                stopping));
 
             var frame = new CapturedFrame();
             var encoded = new EncodedVideoFrame();
@@ -151,6 +165,15 @@ internal static class MediaWorkerHost
                 {
                     Thread.Sleep(SecureDesktopPollMs);
                     continue;
+                }
+
+                // Applied here, on the thread that owns the encoder.
+                int wantedKbps = Interlocked.Exchange(ref targetKbps, 0);
+                if (wantedKbps > 0)
+                {
+                    int wantedFps = Volatile.Read(ref targetFps);
+                    if (encoder is MediaFoundationVideoEncoder hardware) hardware.TrySetBitrate(wantedKbps);
+                    Logger.WriteLine($"Media worker: now sending at {wantedKbps} kbps, {wantedFps} fps.");
                 }
 
                 if (encoder is MediaFoundationVideoEncoder { HasStalled: true } stalled)
@@ -227,8 +250,9 @@ internal static class MediaWorkerHost
         }
     }
 
-    private static void ReadCommands(Stream pipe, Action requestKeyFrame, CancellationTokenSource stopping)
+    private static void ReadCommands(Stream pipe, Action requestKeyFrame, Action<int, int> setTarget, CancellationTokenSource stopping)
     {
+        Span<byte> target = stackalloc byte[8];
         try
         {
             while (!stopping.IsCancellationRequested)
@@ -236,6 +260,20 @@ internal static class MediaWorkerHost
                 int value = pipe.ReadByte();
                 if (value < 0 || value == (byte)MediaWorkerProtocol.Command.Stop) break;
                 if (value == (byte)MediaWorkerProtocol.Command.KeyFrame) requestKeyFrame();
+                else if (value == (byte)MediaWorkerProtocol.Command.Target)
+                {
+                    int read = 0;
+                    while (read < target.Length)
+                    {
+                        int got = pipe.Read(target[read..]);
+                        if (got <= 0) return;
+                        read += got;
+                    }
+
+                    setTarget(
+                        System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(target),
+                        System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(target[4..]));
+                }
             }
         }
         catch (IOException) { }
