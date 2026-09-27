@@ -83,14 +83,29 @@ internal static class MediaWorkerHost
         IReadOnlyList<RemoteMonitor> monitors = RemoteMonitors.Enumerate();
         RemoteMonitor monitor = monitors[Math.Clamp(configuration.Monitor, 0, monitors.Count - 1)];
 
-        using var source = new GdiScreenSource(monitor, configuration.MaxWidth, configuration.MaxHeight, configuration.Cursor);
-        IVideoEncoder encoder = MediaFoundationVideoEncoder.TryCreate(
-            configuration.Codecs,
-            source.Width,
-            source.Height,
-            configuration.FrameRate,
-            configuration.BitrateKbps)
-            ?? (IVideoEncoder)new JpegTileEncoder(source.Width, source.Height, configuration.JpegQuality);
+        // The path that keeps every frame on the graphics card, where this machine and
+        // this monitor allow one. It is tried first and it proves itself by coding a real
+        // frame before it is accepted, so anything that returns null here - a combined
+        // virtual monitor, a driver with no duplication, an encoder that cannot take
+        // textures - falls through to the desktop copy path below rather than failing.
+        GpuCapturePipeline? gpu = GpuCapturePipeline.TryCreate(
+            monitor, configuration.MaxWidth, configuration.MaxHeight,
+            configuration.FrameRate, configuration.BitrateKbps, configuration.Codecs);
+
+        GdiScreenSource? source = null;
+        IVideoEncoder? encoder = null;
+
+        if (gpu is null)
+        {
+            source = new GdiScreenSource(monitor, configuration.MaxWidth, configuration.MaxHeight, configuration.Cursor);
+            encoder = MediaFoundationVideoEncoder.TryCreate(
+                configuration.Codecs,
+                source.Width,
+                source.Height,
+                configuration.FrameRate,
+                configuration.BitrateKbps)
+                ?? (IVideoEncoder)new JpegTileEncoder(source.Width, source.Height, configuration.JpegQuality);
+        }
 
         RemoteAudioCapture? audio = null;
         RemoteAudioFormat? audioFormat = null;
@@ -121,7 +136,9 @@ internal static class MediaWorkerHost
 
         try
         {
-            writer.WriteJson(MediaWorkerProtocol.Message.Ready, Ready(encoder, source, configuration, audioFormat));
+            writer.WriteJson(MediaWorkerProtocol.Message.Ready, gpu is not null
+                ? new MediaWorkerReady(gpu.Codec, gpu.EncoderName, gpu.Width, gpu.Height, configuration.FrameRate, audioFormat)
+                : Ready(encoder!, source!, configuration, audioFormat));
             int keyFrameWanted = 0;
             // Volatile rather than applied on the command thread: the encoder and the
             // pipeline are owned by the capture loop, and reaching into them from the
@@ -167,13 +184,70 @@ internal static class MediaWorkerHost
                     continue;
                 }
 
+                // The duplication path. It blocks inside AcquireNextFrame until the
+                // desktop changes and drops what the frame rate does not need, so there
+                // is no sleep at the bottom of this branch: waking on a timer was the
+                // thing that capped the old path, and pacing here is the schedule the
+                // pipeline keeps.
                 // Applied here, on the thread that owns the encoder.
                 int wantedKbps = Interlocked.Exchange(ref targetKbps, 0);
                 if (wantedKbps > 0)
                 {
                     int wantedFps = Volatile.Read(ref targetFps);
-                    if (encoder is MediaFoundationVideoEncoder hardware) hardware.TrySetBitrate(wantedKbps);
+                    if (gpu is not null) gpu.SetTarget(wantedKbps, wantedFps);
+                    else if (encoder is MediaFoundationVideoEncoder hardware) hardware.TrySetBitrate(wantedKbps);
                     Logger.WriteLine($"Media worker: now sending at {wantedKbps} kbps, {wantedFps} fps.");
+                }
+
+                if (gpu is not null)
+                {
+                    if (Interlocked.Exchange(ref keyFrameWanted, 0) != 0) gpu.RequestKeyFrame();
+                    if (returned) gpu.RequestKeyFrame();
+
+                    if (stopwatch.ElapsedMilliseconds - lastKeyFrameMs > IdleKeyFrameInterval.TotalMilliseconds)
+                    {
+                        gpu.RequestKeyFrame();
+                        lastKeyFrameMs = stopwatch.ElapsedMilliseconds;
+                    }
+
+                    bool sent = gpu.TryProduce((uint)targetMs, encoded, out lastCaptureMs, out lastEncodeMs, out bool alive);
+                    if (sent)
+                    {
+                        if ((encoded.Flags & RemoteDesktopProtocol.VideoFlags.KeyFrame) != 0)
+                            lastKeyFrameMs = stopwatch.ElapsedMilliseconds;
+
+                        writer.Write(MediaWorkerProtocol.Message.Video, (byte)encoded.Flags, encoded.Data.AsSpan(0, encoded.Length));
+                        frames++;
+                    }
+
+                    // The duplication has gone and could not be rebuilt, or the encoder
+                    // stopped answering. Either way the session continues on the path
+                    // that always works rather than ending.
+                    if (!alive || gpu.HasStalled)
+                    {
+                        Logger.WriteLine(alive
+                            ? "Media worker: the hardware encoder stopped; falling back to the desktop copy path."
+                            : "Media worker: desktop duplication was lost; falling back to the desktop copy path.");
+
+                        gpu.Dispose();
+                        gpu = null;
+                        source = new GdiScreenSource(monitor, configuration.MaxWidth, configuration.MaxHeight, configuration.Cursor);
+                        encoder = new JpegTileEncoder(source.Width, source.Height, configuration.JpegQuality);
+                        writer.WriteJson(MediaWorkerProtocol.Message.Ready, Ready(encoder, source, configuration, audioFormat));
+                    }
+
+                    if (stopwatch.ElapsedMilliseconds >= nextStatsMs)
+                    {
+                        nextStatsMs = stopwatch.ElapsedMilliseconds + (long)StatsInterval.TotalMilliseconds;
+                        writer.WriteJson(MediaWorkerProtocol.Message.Stats, new MediaWorkerStats(
+                            (int)Math.Round(frames / StatsInterval.TotalSeconds),
+                            lastEncodeMs,
+                            lastCaptureMs,
+                            gpu?.EncoderName ?? EncoderName(encoder!)));
+                        frames = 0;
+                    }
+
+                    continue;
                 }
 
                 if (encoder is MediaFoundationVideoEncoder { HasStalled: true } stalled)
@@ -246,7 +320,9 @@ internal static class MediaWorkerHost
         {
             stopping.Cancel();
             audio?.Dispose();
-            encoder.Dispose();
+            gpu?.Dispose();
+            encoder?.Dispose();
+            source?.Dispose();
         }
     }
 

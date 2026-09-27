@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>CaptureProbe</AssemblyName>
+    <RootNamespace>Arsenal.UI.Services.Remote.Desktop</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Drives the real duplication against the real display. Every interface in
+       Direct3DInterop is hand-written vtable order, and a wrong slot is invisible to
+       the compiler and to try/catch: it calls a different function, which either
+       returns nonsense or corrupts something that fails later somewhere else. The only
+       way to know the declarations are right is to call them. -->
+  <ItemGroup>
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\Direct3DInterop.cs" Link="Direct3DInterop.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\DesktopDuplicationSource.cs" Link="DesktopDuplicationSource.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\MediaFoundationInterop.cs" Link="MediaFoundationInterop.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\ScreenCapture.cs" Link="ScreenCapture.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\RemoteNative.cs" Link="RemoteNative.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\RemoteDesktopProtocol.cs" Link="RemoteDesktopProtocol.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\GpuFrameScaler.cs" Link="GpuFrameScaler.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\GpuCapturePipeline.cs" Link="GpuCapturePipeline.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\MediaFoundationVideoEncoder.cs" Link="MediaFoundationVideoEncoder.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\MediaFoundationEventPump.cs" Link="MediaFoundationEventPump.cs" />
+    <Compile Include="..\..\Arsenal.UI\Services\Remote\Desktop\VideoEncoding.cs" Link="VideoEncoding.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Arsenal.Application\Arsenal.Application.csproj" />
+  </ItemGroup>
+</Project>

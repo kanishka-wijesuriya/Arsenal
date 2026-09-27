@@ -38,6 +38,15 @@ internal static class MF
 
     internal static readonly Guid MFMediaType_Video = new("73646976-0000-0010-8000-00AA00389B71");
     internal static readonly Guid MFVideoFormat_NV12 = new("3231564E-0000-0010-8000-00AA00389B71");
+
+    /// <summary>
+    /// What Desktop Duplication hands over: <c>DXGI_FORMAT_B8G8R8A8_UNORM</c>.
+    /// </summary>
+    /// <remarks>
+    /// Media Foundation calls it ARGB32 and DXGI calls it BGRA, and they mean the same
+    /// bytes in the same order. The name is the only thing that disagrees.
+    /// </remarks>
+    internal static readonly Guid MFVideoFormat_ARGB32 = new("00000015-0000-0010-8000-00AA00389B71");
     internal static readonly Guid MFVideoFormat_H264 = new("34363248-0000-0010-8000-00AA00389B71");
     internal static readonly Guid MFVideoFormat_HEVC = new("43564548-0000-0010-8000-00AA00389B71");
 
@@ -60,6 +69,20 @@ internal static class MF
     /// </remarks>
     internal static readonly Guid MFSampleExtension_CleanPoint = new("9cdf01d8-a0f0-43ba-b077-eaa06cbd728a");
 
+    /// <summary>
+    /// Set on a transform that can accept Direct3D 11 textures instead of system memory.
+    /// </summary>
+    /// <remarks>
+    /// Read before a candidate encoder is offered a device manager. An encoder without
+    /// it will usually still accept the message and then quietly fail to produce
+    /// anything, which is the same failure mode as every other unchecked capability in
+    /// this stack.
+    /// </remarks>
+    internal static readonly Guid MF_SA_D3D11_AWARE = new("206b4fc8-fcf9-4c51-afe3-9764369e33a0");
+
+    /// <summary>The stock scaler and colour converter, which runs on the graphics card.</summary>
+    internal static readonly Guid CLSID_VideoProcessorMFT = new("88753b26-5b24-49bd-b2e7-0c445c78c982");
+
     internal static readonly Guid MFT_CATEGORY_VIDEO_ENCODER = new("f79eac7d-e545-4387-bdee-d647d7bde42a");
     internal static readonly Guid MFT_FRIENDLY_NAME_Attribute = new("314ffbae-5b41-4c95-9c19-4e7d586face3");
     internal static readonly Guid MF_TRANSFORM_ASYNC = new("f81a699a-649a-497d-8c73-29f8fed6ad7a");
@@ -78,6 +101,18 @@ internal static class MF
 
     internal const int MFT_MESSAGE_COMMAND_FLUSH = 0x00000000;
     internal const int MFT_MESSAGE_COMMAND_DRAIN = 0x00000001;
+
+    /// <summary>
+    /// Hands a transform the Direct3D device whose textures it will be fed.
+    /// </summary>
+    /// <remarks>
+    /// The parameter is the device manager pointer itself rather than a pointer to it,
+    /// which is the opposite of every other message and is why it is passed here with an
+    /// explicit cast at the call site. Sent before streaming begins and again as zero on
+    /// the way down; a transform told about a device that has gone keeps a reference to
+    /// it forever.
+    /// </remarks>
+    internal const int MFT_MESSAGE_SET_D3D_MANAGER = 0x00000002;
     internal const int MFT_MESSAGE_NOTIFY_BEGIN_STREAMING = 0x10000000;
     internal const int MFT_MESSAGE_NOTIFY_END_STREAMING = 0x10000001;
     internal const int MFT_MESSAGE_NOTIFY_END_OF_STREAM = 0x10000002;
@@ -113,6 +148,30 @@ internal static class MF
     internal static extern int MFCreateMemoryBuffer(int maxLength, out IMFMediaBuffer buffer);
 
     [DllImport("mfplat.dll", ExactSpelling = true)]
+    internal static extern int MFCreateDXGIDeviceManager(out uint resetToken, out IMFDXGIDeviceManager manager);
+
+    /// <remarks>
+    /// Wraps a Direct3D texture as a media buffer without copying it. The surface is
+    /// passed as a raw pointer and identified by IID, so <c>ID3D11Texture2D</c> never
+    /// needs a managed declaration - see the note in <see cref="Direct3DInterop"/>.
+    ///
+    /// <para><paramref name="bottomUpWhenLinear"/> stays false. It only applies to a
+    /// surface with a linear layout, and setting it on one that has none flips the
+    /// picture on some drivers and is ignored by others, which is the worst combination
+    /// to debug.</para>
+    /// </remarks>
+    [DllImport("mfplat.dll", ExactSpelling = true)]
+    internal static extern int MFCreateDXGISurfaceBuffer(
+        in Guid riid,
+        IntPtr surface,
+        uint subresourceIndex,
+        [MarshalAs(UnmanagedType.Bool)] bool bottomUpWhenLinear,
+        out IMFMediaBuffer buffer);
+
+    [DllImport("mfplat.dll", ExactSpelling = true)]
+    internal static extern int MFCreateVideoSampleFromSurface(IntPtr surface, out IMFSample sample);
+
+    [DllImport("mfplat.dll", ExactSpelling = true)]
     internal static extern int MFTEnumEx(
         Guid category,
         uint flags,
@@ -123,6 +182,27 @@ internal static class MF
 
     [DllImport("ole32.dll", ExactSpelling = true)]
     internal static extern void CoTaskMemFree(IntPtr memory);
+
+    internal const uint CLSCTX_INPROC_SERVER = 1;
+
+    [DllImport("ole32.dll", ExactSpelling = true)]
+    internal static extern int CoCreateInstance(
+        in Guid clsid,
+        IntPtr outer,
+        uint context,
+        in Guid riid,
+        [MarshalAs(UnmanagedType.Interface)] out object instance);
+
+    /// <summary>
+    /// Set when a transform allocates its own output samples rather than filling one it
+    /// is handed.
+    /// </summary>
+    /// <remarks>
+    /// Always the case for the scaler once it is running on Direct3D: the output is a
+    /// texture, and only the transform knows which pool it came from. The caller passes
+    /// a null sample and takes what comes back.
+    /// </remarks>
+    internal const uint MFT_OUTPUT_STREAM_PROVIDES_SAMPLES = 0x00000100;
 
     [StructLayout(LayoutKind.Sequential)]
     internal sealed class MFT_REGISTER_TYPE_INFO
@@ -456,6 +536,27 @@ internal static class MF
         [PreserveSig] int Reserved4(ref Guid api, out VARIANT value);
         [PreserveSig] int GetValue(ref Guid api, out VARIANT value);
         [PreserveSig] int SetValue(ref Guid api, ref VARIANT value);
+    }
+
+    /// <summary>
+    /// The handle every Direct3D-aware transform takes its device through.
+    /// </summary>
+    /// <remarks>
+    /// One manager is shared by the whole pipeline - the scaler and the encoder both get
+    /// the same one - because a texture produced on one device cannot be read by
+    /// another. <c>ResetDevice</c> takes the device and hands back nothing; the reset
+    /// token from creation is what proves the caller owns it.
+    /// </remarks>
+    [ComImport, Guid("eb533d5d-2db6-40f8-97a9-494692014f07"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    internal interface IMFDXGIDeviceManager
+    {
+        [PreserveSig] int CloseDeviceHandle(IntPtr handle);
+        [PreserveSig] int GetVideoService(IntPtr handle, in Guid riid, out IntPtr service);
+        [PreserveSig] int LockDevice(IntPtr handle, in Guid riid, out IntPtr device, [MarshalAs(UnmanagedType.Bool)] bool block);
+        [PreserveSig] int OpenDeviceHandle(out IntPtr handle);
+        [PreserveSig] int ResetDevice(IntPtr device, uint resetToken);
+        [PreserveSig] int TestDevice(IntPtr handle);
+        [PreserveSig] int UnlockDevice(IntPtr handle, [MarshalAs(UnmanagedType.Bool)] bool saveState);
     }
 
     [ComImport, Guid("a27003cf-2354-4f2a-8d6a-ab7cff15437e"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

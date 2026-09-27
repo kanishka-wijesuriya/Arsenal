@@ -128,6 +128,17 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
     /// <summary>The name Windows gives this encoder, for the session's statistics.</summary>
     internal string EncoderName { get; }
 
+    /// <summary>
+    /// Whether the next frame must be coded even if the screen has not changed.
+    /// </summary>
+    /// <remarks>
+    /// Read by the duplication pipeline before it skips an unchanged frame. A phone
+    /// asking to be resynchronised is exactly the case where nothing is moving, so a skip
+    /// that ignored this would leave it waiting for a keyframe that only a change to the
+    /// desktop could trigger.
+    /// </remarks>
+    internal bool KeyFrameWanted => _keyFrameWanted;
+
     public void RequestKeyFrame() => _keyFrameWanted = true;
 
     /// <summary>
@@ -158,7 +169,20 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
     /// and the session would open to a black rectangle. Returns null when none of them
     /// work, which the caller reads as "use the tile encoder".
     /// </remarks>
-    internal static MediaFoundationVideoEncoder? TryCreate(IReadOnlyList<string> preferred, int width, int height, int frameRate, int bitrateKbps)
+    /// <param name="deviceManager">
+    /// The Direct3D device whose textures this encoder will be fed, or null to encode
+    /// from system memory. When one is given, only transforms that advertise
+    /// <see cref="MF.MF_SA_D3D11_AWARE"/> are considered, and the caller is responsible
+    /// for proving the whole pipeline codes a real frame - the internal check cannot,
+    /// because it has only system memory to offer.
+    /// </param>
+    internal static MediaFoundationVideoEncoder? TryCreate(
+        IReadOnlyList<string> preferred,
+        int width,
+        int height,
+        int frameRate,
+        int bitrateKbps,
+        MF.IMFDXGIDeviceManager? deviceManager = null)
     {
         if (width <= 0 || height <= 0 || (width & 1) != 0 || (height & 1) != 0) return null;
 
@@ -172,7 +196,7 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
                 else if (string.Equals(codec, "h264", StringComparison.OrdinalIgnoreCase)) subtype = MF.MFVideoFormat_H264;
                 else continue;
 
-                MediaFoundationVideoEncoder? encoder = TryCreate(codec, subtype, width, height, frameRate, bitrateKbps);
+                MediaFoundationVideoEncoder? encoder = TryCreate(codec, subtype, width, height, frameRate, bitrateKbps, deviceManager);
                 if (encoder is not null) return encoder;
             }
             return null;
@@ -183,7 +207,7 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
         }
     }
 
-    private static MediaFoundationVideoEncoder? TryCreate(string codec, Guid subtype, int width, int height, int frameRate, int bitrateKbps)
+    private static MediaFoundationVideoEncoder? TryCreate(string codec, Guid subtype, int width, int height, int frameRate, int bitrateKbps, MF.IMFDXGIDeviceManager? deviceManager)
     {
         if (!Startup()) return null;
 
@@ -208,7 +232,7 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
                 var activate = (MF.IMFActivate)Marshal.GetObjectForIUnknown(activatePointer);
                 try
                 {
-                    MediaFoundationVideoEncoder? encoder = TryActivate(activate, codec, width, height, frameRate, bitrateKbps);
+                    MediaFoundationVideoEncoder? encoder = TryActivate(activate, codec, width, height, frameRate, bitrateKbps, deviceManager);
                     if (encoder is not null) return encoder;
                 }
                 catch (Exception ex)
@@ -234,7 +258,7 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
         }
     }
 
-    private static MediaFoundationVideoEncoder? TryActivate(MF.IMFActivate activate, string codec, int width, int height, int frameRate, int bitrateKbps)
+    private static MediaFoundationVideoEncoder? TryActivate(MF.IMFActivate activate, string codec, int width, int height, int frameRate, int bitrateKbps, MF.IMFDXGIDeviceManager? deviceManager)
     {
         string name = ReadFriendlyName(activate);
         Guid transformId = typeof(MF.IMFTransform).GUID;
@@ -249,12 +273,16 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
             // An async transform refuses every call until it is told the caller knows
             // it is async. A sync one has no attribute store worth reading here.
             bool async = false;
+            bool textureAware = false;
             if (transform.GetAttributes(out MF.IMFAttributes attributes) == MF.S_OK && attributes is not null)
             {
                 try
                 {
                     Guid asyncKey = MF.MF_TRANSFORM_ASYNC;
                     async = attributes.GetUINT32(ref asyncKey, out uint isAsync) == MF.S_OK && isAsync != 0;
+
+                    Guid d3dAware = MF.MF_SA_D3D11_AWARE;
+                    textureAware = attributes.GetUINT32(ref d3dAware, out uint aware) == MF.S_OK && aware != 0;
                     if (async)
                     {
                         Guid unlock = MF.MF_TRANSFORM_ASYNC_UNLOCK;
@@ -274,6 +302,34 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
             }
 
             if (async && transform is not MF.IMFMediaEventGenerator) return null;
+
+            // The Direct3D device, before any media type and before streaming. A
+            // transform that has already been given a type has decided where its
+            // buffers live, and telling it about a device afterwards is accepted and
+            // then ignored - it asks for system memory for the rest of the session.
+            if (deviceManager is not null)
+            {
+                if (!textureAware)
+                {
+                    Logger.WriteLine($"Remote encoder: {name} cannot take textures, trying the next one");
+                    return null;
+                }
+
+                IntPtr managerPointer = Marshal.GetIUnknownForObject(deviceManager);
+                try
+                {
+                    int set = transform.ProcessMessage(MF.MFT_MESSAGE_SET_D3D_MANAGER, managerPointer);
+                    if (set != MF.S_OK)
+                    {
+                        Logger.WriteLine($"Remote encoder: {name} refused the Direct3D device (0x{set:X8}), trying the next one");
+                        return null;
+                    }
+                }
+                finally
+                {
+                    Marshal.Release(managerPointer);
+                }
+            }
 
             // Output type first. An encoder cannot describe the input it wants until it
             // knows what it is being asked to produce, and setting input first fails.
@@ -296,7 +352,16 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
             // reports itself ready, and then never asks for a frame, so a session built
             // on it opens to a black screen with nothing in the log. One real frame
             // through the whole path is the only answer that means anything.
-            if (!encoder.Begin() || !encoder.ProducesFrames(width, height))
+            // The probe frame is system memory, so it can only be offered to an encoder
+            // that is working in system memory. A texture-fed one is proved instead by
+            // the pipeline that owns it, which has a real captured frame and a scaler to
+            // put it through - see GpuCapturePipeline. The rule is unchanged: nothing is
+            // trusted until it has coded a real picture.
+            bool proved = deviceManager is null
+                ? encoder.Begin() && encoder.ProducesFrames(width, height)
+                : encoder.Begin();
+
+            if (!proved)
             {
                 Logger.WriteLine($"Remote encoder: {name} configured but produced nothing, trying the next one");
                 encoder.Dispose();
@@ -679,34 +744,7 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
             try
             {
                 if (sample.AddBuffer(buffer) != MF.S_OK) return false;
-                sample.SetSampleTime(_frameIndex * _frameDuration);
-                sample.SetSampleDuration(_frameDuration);
-                _frameIndex++;
-
-                if (_keyFrameWanted)
-                {
-                    _keyFrameWanted = false;
-
-                    // Both, because neither is reliable alone. The sample attribute is
-                    // what the documentation points at and Intel's hardware transform
-                    // ignores it outright - measured: a session ran sixty frames with
-                    // no keyframe in it, so a phone joining late had nothing to decode
-                    // against. The codec property is what that encoder listens to, and
-                    // is not supported by every other one.
-                    Guid cleanPoint = MF.MFSampleExtension_CleanPoint;
-                    sample.SetUINT32(ref cleanPoint, 1);
-                    ForceKeyFrame();
-                }
-
-                int hr = _transform.ProcessInput(InputStream, sample, 0);
-                if (hr != MF.S_OK)
-                {
-                    // The encoder is full. Dropping this frame is correct: the next one
-                    // is 16 milliseconds away and describes the screen better.
-                    if (_keyFrameWanted) RequestKeyFrame();
-                    return false;
-                }
-                return true;
+                return SubmitSample(sample);
             }
             finally
             {
@@ -716,6 +754,87 @@ internal sealed class MediaFoundationVideoEncoder : IVideoEncoder
         finally
         {
             Marshal.ReleaseComObject(buffer);
+        }
+    }
+
+    /// <summary>
+    /// Times one prepared sample and hands it to the transform.
+    /// </summary>
+    /// <remarks>
+    /// Shared by both input paths. The system memory path builds the sample around a
+    /// buffer it filled; the texture path is given one the scaler produced, whose buffer
+    /// is a surface on the graphics card. Everything from here down is identical, and
+    /// deliberately so: the timestamp rule and the keyframe rule below were both paid
+    /// for once and must not be re-learned by a second copy of this code.
+    /// </remarks>
+    private bool SubmitSample(MF.IMFSample sample)
+    {
+        sample.SetSampleTime(_frameIndex * _frameDuration);
+        sample.SetSampleDuration(_frameDuration);
+        _frameIndex++;
+
+        if (_keyFrameWanted)
+        {
+            _keyFrameWanted = false;
+
+            // Both, because neither is reliable alone. The sample attribute is
+            // what the documentation points at and Intel's hardware transform
+            // ignores it outright - measured: a session ran sixty frames with
+            // no keyframe in it, so a phone joining late had nothing to decode
+            // against. The codec property is what that encoder listens to, and
+            // is not supported by every other one.
+            Guid cleanPoint = MF.MFSampleExtension_CleanPoint;
+            sample.SetUINT32(ref cleanPoint, 1);
+            ForceKeyFrame();
+        }
+
+        int hr = _transform.ProcessInput(InputStream, sample, 0);
+        if (hr != MF.S_OK)
+        {
+            // The encoder is full. Dropping this frame is correct: the next one
+            // is 16 milliseconds away and describes the screen better.
+            if (_keyFrameWanted) RequestKeyFrame();
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Codes one frame that is already a texture on the graphics card.
+    /// </summary>
+    /// <remarks>
+    /// The counterpart of <see cref="TryEncode"/> for the duplication path. There is no
+    /// digest here and no conversion: whether the desktop changed was already answered by
+    /// <c>AccumulatedFrames</c> before this was called, for free, and the pixels were
+    /// converted by the scaler on the hardware that held them.
+    /// </remarks>
+    internal bool TryEncodeSample(MF.IMFSample sample, long timestampUs, EncodedVideoFrame encoded)
+    {
+        if (_disposed) return false;
+
+        if (!_configurationSent && _codecConfiguration is { Length: > 0 })
+        {
+            _configurationSent = true;
+            EnsureOutput(_codecConfiguration.Length + 8);
+            BinaryPrimitives.WriteInt64BigEndian(_output, timestampUs);
+            _codecConfiguration.CopyTo(_output.AsSpan(8));
+            encoded.Data = _output;
+            encoded.Length = _codecConfiguration.Length + 8;
+            encoded.Flags = RemoteDesktopProtocol.VideoFlags.Configuration;
+            encoded.TimestampUs = timestampUs;
+            return true;
+        }
+
+        try
+        {
+            if (_async && !WaitForNeedInput()) return false;
+            if (!SubmitSample(sample)) return false;
+            return Drain(timestampUs, encoded);
+        }
+        catch (Exception ex)
+        {
+            Logger.WriteLine("Remote encode (texture): " + ex.Message);
+            return false;
         }
     }
 
