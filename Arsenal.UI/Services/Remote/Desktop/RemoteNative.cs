@@ -105,6 +105,11 @@ internal static class RemoteNative
     [DllImport("user32.dll")]
     internal static extern int GetSystemMetrics(int index);
 
+    internal static readonly IntPtr DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = new(-4);
+
+    [DllImport("user32.dll")]
+    internal static extern bool SetProcessDpiAwarenessContext(IntPtr context);
+
     // ---- Device contexts and bitmaps ---------------------------------------------
 
     internal const int SRCCOPY = 0x00CC0020;

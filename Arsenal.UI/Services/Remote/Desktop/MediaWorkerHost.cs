@@ -13,16 +13,55 @@ internal static class MediaWorkerHost
     private static readonly TimeSpan IdleKeyFrameInterval = TimeSpan.FromSeconds(10);
     private const int SecureDesktopPollMs = 400;
 
+    /// <summary>
+    /// Runs the capture and encode side of a session in its own process.
+    /// </summary>
+    /// <remarks>
+    /// The first thing this does is claim the same DPI awareness the rest of Arsenal
+    /// has, and it has to be done here rather than left to the entry point: the worker
+    /// branch returns before <c>ApplicationConfiguration.Initialize</c>, which is the
+    /// only place the process-wide mode is otherwise applied.
+    ///
+    /// <para>Without it the worker is DPI unaware, and an unaware process is lied to
+    /// about the screen in one direction only. <c>GetMonitorInfo</c> hands back the
+    /// scaled size - 1707x1067 on a 2560x1600 panel at 150% - while the screen device
+    /// context is still the real thing at full resolution. Capturing the reported size
+    /// therefore copies the top left two thirds of the display and calls it the whole
+    /// screen, and the phone, told that picture is the entire monitor, places every tap
+    /// a third of the way off. Both halves of that came from this one line being
+    /// missing.</para>
+    /// </remarks>
     internal static int Run(string pipeName, string encodedConfiguration)
     {
         try
         {
+            RemoteNative.SetProcessDpiAwarenessContext(RemoteNative.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
             MediaWorkerConfiguration configuration = MediaWorkerProtocol.DecodeConfiguration(encodedConfiguration);
             using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
             pipe.Connect(10_000);
             using var stopping = new CancellationTokenSource();
             var writer = new WorkerWriter(pipe, stopping.Token);
-            return RunCapture(pipe, writer, configuration, stopping);
+
+            // Capture runs on a thread of its own, in the multithreaded apartment.
+            //
+            // The process entry point is [STAThread], which the user interface needs and
+            // this does not: an asynchronous Media Foundation transform delivers
+            // METransformNeedInput through COM, and on a single-threaded apartment that
+            // delivery waits for a message pump this process does not have. The encoder
+            // configures, reports itself ready, and then never asks for a frame - which
+            // is indistinguishable from the hardware being broken, and is what the
+            // capture loop was seeing within a second of every session starting.
+            int result = 1;
+            var worker = new Thread(() => result = RunCapture(pipe, writer, configuration, stopping))
+            {
+                IsBackground = false,
+                Name = "arsenal-media-worker",
+            };
+            worker.SetApartmentState(ApartmentState.MTA);
+            worker.Start();
+            worker.Join();
+            return result;
         }
         catch (Exception ex)
         {
