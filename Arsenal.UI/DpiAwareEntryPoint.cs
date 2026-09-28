@@ -16,6 +16,12 @@ internal static class DpiAwareEntryPoint
             return;
         }
 
+#if ARSENAL_SIMULATOR
+        // Before anything reads AppConfig or the model: both are fixed the first time
+        // they are asked for, and a simulation has to be in place by then.
+        Arsenal.Simulation.DeviceSimulation.Start(args);
+#endif
+
         ApplicationConfiguration.Initialize();
 
         // Before anything draws. Windows reads this when the first Direct3D device is

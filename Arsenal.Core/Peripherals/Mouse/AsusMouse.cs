@@ -219,6 +219,13 @@ namespace Arsenal.Peripherals.Mouse
 
         public bool IsDeviceReady { get; protected set; }
 
+        /// <summary>
+        /// Stands in for a mouse that is not there: no USB at all, and every request
+        /// answered by the device simulator. The mouse counterpart of the keyboard's
+        /// test mode.
+        /// </summary>
+        public bool TestMode;
+
         private void SetDeviceReady(bool ready)
         {
             bool notify = false;
@@ -485,6 +492,7 @@ namespace Arsenal.Peripherals.Mouse
 
         public void Connect()
         {
+            if (TestMode) return;
             SetProvider();
             HidSharp.DeviceList.Local.Changed += Device_Changed;
         }
@@ -542,6 +550,7 @@ namespace Arsenal.Peripherals.Mouse
 
         public bool IsDeviceConnected()
         {
+            if (TestMode) return true;
             try
             {
                 return HidSharp.DeviceList.Local.GetHidDevices(VendorID(), ProductID())
@@ -627,6 +636,8 @@ namespace Arsenal.Peripherals.Mouse
 
         private byte[]? WriteForResponseImpl(byte[] packet, int matchLength)
         {
+            if (TestMode) return Helpers.Simulated.MouseReply(this, packet, USBPacketSize());
+
             Array.Resize(ref packet, USBPacketSize());
 
             try { Drain(USBPacketSize()); } catch { }

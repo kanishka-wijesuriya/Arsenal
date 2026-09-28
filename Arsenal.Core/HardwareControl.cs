@@ -1154,6 +1154,11 @@ public static class HardwareControl
     public static void RecreateGpuControl()
     {
         if (AppConfig.NoGpu()) return;
+
+        // The driver would describe the graphics card in this machine, not the one the
+        // simulated laptop has, and its clock and power writes would reach it.
+        if (Simulated.Skip("open the NVIDIA or AMD driver")) return;
+
         try
         {
             DisposeGpuControl();

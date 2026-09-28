@@ -1,0 +1,129 @@
+<UserControl x:Class="Arsenal.UI.Simulation.SimulatorPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Arsenal.UI.Controls">
+
+    <!-- Only in test and Debug builds: the folder this lives in is not compiled into a
+         stable release, and SettingsPage adds it from code for the same reason. -->
+    <controls:SettingsGroup Header="Device simulator" Icon="DeveloperBoard24"
+                            Description="Run Arsenal as another ASUS laptop to see which options it shows there. Test builds only.">
+
+        <controls:SettingsRow Header="Running as" Description="{Binding StatusDescription}">
+            <TextBlock Text="{Binding StatusLabel}" FontWeight="SemiBold"
+                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="320"
+                       Foreground="{DynamicResource TextPrimary}"/>
+        </controls:SettingsRow>
+
+        <controls:SettingsRow Header="Laptop to simulate" Description="{Binding SelectedDescription}">
+            <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile, Mode=TwoWay}"
+                      DisplayMemberPath="Name" MinWidth="300"/>
+
+            <controls:SettingsRow.ContentBelow>
+                <WrapPanel Margin="0,4,0,0">
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0,0,8,0"
+                               Content="Open as this laptop" Appearance="Primary"
+                               Icon="{ui:SymbolIcon Open24}"
+                               Command="{Binding SimulateCommand}"/>
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0,0,8,0"
+                               Content="Close the simulation" Appearance="Secondary"
+                               Command="{Binding StopCommand}"
+                               Visibility="{Binding IsSimulating, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0,0,8,0"
+                               Content="Reload profiles" Appearance="Secondary"
+                               Command="{Binding ReloadCommand}"/>
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0"
+                               Content="Open profiles folder" Appearance="Secondary"
+                               Icon="{ui:SymbolIcon FolderOpen24}"
+                               Command="{Binding OpenFolderCommand}"/>
+                </WrapPanel>
+            </controls:SettingsRow.ContentBelow>
+        </controls:SettingsRow>
+
+        <controls:SettingsRow Header="Peripherals" Description="{Binding PeripheralsSummary}">
+            <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0"
+                       Content="Use the profile's own" Appearance="Secondary"
+                       Icon="{ui:SymbolIcon ArrowReset24}"
+                       Command="{Binding ResetPeripheralsCommand}"/>
+
+            <controls:SettingsRow.ContentBelow>
+                <Border Style="{StaticResource InsetSurfaceStyle}" Padding="12,8" Margin="0,4,0,0">
+                    <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="Mice and mouse pads" Style="{StaticResource SettingLabelStyle}" Margin="0,4,0,6"/>
+                            <ItemsControl ItemsSource="{Binding MouseOptions}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Content="{Binding DisplayName}" IsChecked="{Binding IsPluggedIn, Mode=TwoWay}"
+                                                  Width="270" Margin="0,0,8,4" ToolTip="{Binding DisplayName}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="Keyboards" Style="{StaticResource SettingLabelStyle}" Margin="0,12,0,6"/>
+                            <ItemsControl ItemsSource="{Binding KeyboardOptions}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Content="{Binding DisplayName}" IsChecked="{Binding IsPluggedIn, Mode=TwoWay}"
+                                                  Width="270" Margin="0,0,8,4" ToolTip="{Binding DisplayName}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </controls:SettingsRow.ContentBelow>
+        </controls:SettingsRow>
+
+        <controls:SettingsRow Header="Capture this laptop" Description="{Binding CaptureStatus}"
+                              Visibility="{Binding IsSimulating, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+            <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0"
+                       Content="Capture" Appearance="Secondary"
+                       Icon="{ui:SymbolIcon Camera24}"
+                       Command="{Binding CaptureCommand}"/>
+        </controls:SettingsRow>
+
+        <controls:SettingsRow Header="What would have happened"
+                              Description="Firmware writes the profile answered, and the Windows changes that were not made. Newest first."
+                              Visibility="{Binding IsSimulating, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <controls:SettingsRow.ContentBelow>
+                <Border Style="{StaticResource InsetSurfaceStyle}" Padding="12,8" Margin="0,4,0,0">
+                    <ScrollViewer MaxHeight="280" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Actions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="72"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Time, StringFormat={}{0:HH:mm:ss}}" FontSize="12"
+                                                   Foreground="{DynamicResource TextTertiary}"/>
+                                        <TextBlock x:Name="Line" Grid.Column="1" Text="{Binding Description}"
+                                                   FontSize="12" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                    </Grid>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Accepted}" Value="False">
+                                            <Setter TargetName="Line" Property="Foreground" Value="{DynamicResource TextTertiary}"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </controls:SettingsRow.ContentBelow>
+        </controls:SettingsRow>
+    </controls:SettingsGroup>
+</UserControl>

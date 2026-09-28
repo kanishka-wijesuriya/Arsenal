@@ -47,4 +47,10 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup Condition="'$(ArsenalSimulator)' == 'true'">
+    <EmbeddedResource Include="Simulation\Profiles\*.json">
+      <LogicalName>Arsenal.Simulation.Profiles.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

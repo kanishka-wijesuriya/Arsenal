@@ -66,6 +66,7 @@ namespace Arsenal.Battery
                 return;
             }
             const string keyPath = @"SOFTWARE\ASUS\ASUS System Control Interface\AsusOptimization\ASUS Keyboard Hotkeys";
+            if (Simulated.Skip($"ChargingRate = {value} in the registry")) return;
             try
             {
                 using var key = Registry.LocalMachine.OpenSubKey(keyPath, writable: true);

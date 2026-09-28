@@ -65,6 +65,7 @@ namespace Arsenal.Display
         public static void SetAsusRefreshFlag(int value)
         {
             if (!ProcessHelper.IsUserAdministrator()) return;
+            if (Simulated.Skip($"RefreshFlag = {value} in the registry")) return;
             const string keyPath = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{8714A8D1-0F08-4681-9DF6-A8C4607A58B4}";
             try
             {
@@ -200,7 +201,8 @@ namespace Arsenal.Display
             if (dialogResult == DialogResult.Yes)
             {
                 Program.acpi.DeviceSet(AsusACPI.ScreenFHD, (fhd == 1) ? 0 : 1, "FHD");
-                Process.Start(ProcessHelper.SystemPath("shutdown"), "/r /t 1");
+                if (!Simulated.Skip("restart Windows to apply the display mode"))
+                    Process.Start(ProcessHelper.SystemPath("shutdown"), "/r /t 1");
             }
         }
 

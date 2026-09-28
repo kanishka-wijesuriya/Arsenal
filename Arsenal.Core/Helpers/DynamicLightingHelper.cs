@@ -28,6 +28,8 @@ namespace Arsenal.Helpers
 
         public static void SetRegStatus(int status = 1)
         {
+            if (Simulated.Skip($"Windows Dynamic Lighting {status}")) return;
+
             try
             {
                 Registry.SetValue(LightingKey, LightingValue, status, RegistryValueKind.DWord);
@@ -42,6 +44,8 @@ namespace Arsenal.Helpers
 
         static void WriteLightingValue(string name, object value, RegistryValueKind kind)
         {
+            if (Simulated.Skip($"Windows Dynamic Lighting {name}")) return;
+
             Registry.SetValue(LightingKey, name, value, kind);
             using var devicesKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Lighting\Devices", true);
 

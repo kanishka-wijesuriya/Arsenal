@@ -49,6 +49,14 @@ public static class AppConfig
         : ProcessHelper.IsRunningAsSystem() && File.Exists(fallbackConfigFile) ? fallbackConfigFile
         : Path.Combine(appPath, configName);
 
+        // A simulated machine keeps its settings to itself, shared copy included, so a
+        // profile that turns something on cannot carry it back to the real one.
+        if (Simulated.StateDirectory is { } simulated)
+        {
+            configFile = Path.Combine(simulated, configName);
+            fallbackConfigFile = Path.Combine(simulated, "shared-" + configName);
+        }
+
         if (!TryLoadConfig(configFile) && !TryRecoverConfig(configFile) && !TryLoadConfig(configFile + ".bak") && !TryLoadConfig(fallbackConfigFile)) Init();
 
         // Rewrite the shared copy once on the way in, rather than waiting for the next
@@ -201,6 +209,8 @@ public static class AppConfig
 
     private static string LoadModel()
     {
+        if (Simulated.Model is { } simulated) return simulated;
+
         try
         {
             using var searcher = new ManagementObjectSearcher("Select * from Win32_ComputerSystem");
@@ -218,17 +228,14 @@ public static class AppConfig
 
     private static (string Bios, string ModelShort) LoadBios()
     {
+        if (Simulated.Bios is { } simulated) return SplitBios(simulated);
+
         try
         {
             using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_BIOS");
             foreach (var obj in searcher.Get())
             {
-                using (obj)
-                {
-                    string raw = obj["SMBIOSBIOSVersion"]?.ToString() ?? string.Empty;
-                    string[] parts = raw.Split('.');
-                    return parts.Length > 1 ? (parts[1], parts[0]) : (string.Empty, raw);
-                }
+                using (obj) return SplitBios(obj["SMBIOSBIOSVersion"]?.ToString() ?? string.Empty);
             }
         }
         catch (Exception ex)
@@ -236,6 +243,12 @@ public static class AppConfig
             Logger.WriteLine(ex.Message);
         }
         return (string.Empty, string.Empty);
+    }
+
+    private static (string Bios, string ModelShort) SplitBios(string raw)
+    {
+        string[] parts = raw.Split('.');
+        return parts.Length > 1 ? (parts[1], parts[0]) : (string.Empty, raw);
     }
 
     public static string GetModel() => _model.Value;
@@ -614,6 +627,8 @@ public static class AppConfig
 
     private static readonly Lazy<bool> _oledFromRegistry = new(() =>
     {
+        if (Simulated.OledCare is { } simulated) return simulated;
+
         try
         {
             var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\ASUS\OLEDCare");
@@ -850,6 +865,8 @@ public static class AppConfig
     }
     public static bool IsDesktop()
     {
+        if (Simulated.IsActive) return false;
+
         try
         {
             using var searcher = new ManagementObjectSearcher("Select * from Win32_ComputerSystem");

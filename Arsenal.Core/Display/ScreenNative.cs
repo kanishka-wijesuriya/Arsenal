@@ -292,6 +292,8 @@ namespace Arsenal.Display
             if (DisplayNative.EnumDisplaySettingsEx(laptopScreen, ENUM_CURRENT_SETTINGS, ref dm) == 0) return 0;
             if (dm.dmDisplayFrequency == frequency) return 0;
 
+            if (Helpers.Simulated.Skip($"set the panel to {frequency}Hz")) return 0;
+
             dm.dmDisplayFrequency = frequency;
             int result = DisplayNative.ChangeDisplaySettingsEx(
                 laptopScreen, ref dm, IntPtr.Zero, DisplayNative.DisplaySettingsFlags.CDS_UPDATEREGISTRY, IntPtr.Zero);

@@ -188,6 +188,12 @@ namespace Arsenal.Gpu
                 OnGPUModeChanged?.Invoke(targetMode);
                 Program.Bridge?.VisualiseGPUMode();
 
+                if (Simulated.Skip("restart Windows to apply the GPU switch"))
+                {
+                    OnGPUBusyChanged?.Invoke(false, null);
+                    return;
+                }
+
                 // Deliberately left busy: Windows is going down, and clearing the
                 // overlay here would flash the UI back for the last second.
                 OnGPUBusyChanged?.Invoke(true, "Restarting Windows");

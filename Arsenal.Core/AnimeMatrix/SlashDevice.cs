@@ -141,6 +141,10 @@ namespace Arsenal.AnimeMatrix
 
         private static bool HasSlashInterface(ushort productId, byte reportId)
         {
+            // Only asked once the model is already known to have a Slash, and a
+            // simulated one has the original lightbar rather than the Aura variant.
+            if (Helpers.Simulated.IsActive) return productId == 0x193B;
+
             try
             {
                 return DeviceList.Local

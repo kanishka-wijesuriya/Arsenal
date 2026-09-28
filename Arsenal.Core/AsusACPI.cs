@@ -1,4 +1,5 @@
 using Arsenal;
+using Arsenal.Helpers;
 using Arsenal.USB;
 using System.Collections.Concurrent;
 using System.Management;
@@ -292,25 +293,10 @@ public class AsusACPI : IDisposable
 
     public AsusACPI()
     {
-        try
-        {
-            handle = CreateFile(
-                FILE_NAME,
-                GENERIC_READ | GENERIC_WRITE,
-                FILE_SHARE_READ | FILE_SHARE_WRITE,
-                IntPtr.Zero,
-                OPEN_EXISTING,
-                FILE_ATTRIBUTE_NORMAL,
-                IntPtr.Zero
-            );
-
-            _connected = handle != new IntPtr(-1);
-
-        }
-        catch (Exception ex)
-        {
-            Logger.WriteLine($"Can't connect to ACPI: {ex.Message}");
-        }
+        // A simulated machine answers from its profile; the driver is never opened, so
+        // there is no handle a call could slip through on.
+        if (Simulated.IsActive) _connected = true;
+        else OpenDriver();
 
         if (AppConfig.IsAdvantageEdition())
         {
@@ -379,8 +365,32 @@ public class AsusACPI : IDisposable
 
     }
 
+    private void OpenDriver()
+    {
+        try
+        {
+            handle = CreateFile(
+                FILE_NAME,
+                GENERIC_READ | GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                IntPtr.Zero,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                IntPtr.Zero
+            );
+
+            _connected = handle != new IntPtr(-1);
+
+        }
+        catch (Exception ex)
+        {
+            Logger.WriteLine($"Can't connect to ACPI: {ex.Message}");
+        }
+    }
+
     public void Control(uint dwIoControlCode, byte[] lpInBuffer, byte[] lpOutBuffer)
     {
+        if (Simulated.TryFirmware(dwIoControlCode, lpInBuffer, lpOutBuffer)) return;
 
         uint lpBytesReturned = 0;
         DeviceIoControl(
@@ -498,6 +508,8 @@ public class AsusACPI : IDisposable
 
     public static void DeviceSetWmi(uint DeviceID, int Status)
     {
+        if (Simulated.Skip($"WMI DEVS 0x{DeviceID:X8} = {Status}")) return;
+
         try
         {
             using var wmi = new ManagementObjectSearcher(@"root\wmi", "SELECT * FROM AsusAtkWmi_WMNB").Get().Cast<ManagementObject>().First();
@@ -953,6 +965,29 @@ public class AsusACPI : IDisposable
 
     }
 
+#if ARSENAL_SIMULATOR
+    /// <summary>
+    /// The whole 64-byte DSTS answer for one id and argument, for the simulator's capture.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="DeviceGetLarge"/> without the argument left at zero: the fan curves
+    /// answer differently per mode, and a capture needs all three.
+    /// </remarks>
+    public byte[] DeviceGetRaw(uint DeviceID, uint Status = 0)
+    {
+        byte[] acpiBuf = new byte[8 + 4 + 8];
+        byte[] outBuffer = new byte[64];
+
+        BitConverter.GetBytes(DSTS).CopyTo(acpiBuf, 0);
+        BitConverter.GetBytes((uint)(4 + 8)).CopyTo(acpiBuf, 4);
+        BitConverter.GetBytes(DeviceID).CopyTo(acpiBuf, 8);
+        BitConverter.GetBytes(Status).CopyTo(acpiBuf, 12);
+
+        Control(CONTROL_CODE, acpiBuf, outBuffer);
+        return outBuffer;
+    }
+#endif
+
     private byte[] DeviceGetLarge(uint DeviceID, int extraIn = 8, int outSize = 64)
     {
         byte[] acpiBuf = new byte[8 + 4 + extraIn];
@@ -1019,6 +1054,10 @@ public class AsusACPI : IDisposable
 
     public void SubscribeToEvents(Action<object, EventArrivedEventArgs> EventHandler)
     {
+        // The Fn keys pressed are this laptop's, and the real Arsenal beside a
+        // simulated one is already handling them.
+        if (Simulated.IsActive) return;
+
         ManagementEventWatcher? nextWatcher = null;
         try
         {

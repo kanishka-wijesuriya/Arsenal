@@ -45,4 +45,24 @@
     <DefineConstants>$(DefineConstants);ARSENAL_STORE</DefineConstants>
   </PropertyGroup>
 
+  <!-- The device simulator: pretend to be another ASUS laptop, with its firmware and
+       peripherals faked, to see what Arsenal would show there. Debug builds and test
+       builds carry it; releases/build-windows-test.ps1 passes ArsenalSimulator=true.
+       A plain Release build, which is what a stable release is, compiles none of it:
+       the Simulation folders are removed from the projects and the hooks elsewhere
+       collapse to constants. -->
+  <PropertyGroup>
+    <ArsenalSimulator Condition="'$(ArsenalSimulator)' == '' and '$(Configuration)' != 'Release'">true</ArsenalSimulator>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ArsenalSimulator)' == 'true'">
+    <DefineConstants>$(DefineConstants);ARSENAL_SIMULATOR</DefineConstants>
+  </PropertyGroup>
+
+  <!-- An exclude rather than an item Remove: this file is read before the SDK globs
+       its default items, so a Remove here would run against an empty list. -->
+  <PropertyGroup Condition="'$(ArsenalSimulator)' != 'true'">
+    <DefaultItemExcludes>$(DefaultItemExcludes);Simulation\**</DefaultItemExcludes>
+  </PropertyGroup>
+
 </Project>

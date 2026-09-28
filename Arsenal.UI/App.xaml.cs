@@ -93,7 +93,10 @@ namespace Arsenal.UI
             bool backgroundAction = action is "charge" or "--allow-companion-network";
             bool replaceExisting = e.Args.Contains(ProcessHelper.ReplaceArgument);
 
-            if (!backgroundAction)
+            // A simulated Arsenal runs beside the real one and stays out of instance
+            // management entirely: it neither raises the real window nor answers the
+            // real one's show and exit signals.
+            if (!backgroundAction && !Simulated.IsActive)
             {
                 // An ordinary second launch should raise the window that is already
                 // there rather than restarting the app.
@@ -143,7 +146,9 @@ namespace Arsenal.UI
 
             // Start the bridge before views bind SettingsViewModel, so the address,
             // pairing code and certificate identity render correctly on first open.
-            Services.GetRequiredService<RemoteCompanionService>().Start();
+            // Not for a simulated machine: a phone paired to it would be steering a
+            // laptop that is not there, with a pairing secret of its own.
+            if (!Simulated.IsActive) Services.GetRequiredService<RemoteCompanionService>().Start();
 
             // Keep the sensor snapshot warm at the same low tray cadence as before.
             // It is an application service, not a reason to retain Quick Panel/Home UI.
@@ -168,7 +173,7 @@ namespace Arsenal.UI
 
             // Never on an automated launch: setup is modal and would block a logon
             // start or a scheduled action behind a dialog nobody is there to answer.
-            if (!startMinimized && (action is "" or "--elevated" or "--setup") &&
+            if (!startMinimized && !Simulated.IsActive && (action is "" or "--elevated" or "--setup") &&
                 (action == "--setup" || SetupViewModel.IsSetupNeeded))
             {
                 ShowSetup();
@@ -207,7 +212,7 @@ namespace Arsenal.UI
                 ToggleTrayMenu();
             }
 
-            if (CanSelfUpdate && (AppConfig.IsNotFalse("check_updates") || action == "autoupdate"))
+            if (CanSelfUpdate && !Simulated.IsActive && (AppConfig.IsNotFalse("check_updates") || action == "autoupdate"))
             {
                 _autoUpdateControl = new AutoUpdateControl();
                 _autoUpdateControl.UpdateAvailable += PromptForApplicationUpdate;

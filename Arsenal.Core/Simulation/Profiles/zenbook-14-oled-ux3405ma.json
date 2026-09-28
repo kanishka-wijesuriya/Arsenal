@@ -1,0 +1,22 @@
+{
+  "name": "Zenbook 14 OLED (2024, UX3405MA)",
+  "model": "ASUS Zenbook 14 UX3405MA_UX3405MA",
+  "bios": "UX3405MA.305",
+  "series": "UX3405MA",
+  "keyboardLayout": "SINGLE",
+  "oledCare": true,
+  "source": "Written by hand from what Arsenal's model checks expect. The values are plausible, not read from a real machine. Intel Core Ultra with no discrete GPU, the Vivobook and Zenbook performance modes, a hardware Fn lock.",
+  "firmware": {
+    "00110019": 0,
+    "00110013": 21,
+    "00120094": 52,
+    "00120057": 80,
+    "0012006C": 2,
+    "0012005A": 640,
+    "00100023": 1,
+    "00050021": 129,
+    "0005002F": 1
+  },
+  "accepts": ["00100057"],
+  "peripherals": []
+}

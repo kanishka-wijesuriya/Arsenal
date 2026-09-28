@@ -41,7 +41,8 @@ namespace Arsenal.AnimeMatrix.Communication
         public virtual void SetProvider()
         {
             if (_usbProvider is not null) return;
-            _usbProvider = new WindowsUsbProvider(_vendorId, _productId, _maxFeatureReportLength, LogName);
+            _usbProvider = Helpers.Simulated.UsbProvider(_vendorId, _productId)
+                ?? new WindowsUsbProvider(_vendorId, _productId, _maxFeatureReportLength, LogName);
         }
 
         protected T Packet<T>(params byte[] command) where T : Packet

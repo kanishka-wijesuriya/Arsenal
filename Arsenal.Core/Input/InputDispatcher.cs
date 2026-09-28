@@ -161,6 +161,9 @@ namespace Arsenal.Input
         {
             hook.UnregisterAll();
 
+            // Global hotkeys belong to the real Arsenal running beside a simulated one.
+            if (Simulated.IsActive) return;
+
             string actionM1 = AppConfig.GetString("m1");
             string actionM2 = AppConfig.GetString("m2");
 
@@ -612,7 +615,8 @@ namespace Arsenal.Input
                 if ((User32.GetAsyncKeyState(0x11) & User32.GetAsyncKeyState(0x10) & User32.GetAsyncKeyState(0x12) & 0x8000) != 0)
                 {
                     Program.acpi.DeviceSet(AsusACPI.GPUMux, 1, "MUX hybrid recovery");
-                    Process.Start(new ProcessStartInfo(ProcessHelper.SystemPath("shutdown"), "/r /t 1") { CreateNoWindow = true, UseShellExecute = false });
+                    if (!Simulated.Skip("restart Windows for MUX recovery"))
+                        Process.Start(new ProcessStartInfo(ProcessHelper.SystemPath("shutdown"), "/r /t 1") { CreateNoWindow = true, UseShellExecute = false });
                 }
                 return;
             }
@@ -869,6 +873,8 @@ namespace Arsenal.Input
 
         public static void SetSlateMode(int status)
         {
+            if (Simulated.Skip($"ConvertibleSlateMode = {status} in the registry")) return;
+
             try
             {
                 Registry.SetValue(@"HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\PriorityControl", "ConvertibleSlateMode", status, RegistryValueKind.DWord);

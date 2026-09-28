@@ -33,6 +33,10 @@ namespace Arsenal.UI.Views.Windows
             // current solid surface colours as soon as it is constructed.
             App.ApplyWindowSurface(this);
 
+#if ARSENAL_SIMULATOR
+            ShowSimulationBadge();
+#endif
+
             _placementSaveTimer = new DispatcherTimer(DispatcherPriority.Background)
             {
                 Interval = TimeSpan.FromMilliseconds(400)
@@ -379,7 +383,9 @@ namespace Arsenal.UI.Views.Windows
         {
             _placementSaveTimer.Stop();
             SaveWindowPlacementNow();
-            if (!_allowClose && AppConfig.IsNotFalse("minimize_to_tray"))
+            // A simulated laptop has nothing to keep running in the tray: closing its
+            // window ends the simulation.
+            if (!_allowClose && !Simulated.IsActive && AppConfig.IsNotFalse("minimize_to_tray"))
             {
                 e.Cancel = true;
                 Hide();

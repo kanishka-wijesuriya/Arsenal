@@ -45,6 +45,10 @@ namespace PawnIO
         {
             if (IsConnected) return ConnectResult.OK;
 
+            // The undervolt driver writes processor registers directly. A simulated
+            // machine is not the processor that is actually running.
+            if (Arsenal.Helpers.Simulated.Skip("load the PawnIO undervolt driver")) return ConnectResult.NotInstalled;
+
             const string path = @"\\?\GLOBALROOT\Device\PawnIO";
             _raw = CreateFile(path, 0xC0000000u, 0x3, IntPtr.Zero, 3, 0, IntPtr.Zero);
             if (_raw == IntPtr.Zero || _raw.ToInt64() == -1)

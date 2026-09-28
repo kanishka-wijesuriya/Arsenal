@@ -123,6 +123,8 @@ namespace Arsenal.Mode
 
         public static void SetCPUBoost(int boost = 0)
         {
+            if (Helpers.Simulated.Skip($"Windows CPU boost mode {boost}")) return;
+
             Guid activeSchemeGuid = GetActiveScheme();
 
             if (boost == GetCPUBoost()) return;
@@ -157,6 +159,7 @@ namespace Arsenal.Mode
 
         public static void SetPowerMode(string scheme)
         {
+            if (Helpers.Simulated.Skip("Windows power mode " + scheme)) return;
 
             if (scheme == PLAN_HIGH_PERFORMANCE)
             {
@@ -193,6 +196,8 @@ namespace Arsenal.Mode
 
         public static void SetPowerPlan(string scheme)
         {
+            if (Helpers.Simulated.Skip("Windows power plan " + scheme)) return;
+
             // Skipping power modes
             if (overlays.Contains(scheme)) return;
 
@@ -239,6 +244,8 @@ namespace Arsenal.Mode
 
         public static void SetASPM(int status = 0)
         {
+            if (Helpers.Simulated.Skip($"PCI Express power saving {status}")) return;
+
             Guid activeSchemeGuid = GetActiveScheme();
             var currentASPM = GetASPM();
             if (currentASPM == status) return;
@@ -262,6 +269,8 @@ namespace Arsenal.Mode
 
         public static void SetConnectivityInStandby(int ac = 0, int dc = 0)
         {
+            if (Helpers.Simulated.Skip($"connectivity in standby {ac}/{dc}")) return;
+
             Guid activeSchemeGuid = GetActiveScheme();
 
             using var key = Registry.LocalMachine.OpenSubKey($@"SYSTEM\CurrentControlSet\Control\Power\User\PowerSchemes\{activeSchemeGuid}\{GUID_CONNECTIVITY_IN_STANDBY}");
@@ -309,6 +318,8 @@ namespace Arsenal.Mode
 
         public static void SetLidAction(int action, bool acOnly = false)
         {
+            if (Helpers.Simulated.Skip($"lid close action {action}")) return;
+
             /**
              * 1: Do nothing
              * 2: Seelp
@@ -358,6 +369,8 @@ namespace Arsenal.Mode
 
         public static void SetHibernateAfter(int minutes)
         {
+            if (Helpers.Simulated.Skip($"hibernate after {minutes} minutes")) return;
+
             int seconds = minutes * 60;
 
             Guid activeSchemeGuid = GetActiveScheme();

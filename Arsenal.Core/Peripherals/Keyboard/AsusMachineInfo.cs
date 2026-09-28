@@ -42,6 +42,8 @@ namespace Arsenal.Peripherals.Keyboard
 
         private static (string, string) Read()
         {
+            if (Helpers.Simulated.MachineInfo is { } simulated) return simulated;
+
             try
             {
                 using RegistryKey? key = Registry.LocalMachine.OpenSubKey(Path);

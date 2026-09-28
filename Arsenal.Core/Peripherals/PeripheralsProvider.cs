@@ -217,6 +217,7 @@ namespace Arsenal.Peripherals
             {
                 DeviceChanged(am, EventArgs.Empty);
             }
+            UpdateSettingsView();
             RefreshHotkeys();
         }
 
@@ -331,6 +332,13 @@ namespace Arsenal.Peripherals
                 catch { }
             });
         }
+
+        /// <summary>
+        /// Takes a keyboard off the list as though it had been unplugged. The mouse
+        /// counterpart is <see cref="Disconnect(AsusMouse)"/>; the device simulator uses
+        /// both to unplug its pretend peripherals.
+        /// </summary>
+        public static void Disconnect(AsusKeyboard kb) => Keyboard_Disconnect(kb, EventArgs.Empty);
 
         private static void Keyboard_Disconnect(object? sender, EventArgs e)
         {
@@ -481,6 +489,13 @@ namespace Arsenal.Peripherals
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static void DetectAllAsusMice()
         {
+            // A simulated machine has the mice its profile lists and none of the real ones.
+            if (Helpers.Simulated.IsActive)
+            {
+                foreach (AsusMouse mouse in Helpers.Simulated.Mice()) DetectMouse(mouse);
+                return;
+            }
+
             asusHidDevices = DeviceList.Local.GetHidDevices(0x0B05).ToList();
 
             //Add one line for every supported mouse class here to support them.
@@ -550,6 +565,12 @@ namespace Arsenal.Peripherals
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static void DetectAllAsusKeyboards()
         {
+            if (Helpers.Simulated.IsActive)
+            {
+                foreach (AsusKeyboard keyboard in Helpers.Simulated.Keyboards()) DetectKeyboard(keyboard);
+                return;
+            }
+
             asusHidDevices = DeviceList.Local.GetHidDevices(0x0B05).ToList();
 
             if (AppConfig.Is("keyboard_test")) DetectKeyboard(new Azoth() { TestMode = true });

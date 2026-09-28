@@ -249,6 +249,7 @@ namespace Arsenal.Display
 
         public static void SetRegStatus(int status = 1)
         {
+            if (Simulated.Skip($"GameVisual = {status} in the registry")) return;
             Registry.SetValue(GameVisualKey, GameVisualValue, status, RegistryValueKind.DWord);
         }
 

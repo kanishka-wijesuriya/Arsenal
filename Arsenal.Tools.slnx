@@ -12,7 +12,9 @@
   <Project Path="tools/mf-encoder-probe/MfEncoderProbe.csproj" />
   <Project Path="tools/navigation-smoke/navigation-smoke.csproj" />
   <Project Path="tools/render-module-probe/RenderModuleProbe.csproj" />
+  <Project Path="tools/peripherals-smoke/PeripheralsSmoke.csproj" />
   <Project Path="tools/scroll-fps/ScrollFps.csproj" />
+  <Project Path="tools/simulator-smoke/SimulatorSmoke.csproj" />
   <Project Path="tools/setup-smoke/setup-smoke.csproj" />
   <Project Path="tools/slash-preview-cost/SlashPreviewCost.csproj" />
   <Project Path="tools/slash-preview-smoke/slash-preview-smoke.csproj" />

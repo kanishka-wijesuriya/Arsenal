@@ -14,6 +14,8 @@ namespace Arsenal.USB
 
         public static HidDevice? GetDevice()
         {
+            if (Simulated.IsActive) return null;
+
             try
             {
                 /*

@@ -76,6 +76,8 @@ public class Startup
 
     public static void ReScheduleAdmin()
     {
+        if (Simulated.Skip("re-register the sign-in task")) return;
+
         if (ProcessHelper.IsUserAdministrator() && IsScheduled())
         {
             UnSchedule();
@@ -113,6 +115,8 @@ public class Startup
 
     public static void StartupCheck()
     {
+        if (Simulated.Skip("check the sign-in task")) return;
+
         // A harness may run this path. It may not rewrite where Windows starts Arsenal.
         if (!IsArsenalItself())
         {
@@ -225,6 +229,8 @@ public class Startup
 
     public static void UnscheduleCharge()
     {
+        if (Simulated.Skip("remove the charge limit task")) return;
+
         using (TaskService taskService = new TaskService())
         {
             try
@@ -271,6 +277,7 @@ public class Startup
 
     public static void ScheduleCharge()
     {
+        if (Simulated.Skip("register the charge limit task")) return;
 
         if (strExeFilePath is null) return;
 
@@ -322,6 +329,8 @@ public class Startup
 
     public static void Schedule()
     {
+        if (Simulated.Skip("register the sign-in task")) return;
+
         // The same guard as StartupCheck, and for the same reason: this writes the
         // running executable's path into the sign-in task, and a harness linking
         // Arsenal.Core is not the thing the user wants started at sign-in.
@@ -378,6 +387,8 @@ public class Startup
 
     public static void UnSchedule()
     {
+        if (Simulated.Skip("remove the sign-in task")) return;
+
         using (TaskService taskService = new TaskService())
         {
             try

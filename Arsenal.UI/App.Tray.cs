@@ -34,7 +34,7 @@ namespace Arsenal.UI
         {
             TrayIcon = new Forms.NotifyIcon
             {
-                Text = "Arsenal",
+                Text = Simulated.IsActive ? "Arsenal (simulated laptop)" : "Arsenal",
                 Visible = true
             };
 

@@ -120,7 +120,7 @@
             <!-- Live status sits in the trailing slot, immediately left of the window
                  buttons, so it stays pinned to the right edge at any window size. -->
             <ui:TitleBar.TrailingContent>
-                <StackPanel Orientation="Horizontal"
+                <StackPanel x:Name="StatusPills" Orientation="Horizontal"
                             Height="48"
                             VerticalAlignment="Center"
                             Margin="0,0,8,0">

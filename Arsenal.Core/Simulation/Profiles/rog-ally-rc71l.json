@@ -1,0 +1,29 @@
+{
+  "name": "ROG Ally (2023, RC71L)",
+  "model": "ROG Ally RC71L_RC71L",
+  "bios": "RC71L.341",
+  "series": "RC71L",
+  "keyboardLayout": "",
+  "source": "Written by hand from what Arsenal's model checks expect. The values are plausible, not read from a real machine. A handheld: Ryzen Z1 Extreme, built-in controller, no keyboard.",
+  "firmware": {
+    "00120075": 0,
+    "00110013": 26,
+    "00110014": 26,
+    "00120094": 60,
+    "00110024": "hex:1E28323C46505A6400050A1423374141",
+    "00110024/1": "hex:1E28323C46505A640000050A14232D37",
+    "00110024/2": "hex:1E28323C46505A64141E283241505A64",
+    "00110025": "hex:1E28323C46505A6400050A1423374141",
+    "00110025/1": "hex:1E28323C46505A640000050A14232D37",
+    "00110025/2": "hex:1E28323C46505A64141E283241505A64",
+    "00120057": 80,
+    "0012006C": 2,
+    "0012005A": 1420,
+    "001200A0": 0,
+    "001200A3": 0,
+    "001200C1": 0,
+    "000600C1": 260
+  },
+  "accepts": ["00110022", "00110023"],
+  "peripherals": []
+}

@@ -1,0 +1,33 @@
+{
+  "name": "ROG Flow Z13 (2025, GZ302EA)",
+  "model": "ROG Flow Z13 GZ302EA_GZ302EA",
+  "bios": "GZ302EA.308",
+  "series": "GZ302EA",
+  "keyboardLayout": "SINGLE",
+  "source": "Written by hand from what Arsenal's model checks expect. The values are plausible, not read from a real machine. Ryzen AI Max with no discrete GPU, a tablet with a detachable keyboard and an XG Mobile port.",
+  "firmware": {
+    "00120075": 0,
+    "00110013": 24,
+    "00110014": 22,
+    "00120094": 55,
+    "00110024": "hex:1E28323C46505A6400050A1423374141",
+    "00110024/1": "hex:1E28323C46505A640000050A14232D37",
+    "00110024/2": "hex:1E28323C46505A64141E283241505A64",
+    "00110025": "hex:1E28323C46505A6400050A1423374141",
+    "00110025/1": "hex:1E28323C46505A640000050A14232D37",
+    "00110025/2": "hex:1E28323C46505A64141E283241505A64",
+    "00120057": 80,
+    "0012006C": 2,
+    "0012005A": 890,
+    "001200A0": 0,
+    "001200A3": 0,
+    "001200C1": 0,
+    "000600C1": 260,
+    "00090018": 0,
+    "00060077": 0,
+    "00050019": 1,
+    "00050020": 1
+  },
+  "accepts": ["00110022", "00110023"],
+  "peripherals": []
+}

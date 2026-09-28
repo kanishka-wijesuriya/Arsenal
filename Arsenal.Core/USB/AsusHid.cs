@@ -1,5 +1,6 @@
 using HidSharp;
 using HidSharp.Reports;
+using Arsenal.Helpers;
 using System.Text;
 
 namespace Arsenal.USB;
@@ -50,6 +51,11 @@ public static class AsusHid
     public static IEnumerable<HidDevice> FindDevices(byte reportId, int[]? pids = null)
     {
         IEnumerable<HidDevice> deviceList;
+
+        // The keyboard and lightbar of a simulated laptop are not this one's. Finding
+        // nothing is the answer every caller already handles, and every write to the
+        // laptop's own HID devices starts here.
+        if (Simulated.Skip($"laptop HID report 0x{reportId:X2}")) yield break;
 
         try
         {

@@ -5,7 +5,7 @@
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
 >
     <ScrollViewer Style="{StaticResource PageScrollStyle}">
-        <StackPanel Style="{StaticResource PageBodyStyle}">
+        <StackPanel x:Name="PageBody" Style="{StaticResource PageBodyStyle}">
 
             <Grid Style="{StaticResource PageHeaderStyle}">
                 <StackPanel>

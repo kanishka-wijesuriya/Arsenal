@@ -262,6 +262,8 @@ namespace Arsenal.Helpers
 
         public static void KillByName(string name)
         {
+            if (Simulated.Skip("stop " + name)) return;
+
             var processes = Process.GetProcessesByName(name);
             try
             {
@@ -379,6 +381,11 @@ namespace Arsenal.Helpers
 
         public static string RunCMD(string name, string args, string? directory = null, int timeoutMs = 0)
         {
+            // powershell, powercfg, schtasks, the ASUS helpers: everything run through
+            // here changes this Windows installation or reads it as if it were the
+            // simulated one. An empty answer is what a failed command already returns.
+            if (Simulated.Skip($"{name} {args}")) return string.Empty;
+
             using var cmd = new Process();
             cmd.StartInfo.UseShellExecute = false;
             cmd.StartInfo.CreateNoWindow = true;

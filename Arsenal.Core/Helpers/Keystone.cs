@@ -25,6 +25,8 @@ namespace Arsenal.Helpers
 
         public static void SetEnabled(bool enabled)
         {
+            if (Simulated.Skip($"Keystone sound {enabled}")) return;
+
             try
             {
                 using var key = Registry.CurrentUser.OpenSubKey(RegistryPath, writable: true);

@@ -8,6 +8,12 @@ namespace Arsenal.UI.Views.Pages
         {
             InitializeComponent();
             DataContext = viewModel;
+
+#if ARSENAL_SIMULATOR
+            // Added here rather than declared in the XAML, which is compiled into every
+            // build: the simulator exists only in Debug and test builds.
+            PageBody.Children.Add(new Simulation.SimulatorPanel());
+#endif
         }
     }
 }
