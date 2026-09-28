@@ -30,6 +30,7 @@ internal static class Program
 
             var app = new App();
             app.InitializeComponent();
+            Arsenal.Tools.HarnessApp.KeepStartupOut();
             app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             App.ApplyConfiguredTheme();
 

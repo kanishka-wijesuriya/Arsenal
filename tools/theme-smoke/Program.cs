@@ -38,6 +38,7 @@ internal static class Program
 
             var application = new App();
             application.InitializeComponent();
+            Arsenal.Tools.HarnessApp.KeepStartupOut();
             // Several assertions open and close off-screen windows. Keep the dispatcher
             // alive between them rather than letting the first close shut the test app
             // down before later controls can ever receive Loaded.
@@ -97,6 +98,7 @@ internal static class Program
 
         var application = new App();
         application.InitializeComponent();
+        Arsenal.Tools.HarnessApp.KeepStartupOut();
         App.ApplyConfiguredTheme();
 
         // Placement belongs to the window and does not depend on hardware state. A null

@@ -33,6 +33,7 @@ internal static class Program
 
             var application = new App();
             application.InitializeComponent();
+            Arsenal.Tools.HarnessApp.KeepStartupOut();
             App.ApplyConfiguredTheme();
 
             CheckAdvancedRowsAreSwitches();

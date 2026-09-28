@@ -10,4 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Arsenal.UI\Arsenal.UI.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Shared/HarnessApp.cs" Link="HarnessApp.cs" />
+  </ItemGroup>
 </Project>

@@ -36,6 +36,7 @@ internal static class Program
 
             var application = new App();
             application.InitializeComponent();
+            Arsenal.Tools.HarnessApp.KeepStartupOut();
             application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             App.ApplyConfiguredTheme();
             var sentinel = new Window

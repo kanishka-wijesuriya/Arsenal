@@ -1,0 +1,27 @@
+<Solution>
+  <!-- Every harness and probe under tools/. None of them ships; they are built here so a
+       change that breaks one is caught by tools/check.ps1 rather than months later. -->
+  <Project Path="tools/capture-probe/CaptureProbe.csproj" />
+  <Project Path="tools/driver-scan-smoke/DriverScanSmoke.csproj" />
+  <Project Path="tools/driver-ui-smoke/DriverUiSmoke.csproj" />
+  <Project Path="tools/icon-gen/IconGen.csproj" />
+  <Project Path="tools/keyboard-preview-smoke/keyboard-preview-smoke.csproj" />
+  <Project Path="tools/media-worker-probe/MediaWorkerProbe.csproj" />
+  <Project Path="tools/memory-lifetime-smoke/MemoryLifetimeSmoke.csproj" />
+  <Project Path="tools/memory-regions-probe/MemoryRegionsProbe.csproj" />
+  <Project Path="tools/mf-encoder-probe/MfEncoderProbe.csproj" />
+  <Project Path="tools/navigation-smoke/navigation-smoke.csproj" />
+  <Project Path="tools/render-module-probe/RenderModuleProbe.csproj" />
+  <Project Path="tools/scroll-fps/ScrollFps.csproj" />
+  <Project Path="tools/setup-smoke/setup-smoke.csproj" />
+  <Project Path="tools/slash-preview-cost/SlashPreviewCost.csproj" />
+  <Project Path="tools/slash-preview-smoke/slash-preview-smoke.csproj" />
+  <Project Path="tools/slider-range-smoke/SliderRangeSmoke.csproj" />
+  <Project Path="tools/store-package/StorePackage.csproj" />
+  <Project Path="tools/telemetry-poll-smoke/telemetry-poll-smoke.csproj" />
+  <Project Path="tools/theme-smoke/ThemeSmoke.csproj" />
+  <Project Path="tools/ui-controls-smoke/UiControlsSmoke.csproj" />
+  <Project Path="tools/ui-memory-smoke/UiMemorySmoke.csproj" />
+  <Project Path="tools/update-card-smoke/update-card-smoke.csproj" />
+  <Project Path="tools/update-feed-smoke/update-feed-smoke.csproj" />
+</Solution>

@@ -28,6 +28,7 @@ internal static class Program
 
             var app = new App();
             app.InitializeComponent();
+            Arsenal.Tools.HarnessApp.KeepStartupOut();
 
             // Several assertions show a host window and close it again. Closing the last
             // one queues an OnLastWindowClose shutdown, which only runs once something
