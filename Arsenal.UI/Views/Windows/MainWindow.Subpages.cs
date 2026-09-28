@@ -1,4 +1,3 @@
-using Arsenal.Application.Models;
 using Arsenal.AutoUpdate;
 using Arsenal.Helpers;
 using Arsenal.UI.ViewModels;
@@ -7,10 +6,8 @@ using Arsenal.UI.Views.Pages;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Threading;
 using Wpf.Ui.Controls;
 
 namespace Arsenal.UI.Views.Windows

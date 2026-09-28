@@ -1,4 +1,3 @@
-using Arsenal.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Arsenal.Application.Models;

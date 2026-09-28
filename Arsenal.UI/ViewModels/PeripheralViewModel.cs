@@ -1,9 +1,7 @@
 using Arsenal.Application.Models;
 using Arsenal.Application.Services.Contracts;
-using Arsenal.Peripherals;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System.Collections.ObjectModel;
 using System.Windows.Data;
 using Wpf.Ui.Controls;
 using DrawingColor = System.Drawing.Color;

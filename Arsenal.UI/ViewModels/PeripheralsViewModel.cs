@@ -4,7 +4,6 @@ using Arsenal.Peripherals;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Windows.Data;
 using Wpf.Ui.Controls;
 
 namespace Arsenal.UI.ViewModels

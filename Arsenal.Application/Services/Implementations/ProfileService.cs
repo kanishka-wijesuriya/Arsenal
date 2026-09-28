@@ -1,6 +1,4 @@
-using Arsenal.Application.Models;
 using Arsenal.Application.Services.Contracts;
-using Arsenal.Display;
 using Arsenal.Fan;
 using Arsenal.Gpu;
 using Arsenal.Helpers;

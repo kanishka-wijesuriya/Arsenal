@@ -1,12 +1,9 @@
-using Arsenal.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Arsenal.Application.Models;
 using Arsenal.Application.Services.Contracts;
 using Arsenal.Display;
 using Arsenal.UI.Services;
 using System.Collections.ObjectModel;
-using Wpf.Ui.Controls;
 
 namespace Arsenal.UI.ViewModels
 {

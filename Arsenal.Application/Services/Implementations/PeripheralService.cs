@@ -1,6 +1,5 @@
 using Arsenal.Application.Models;
 using Arsenal.Application.Services.Contracts;
-using Arsenal.Battery;
 using Arsenal.Display;
 using Arsenal.Fan;
 using Arsenal.Helpers;
@@ -10,7 +9,6 @@ using Arsenal.Peripherals.Keyboard.Models;
 using Arsenal.Peripherals.Mouse;
 using Arsenal.USB;
 using System.Runtime.CompilerServices;
-using System.Diagnostics;
 
 namespace Arsenal.Application.Services.Implementations
 {

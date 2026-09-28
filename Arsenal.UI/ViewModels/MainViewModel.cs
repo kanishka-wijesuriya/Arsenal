@@ -2,11 +2,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Arsenal.Application.Models;
 using Arsenal.Application.Services.Contracts;
-using Arsenal.UI.Services;
 using Arsenal.Mode;
 using Arsenal.Display;
 using Arsenal.Helpers;
-using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
 
 namespace Arsenal.UI.ViewModels
