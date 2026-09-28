@@ -256,7 +256,45 @@ namespace Arsenal.UI.Controls
         /// A pinned group never becomes a destination whatever the setting says: it is
         /// the one control its page exists for, and the page named it as such.
         /// </remarks>
-        private void ApplyPresentation() => DrillIn = SubpagesEnabled && !AlwaysOpen;
+        private void ApplyPresentation() => DrillIn = (SubpagesEnabled || IsDestination) && !AlwaysOpen;
+
+        public static readonly DependencyProperty IsDestinationProperty =
+            DependencyProperty.Register(nameof(IsDestination), typeof(bool), typeof(SettingsGroup),
+                new PropertyMetadata(false, (d, _) => ((SettingsGroup)d).ApplyPresentation()));
+
+        /// <summary>
+        /// A place to go whatever the subpages setting says.
+        /// </summary>
+        /// <remarks>
+        /// For a group that stands for a thing rather than for a topic. A connected
+        /// mouse is one: its settings are a page of their own, the way G-Helper gives
+        /// each peripheral its own window, and laying every device's sections out one
+        /// after another on the list would leave nothing saying which mouse a DPI
+        /// slider belongs to.
+        /// </remarks>
+        public bool IsDestination
+        {
+            get => (bool)GetValue(IsDestinationProperty);
+            set => SetValue(IsDestinationProperty, value);
+        }
+
+        public static readonly DependencyProperty HostsSectionsProperty =
+            DependencyProperty.Register(nameof(HostsSections), typeof(bool), typeof(SettingsGroup),
+                new PropertyMetadata(false));
+
+        /// <summary>
+        /// The open group holds sections of its own, so it draws no card around them.
+        /// </summary>
+        /// <remarks>
+        /// Each item is then a group in its own right, pinned open, with its own heading
+        /// and card. Those nested groups are not siblings of this one and are never
+        /// stood aside when it opens; see <see cref="OnOpenChanged"/>.
+        /// </remarks>
+        public bool HostsSections
+        {
+            get => (bool)GetValue(HostsSectionsProperty);
+            set => SetValue(HostsSectionsProperty, value);
+        }
 
         private static void OnDrillInChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -418,7 +456,21 @@ namespace Arsenal.UI.Controls
             // during a navigation transition, and the one being left should not be
             // rearranged on its way out.
             bool samePage = open is not null && ReferenceEquals(PageRoot(), open.PageRoot());
-            IsDimmed = open is not null && open != this && samePage;
+            IsDimmed = open is not null && open != this && samePage && !IsInside(this, open);
+        }
+
+        /// <summary>
+        /// Whether an element is part of the open group's own content: a section inside
+        /// a peripheral, rather than another group on the list beside it.
+        /// </summary>
+        private static bool IsInside(DependencyObject element, SettingsGroup open)
+        {
+            for (DependencyObject? node = element; node is not null;
+                 node = System.Windows.Media.VisualTreeHelper.GetParent(node) ?? LogicalTreeHelper.GetParent(node))
+            {
+                if (!ReferenceEquals(node, element) && ReferenceEquals(node, open)) return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -503,7 +555,8 @@ namespace Arsenal.UI.Controls
                 // during a navigation transition, and the one being left must not be
                 // rearranged on its way out - the same rule the groups follow.
                 bool hidden = open is not null
-                    && ReferenceEquals(PageRootOf(element), PageRootOf(open));
+                    && ReferenceEquals(PageRootOf(element), PageRootOf(open))
+                    && !IsInside(element, open);
                 element.Visibility = hidden ? Visibility.Collapsed : Visibility.Visible;
             }
 

@@ -266,7 +266,7 @@
                 <ui:NavigationViewItem Content="Performance" TargetPageTag="Performance" Icon="{ui:SymbolIcon Gauge24}" Click="NavigationItem_Click"/>
                 <ui:NavigationViewItem Content="Display &amp; graphics" TargetPageTag="Display" Icon="{ui:SymbolIcon Desktop24}" Click="NavigationItem_Click"/>
                 <ui:NavigationViewItem Content="Battery" TargetPageTag="Battery" Icon="{ui:SymbolIcon BatteryCharge24}" Click="NavigationItem_Click"/>
-                <ui:NavigationViewItem Content="Devices" TargetPageTag="Devices" Icon="{ui:SymbolIcon Keyboard24}" Click="NavigationItem_Click"/>
+                <ui:NavigationViewItem Content="Peripherals" TargetPageTag="Peripherals" Icon="{ui:SymbolIcon Keyboard24}" Click="NavigationItem_Click"/>
                 <ui:NavigationViewItem Content="Lighting" TargetPageTag="Lighting" Icon="{ui:SymbolIcon Lightbulb24}" Click="NavigationItem_Click"/>
                 <ui:NavigationViewItem Content="Automation" TargetPageTag="Automation" Icon="{ui:SymbolIcon Flash24}" Click="NavigationItem_Click"/>
                 <ui:NavigationViewItem Content="Drivers" TargetPageTag="Drivers" Icon="{ui:SymbolIcon Box24}" Click="NavigationItem_Click"/>

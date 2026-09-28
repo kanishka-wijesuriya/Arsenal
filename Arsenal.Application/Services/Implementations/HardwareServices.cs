@@ -446,10 +446,14 @@ namespace Arsenal.Application.Services.Implementations
                 string id = RuntimeHelpers.GetHashCode(dev).ToString();
                 mice[id] = dev;
                 var dpiList = new List<int>();
+                // A mouse being read again clears its stages before reading them, and the
+                // battery it reports first raises this refresh in between. A stage not
+                // read yet is skipped rather than dereferenced: the exception came back
+                // through the battery event and abandoned the read half done.
                 if (dev.DpiSettings != null)
                 {
                     foreach (var dpi in dev.DpiSettings)
-                        dpiList.Add((int)dpi.DPI);
+                        if (dpi is not null) dpiList.Add((int)dpi.DPI);
                 }
 
                 devices.Add(new PeripheralDeviceModel
@@ -736,6 +740,16 @@ namespace Arsenal.Application.Services.Implementations
                 if (!clock) oled.SetOledAnimation(Math.Clamp(mode - 1, 0, count - 1));
             }
             RefreshDevices();
+        }
+
+        public AsusMouse? FindMouse(string deviceId)
+        {
+            lock (_devicesGate) return _mice.TryGetValue(deviceId, out AsusMouse? mouse) ? mouse : null;
+        }
+
+        public AsusKeyboard? FindKeyboard(string deviceId)
+        {
+            lock (_devicesGate) return _keyboards.TryGetValue(deviceId, out AsusKeyboard? keyboard) ? keyboard : null;
         }
 
         private static int PollingRateToHz(PollingRate rate) => rate switch

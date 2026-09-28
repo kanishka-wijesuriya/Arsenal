@@ -1070,7 +1070,7 @@ namespace Arsenal.UI.Views.Windows
                 "Display" => new DisplayPage(App.Services.GetRequiredService<DisplayViewModel>()),
                 "Battery" => new BatteryPage(App.Services.GetRequiredService<BatteryViewModel>()),
                 "Lighting" => new LightingPage(App.Services.GetRequiredService<LightingViewModel>()),
-                "Devices" => new DevicesPage(App.Services.GetRequiredService<DevicesViewModel>()),
+                "Peripherals" => new PeripheralsPage(App.Services.GetRequiredService<PeripheralsViewModel>()),
                 "Automation" => new AutomationPage(App.Services.GetRequiredService<AutomationViewModel>()),
                 "Drivers" or "Updates" => new UpdatesPage(App.Services.GetRequiredService<UpdatesViewModel>()),
                 "MobileCompanion" => new MobileCompanionPage(App.Services.GetRequiredService<MobileCompanionViewModel>()),
@@ -1139,10 +1139,11 @@ namespace Arsenal.UI.Views.Windows
         private static string NormalizePageTag(string? tag) => tag switch
         {
             "Home" or "Performance" or "Display" or "Battery" or "Lighting" or
-            "Devices" or "Automation" or "Drivers" or "MobileCompanion" or
+            "Peripherals" or "Automation" or "Drivers" or "MobileCompanion" or
             "Advanced" or "Settings" or "About" => tag,
             // Existing remote companions and command links used the old page tag.
             "Updates" => "Drivers",
+            "Devices" => "Peripherals",
             _ => "Home"
         };
 

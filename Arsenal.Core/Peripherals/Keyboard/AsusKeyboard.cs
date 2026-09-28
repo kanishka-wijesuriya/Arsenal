@@ -708,6 +708,12 @@ namespace Arsenal.Peripherals.Keyboard
         // bytes, one over the 64-byte Omni report (last key loses B), so max 14 per packet
         private byte Dim(byte channel) => (byte)(channel * StoredBrightness / 100);
 
+        public bool SetLedColor(int led, Color color)
+        {
+            byte[] packet = new byte[] { reportId, 0xC0, 0x81, 0x01, 0x00, LedId(Layout().LedIds, led), Dim(color.R), Dim(color.G), Dim(color.B) };
+            return WriteForResponse(packet) is not null;
+        }
+
         public bool SetLedColors(Color[] colors)
         {
             if (colors.Length > 0 && Array.TrueForAll(colors, c => c.ToArgb() == colors[0].ToArgb()))

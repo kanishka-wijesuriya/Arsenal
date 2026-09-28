@@ -347,11 +347,11 @@
                                                   VerticalAlignment="Center"/>
                             </Grid>
 
-                            <controls:AngularBorder Cut="14" Corners="TopRight,BottomLeft"
+                            <controls:AngularBorder x:Name="SectionCard" Cut="14" Corners="TopRight,BottomLeft"
                                                     Background="{DynamicResource SurfaceCard}"
                                                     BorderBrush="{DynamicResource StrokeSubtle}"
                                                     BorderThickness="{DynamicResource BorderWeight}">
-                                <ItemsPresenter Margin="0,4"/>
+                                <ItemsPresenter x:Name="SectionItems" Margin="0,4"/>
                             </controls:AngularBorder>
 
                             <ContentPresenter x:Name="FooterHost"
@@ -448,6 +448,14 @@
                             <Setter TargetName="Closed" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="Opened" Property="Visibility" Value="Visible"/>
                             <Setter TargetName="PinnedHeader" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+
+                        <!-- A group whose content is sections of its own: each brings
+                             its own card, so this one draws none around them. -->
+                        <Trigger Property="HostsSections" Value="True">
+                            <Setter TargetName="SectionCard" Property="Background" Value="Transparent"/>
+                            <Setter TargetName="SectionCard" Property="BorderThickness" Value="0"/>
+                            <Setter TargetName="SectionItems" Property="Margin" Value="0"/>
                         </Trigger>
 
                         <!-- A group with no title is not a destination - some pages use

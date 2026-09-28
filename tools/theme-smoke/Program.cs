@@ -56,8 +56,8 @@ internal static class Program
             Assert(viewModel.CustomAccentHex == "#D83B01", "Settings did not restore the custom accent value.");
             var page = new SettingsPage(viewModel);
             Assert(ReferenceEquals(page.DataContext, viewModel), "Settings accent editor failed to load.");
-            var devicesPage = new DevicesPage(null!);
-            Assert(devicesPage is not null, "Devices page with keyboard controls failed to load.");
+            var peripheralsPage = new PeripheralsPage(null!);
+            Assert(peripheralsPage is not null, "Peripherals page with keyboard controls failed to load.");
             var lightingPage = new LightingPage(null!);
             Assert(lightingPage is not null, "Lighting page with AniMe Matrix controls failed to load.");
             AssertQuickPanelSliderGeometry();

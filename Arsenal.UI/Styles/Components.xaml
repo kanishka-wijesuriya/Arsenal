@@ -211,7 +211,7 @@
                                        Visibility="{TemplateBinding Description, Converter={StaticResource HideWhenEmptyText}}"/>
                         </StackPanel>
 
-                        <Border Background="{DynamicResource SurfaceCard}"
+                        <Border x:Name="SectionCard" Background="{DynamicResource SurfaceCard}"
                                 BorderBrush="{DynamicResource StrokeSubtle}"
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource RadiusCard}"
@@ -309,6 +309,13 @@
                             <Setter TargetName="Closed" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="Opened" Property="Visibility" Value="Visible"/>
                             <Setter TargetName="HeaderHost" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+
+                        <!-- A group whose content is sections of its own: each brings
+                             its own card, so this one draws none around them. -->
+                        <Trigger Property="HostsSections" Value="True">
+                            <Setter TargetName="SectionCard" Property="Background" Value="Transparent"/>
+                            <Setter TargetName="SectionCard" Property="BorderThickness" Value="0"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

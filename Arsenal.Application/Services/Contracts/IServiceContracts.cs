@@ -283,6 +283,21 @@ namespace Arsenal.Application.Services.Contracts
         void SetKeyboardProfile(string deviceId, int profile);
         void SetKeyboardEnergy(string deviceId, int sleepMinutes, int lowBatteryWarningPercent);
         void SetKeyboardOled(string deviceId, bool enabled, int brightness, int mode);
+
+        /// <summary>
+        /// The mouse or pad behind a listed device, for the Peripherals page's own
+        /// settings, or null once it has gone.
+        /// </summary>
+        /// <remarks>
+        /// The page works on the device itself, the way G-Helper's mouse window does,
+        /// rather than through a transfer model per setting: a mouse carries twenty-odd
+        /// capabilities, each with its own range and write, and copying every one of
+        /// them into a model and back again would only add a place for them to differ.
+        /// </remarks>
+        Arsenal.Peripherals.Mouse.AsusMouse? FindMouse(string deviceId);
+
+        /// <summary>The keyboard behind a listed device, or null once it has gone.</summary>
+        Arsenal.Peripherals.Keyboard.AsusKeyboard? FindKeyboard(string deviceId);
     }
 
     /// <summary>Built-in pointer and touch devices exposed by the laptop itself.</summary>

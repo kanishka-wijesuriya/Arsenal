@@ -1,0 +1,540 @@
+<UserControl x:Class="Arsenal.UI.Views.Pages.PeripheralsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Arsenal.UI.Controls"
+             xmlns:vm="clr-namespace:Arsenal.UI.ViewModels"
+>
+    <UserControl.Resources>
+
+        <!-- Binding targets, under their headings. Shared by the mouse buttons and the
+             keyboard keys. -->
+        <GroupStyle x:Key="BindingGroupStyle">
+            <GroupStyle.HeaderTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Name}" Style="{StaticResource CaptionStyle}"
+                               FontWeight="SemiBold" Margin="10,8,10,2"/>
+                </DataTemplate>
+            </GroupStyle.HeaderTemplate>
+        </GroupStyle>
+
+        <!-- ===================================================================
+             A mouse or mouse pad. The card on the list is the device; opening it
+             leaves its own sections on the page, as G-Helper's mouse window does.
+             =================================================================== -->
+        <DataTemplate DataType="{x:Type vm:MousePeripheralViewModel}">
+            <controls:SettingsGroup IsDestination="True" HostsSections="True"
+                                    Header="{Binding Name}" Description="{Binding Summary}" Icon="{Binding Icon}">
+
+                <TextBlock Text="Reading settings from the device…" Style="{StaticResource CaptionStyle}" Margin="2,0,0,12"
+                           Visibility="{Binding IsReading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Device" Icon="Info24"
+                                        Description="Profiles are stored in the mouse, so they follow it to any PC.">
+                    <controls:SettingsRow Header="Profile" Description="Each profile keeps its own DPI, lighting and buttons."
+                                          Visibility="{Binding HasProfiles, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{Binding ProfileOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding Profile, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Battery"
+                                          Visibility="{Binding HasBattery, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="{Binding BatteryText}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimary}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Profile file" Description="Save every setting on this mouse to a file, or load one back. Files from G-Helper open here too."
+                                          Visibility="{Binding CanExport, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:Button Content="Import" Icon="{ui:SymbolIcon ArrowImport24}" Appearance="Secondary" Command="{Binding ImportCommand}" Margin="0,0,8,0"/>
+                            <ui:Button Content="Export" Icon="{ui:SymbolIcon ArrowExport24}" Appearance="Secondary" Command="{Binding ExportCommand}"/>
+                        </StackPanel>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Read from the mouse" Description="Show what the mouse holds now, if it was changed on another PC or with its own buttons.">
+                        <ui:Button Content="Read again" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Secondary" Command="{Binding SynchronizeCommand}"/>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Performance" Icon="Gauge24"
+                                        Description="Written to the mouse as you change them."
+                                        Visibility="{Binding HasPerformance, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow Header="DPI stages" Description="The DPI button steps through these. Select one to edit it."
+                                          IsEnabled="{Binding IsStageControlEnabled}">
+                        <controls:SettingsRow.ContentBelow>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <ItemsControl ItemsSource="{Binding DpiStages}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,0,8,0">
+                                                <ui:Button x:Name="StageButton" Appearance="Secondary" MinWidth="104" Padding="12,8"
+                                                           HorizontalContentAlignment="Left"
+                                                           Command="{Binding DataContext.SelectDpiStageCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                           CommandParameter="{Binding}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Ellipse Width="10" Height="10" Fill="{Binding Brush}" VerticalAlignment="Center"/>
+                                                        <StackPanel Margin="10,0,0,0">
+                                                            <TextBlock Text="{Binding Label}" FontSize="11" Opacity="0.8"/>
+                                                            <TextBlock Text="{Binding Dpi}" FontWeight="SemiBold"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </ui:Button>
+                                                <ui:Button HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-6,0"
+                                                           Width="22" Height="22" Padding="0" Appearance="Secondary"
+                                                           ToolTip="Remove this stage" Icon="{ui:SymbolIcon Dismiss12}"
+                                                           Visibility="{Binding CanDelete, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                           Command="{Binding DataContext.DeleteDpiStageCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                           CommandParameter="{Binding}"/>
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                    <Setter TargetName="StageButton" Property="Appearance" Value="Primary"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon Add24}" MinWidth="48" ToolTip="Add a stage"
+                                           Command="{Binding AddDpiStageCommand}"
+                                           Visibility="{Binding CanAddDpiStage, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </controls:SettingsRow.ContentBelow>
+                    </controls:SettingsRow>
+
+                    <controls:SettingsRow Header="DPI" Description="For the selected stage." IsEnabled="{Binding IsStageControlEnabled}">
+                        <controls:ValueSlider Minimum="{Binding MinDpi}" Maximum="{Binding MaxDpi}" TickFrequency="{Binding DpiStep}"
+                                              IsSnapToTickEnabled="True" Value="{Binding ActiveDpi}" Format="{}{0}"/>
+                    </controls:SettingsRow>
+
+                    <controls:SettingsRow Header="Stage colour" Description="Shown on the mouse while this stage is in use."
+                                          IsEnabled="{Binding IsStageControlEnabled}"
+                                          Visibility="{Binding HasDpiColors, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:SettingsRow.ContentBelow>
+                            <StackPanel Margin="0,8,0,0" MaxWidth="360" HorizontalAlignment="Left">
+                                <controls:ColorSpectrumPicker SelectedColor="{Binding ActiveDpiColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="140"/>
+                                <Border Height="34" Margin="0,8,0,0" CornerRadius="{DynamicResource RadiusControl}" Background="{Binding ActiveDpiBrush}">
+                                    <TextBlock Text="{Binding ActiveDpiHex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                </Border>
+                            </StackPanel>
+                        </controls:SettingsRow.ContentBelow>
+                    </controls:SettingsRow>
+
+                    <controls:SettingsRow Header="Polling rate" Description="Higher rates report position more often, at the cost of battery life."
+                                          IsEnabled="{Binding IsStageControlEnabled}"
+                                          Visibility="{Binding CanSetPollingRate, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{Binding PollingRateOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding SelectedPollingRate, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+
+                    <controls:SettingsRow Header="Motion Sync" Description="Lines sensor reports up with USB polling for steadier tracking. Not available at 8000 Hz."
+                                          Visibility="{Binding HasMotionSync, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ui:ToggleSwitch IsChecked="{Binding MotionSync, Mode=TwoWay}" IsEnabled="{Binding CanUseMotionSync}"/>
+                    </controls:SettingsRow>
+
+                    <controls:SettingsRow Header="Zone Mode" Description="A fixed DPI and polling rate, in place of the stages above."
+                                          Visibility="{Binding HasZoneMode, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ui:ToggleSwitch IsChecked="{Binding ZoneMode, Mode=TwoWay}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Zone Mode DPI" IsEnabled="{Binding ZoneMode}"
+                                          Visibility="{Binding HasZoneMode, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:ValueSlider Minimum="{Binding MinDpi}" Maximum="{Binding MaxDpi}" TickFrequency="{Binding DpiStep}"
+                                              IsSnapToTickEnabled="True" Value="{Binding ZoneModeDpi}" Format="{}{0}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Zone Mode polling rate" IsEnabled="{Binding ZoneMode}"
+                                          Visibility="{Binding HasZoneMode, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{Binding ZoneModePollingRateOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding ZoneModePollingRate, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+
+                    <controls:SettingsRow Header="Angle snapping" Description="Straightens movement that is close to horizontal or vertical."
+                                          Visibility="{Binding HasAngleSnapping, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ui:ToggleSwitch IsChecked="{Binding AngleSnapping, Mode=TwoWay}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Angle adjustment" Description="Rotates the sensor's idea of straight, for a mouse held at an angle."
+                                          Visibility="{Binding HasAngleTuning, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:ValueSlider Minimum="{Binding AngleMin}" Maximum="{Binding AngleMax}" TickFrequency="{Binding AngleStep}"
+                                              IsSnapToTickEnabled="True" Value="{Binding AngleAdjustment}" Format="{}{0}°"/>
+                    </controls:SettingsRow>
+
+                    <controls:SettingsRow Header="Lift-off distance" Description="How high the mouse can be lifted before it stops tracking."
+                                          Visibility="{Binding HasLiftOff, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{Binding LiftOffOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding LiftOff, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+
+                    <controls:SettingsRow Header="Button response" Description="How long a click has to settle before it counts. Lower is quicker; higher ignores switch chatter."
+                                          Visibility="{Binding HasDebounce, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:ValueSlider Minimum="{Binding DebounceMin}" Maximum="{Binding DebounceMax}" TickFrequency="1"
+                                              IsSnapToTickEnabled="True" Value="{Binding Debounce}" ValueText="{Binding DebounceText}"/>
+                    </controls:SettingsRow>
+
+                    <controls:SettingsRow Header="Acceleration"
+                                          Visibility="{Binding HasAcceleration, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:ValueSlider Minimum="0" Maximum="{Binding MaxAcceleration}" TickFrequency="1"
+                                              IsSnapToTickEnabled="True" Value="{Binding Acceleration}" Format="{}{0}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Deceleration"
+                                          Visibility="{Binding HasDeceleration, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:ValueSlider Minimum="0" Maximum="{Binding MaxDeceleration}" TickFrequency="1"
+                                              IsSnapToTickEnabled="True" Value="{Binding Deceleration}" Format="{}{0}"/>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Lighting" Icon="Color24"
+                                        Description="Stored in the mouse, so it stays after Arsenal closes."
+                                        Visibility="{Binding HasLighting, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow Header="Sync with laptop Aura" Description="Every connected ASUS mouse and pad follows the laptop keyboard's effect and colour.">
+                        <ui:ToggleSwitch IsChecked="{Binding AuraSync, Mode=TwoWay}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Zone" IsEnabled="{Binding IsManualLighting}"
+                                          Visibility="{Binding HasLightingZones, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{Binding LightingZones}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding SelectedZone, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Effect" IsEnabled="{Binding IsManualLighting}">
+                        <ComboBox ItemsSource="{Binding LightingModes}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding SelectedMode, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Brightness" IsEnabled="{Binding IsManualLighting}">
+                        <controls:ValueSlider Minimum="0" Maximum="{Binding MaxBrightness}" TickFrequency="1" IsSnapToTickEnabled="True"
+                                              Value="{Binding Brightness}" Format="{Binding BrightnessFormat}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Random colour" IsEnabled="{Binding IsManualLighting}"
+                                          Visibility="{Binding ShowsRandomColor, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ui:ToggleSwitch IsChecked="{Binding RandomColor, Mode=TwoWay}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Speed" IsEnabled="{Binding IsManualLighting}"
+                                          Visibility="{Binding ShowsSpeed, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox SelectedIndex="{Binding Speed, Mode=TwoWay}" MinWidth="200">
+                            <ComboBoxItem Content="Slow"/>
+                            <ComboBoxItem Content="Normal"/>
+                            <ComboBoxItem Content="Fast"/>
+                        </ComboBox>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Direction" IsEnabled="{Binding IsManualLighting}"
+                                          Visibility="{Binding ShowsDirection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox SelectedIndex="{Binding Direction, Mode=TwoWay}" MinWidth="200">
+                            <ComboBoxItem Content="Clockwise"/>
+                            <ComboBoxItem Content="Anticlockwise"/>
+                        </ComboBox>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Colour" IsEnabled="{Binding IsManualLighting}"
+                                          Visibility="{Binding ShowsColor, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:SettingsRow.ContentBelow>
+                            <StackPanel Margin="0,8,0,0" MaxWidth="360" HorizontalAlignment="Left">
+                                <controls:ColorSpectrumPicker SelectedColor="{Binding LightingColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="150"/>
+                                <Border Height="34" Margin="0,8,0,0" CornerRadius="{DynamicResource RadiusControl}" Background="{Binding LightingBrush}">
+                                    <TextBlock Text="{Binding LightingHex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                </Border>
+                            </StackPanel>
+                        </controls:SettingsRow.ContentBelow>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Power" Icon="BatteryCharge24"
+                                        Visibility="{Binding HasPower, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow Header="Turn off when idle" Description="How long the mouse waits before it sleeps."
+                                          Visibility="{Binding HasAutoPowerOff, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{x:Static vm:PeripheralViewModel.PowerOffOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding PowerOff, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Low-battery warning" Description="The mouse flashes when its charge falls to this."
+                                          Visibility="{Binding HasLowBatteryWarning, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:ValueSlider Minimum="0" Maximum="{Binding LowBatteryWarningMax}" TickFrequency="{Binding LowBatteryWarningStep}"
+                                              IsSnapToTickEnabled="True" Value="{Binding LowBatteryWarning}" Format="{}{0}%"/>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Buttons" Icon="CursorClick24"
+                                        Description="What each button does. Shortcuts are sent by Arsenal, so they need it running."
+                                        ItemsSource="{Binding BindingSlots}"
+                                        Visibility="{Binding HasBindings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsGroup.ItemTemplate>
+                        <DataTemplate>
+                            <controls:SettingsRow Header="{Binding Name}">
+                                <ComboBox ItemsSource="{Binding DataContext.BindingOptions, RelativeSource={RelativeSource AncestorType=controls:SettingsGroup}}"
+                                          DisplayMemberPath="Name" SelectedValuePath="Code" IsSynchronizedWithCurrentItem="False"
+                                          SelectedValue="{Binding Code, Mode=TwoWay}" IsEnabled="{Binding IsEditable}" MinWidth="240">
+                                    <ComboBox.GroupStyle>
+                                        <StaticResource ResourceKey="BindingGroupStyle"/>
+                                    </ComboBox.GroupStyle>
+                                </ComboBox>
+                            </controls:SettingsRow>
+                        </DataTemplate>
+                    </controls:SettingsGroup.ItemTemplate>
+                    <controls:SettingsGroup.Footer>
+                        <Grid>
+                            <StackPanel Orientation="Horizontal"
+                                        Visibility="{Binding HasSpeedShift, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="Layer" Style="{StaticResource SettingLabelStyle}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <ComboBox ItemsSource="{Binding BindingLayerOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                          SelectedValue="{Binding BindingLayer, Mode=TwoWay}" MinWidth="160"
+                                          ToolTip="Speed Shift gives each button a second action while the Speed Shift button is held."/>
+                            </StackPanel>
+                            <ui:Button Content="Reset buttons" Icon="{ui:SymbolIcon ArrowReset24}" Appearance="Secondary"
+                                       HorizontalAlignment="Right" Command="{Binding ResetBindingsCommand}"/>
+                        </Grid>
+                    </controls:SettingsGroup.Footer>
+                </controls:SettingsGroup>
+            </controls:SettingsGroup>
+        </DataTemplate>
+
+        <!-- ===================================================================
+             A keyboard. Same arrangement, following G-Helper's keyboard window.
+             =================================================================== -->
+        <DataTemplate DataType="{x:Type vm:KeyboardPeripheralViewModel}">
+            <controls:SettingsGroup IsDestination="True" HostsSections="True"
+                                    Header="{Binding Name}" Description="{Binding Summary}" Icon="{Binding Icon}">
+
+                <TextBlock Text="Reading settings from the device…" Style="{StaticResource CaptionStyle}" Margin="2,0,0,12"
+                           Visibility="{Binding IsReading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Device" Icon="Info24">
+                    <controls:SettingsRow Header="Profile" Description="Each profile keeps its own lighting and key bindings."
+                                          Visibility="{Binding HasProfiles, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{Binding ProfileOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding Profile, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Battery"
+                                          Visibility="{Binding HasBattery, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="{Binding BatteryText}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimary}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Read from the keyboard" Description="Show what the keyboard holds now, if it was changed on another PC or with its own keys.">
+                        <ui:Button Content="Read again" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Secondary" Command="{Binding SynchronizeCommand}"/>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Lighting" Icon="Color24"
+                                        Description="Stored in the keyboard, so it stays after Arsenal closes."
+                                        Visibility="{Binding HasLighting, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow Header="Sync with laptop Aura" Description="Follow the laptop keyboard's colour, while keeping this keyboard's own brightness.">
+                        <ui:ToggleSwitch IsChecked="{Binding AuraSync, Mode=TwoWay}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Effect" IsEnabled="{Binding IsManualLighting}">
+                        <ComboBox ItemsSource="{Binding LightingModes}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding SelectedMode, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Speed" IsEnabled="{Binding IsManualLighting}"
+                                          Visibility="{Binding ShowsSpeed, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{Binding SpeedOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding Speed, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Brightness">
+                        <controls:ValueSlider Minimum="0" Maximum="{Binding MaxBrightness}" TickFrequency="5"
+                                              Value="{Binding Brightness}" Format="{}{0}%"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Colours" IsEnabled="{Binding IsManualLighting}"
+                                          Visibility="{Binding ShowsColor1, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:SettingsRow.ContentBelow>
+                            <WrapPanel Margin="0,8,0,0">
+                                <StackPanel Width="260" Margin="0,0,16,8">
+                                    <TextBlock Text="Main" Style="{StaticResource SettingLabelStyle}" Margin="0,0,0,8"/>
+                                    <controls:ColorSpectrumPicker SelectedColor="{Binding Color1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="140"/>
+                                    <Border Height="30" Margin="0,8,0,0" CornerRadius="{DynamicResource RadiusControl}" Background="{Binding Color1Brush}">
+                                        <TextBlock Text="{Binding Color1Hex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel Width="260" Margin="0,0,16,8"
+                                            Visibility="{Binding ShowsColor2, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <TextBlock Text="Second" Style="{StaticResource SettingLabelStyle}" Margin="0,0,0,8"/>
+                                    <controls:ColorSpectrumPicker SelectedColor="{Binding Color2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="140"/>
+                                    <Border Height="30" Margin="0,8,0,0" CornerRadius="{DynamicResource RadiusControl}" Background="{Binding Color2Brush}">
+                                        <TextBlock Text="{Binding Color2Hex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    </Border>
+                                </StackPanel>
+                                <StackPanel Width="260" Margin="0,0,16,8"
+                                            Visibility="{Binding ShowsColor3, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <TextBlock Text="Background" Style="{StaticResource SettingLabelStyle}" Margin="0,0,0,8"/>
+                                    <controls:ColorSpectrumPicker SelectedColor="{Binding Color3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="140"/>
+                                    <Border Height="30" Margin="0,8,0,0" CornerRadius="{DynamicResource RadiusControl}" Background="{Binding Color3Brush}">
+                                        <TextBlock Text="{Binding Color3Hex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    </Border>
+                                </StackPanel>
+                            </WrapPanel>
+                        </controls:SettingsRow.ContentBelow>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Keys" Icon="KeyboardShift24"
+                                        Description="Select a key to change what it does. With the Custom effect, pressing a key also paints it."
+                                        Visibility="{Binding HasPerKeyRgb, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow Header="Paint colour" IsEnabled="{Binding CanPaint}"
+                                          Visibility="{Binding IsCustom, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:SettingsRow.ContentBelow>
+                            <StackPanel Margin="0,8,0,0">
+                                <WrapPanel>
+                                    <ItemsControl ItemsSource="{Binding Palette}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Width="28" Height="28" Margin="0,0,6,6" Cursor="Hand"
+                                                        Command="{Binding DataContext.PickPaintCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border CornerRadius="4" BorderThickness="1" BorderBrush="{DynamicResource StrokeSubtle}">
+                                                                <Border.Background>
+                                                                    <SolidColorBrush Color="{Binding}"/>
+                                                                </Border.Background>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </WrapPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <controls:ColorSpectrumPicker SelectedColor="{Binding PaintColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="110" Width="260"/>
+                                    <StackPanel Margin="16,0,0,0" VerticalAlignment="Bottom">
+                                        <Border Height="30" Width="120" CornerRadius="{DynamicResource RadiusControl}" Background="{Binding PaintBrush}" Margin="0,0,0,8">
+                                            <TextBlock Text="{Binding PaintHex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                        </Border>
+                                        <ui:Button Content="Fill every key" Icon="{ui:SymbolIcon PaintBucket24}" Appearance="Secondary" Command="{Binding FillAllCommand}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </controls:SettingsRow.ContentBelow>
+                    </controls:SettingsRow>
+
+                    <controls:SettingsRow>
+                        <controls:SettingsRow.ContentBelow>
+                            <!-- Drawn to scale from the keyboard's own layout, and scaled
+                                 down to fit rather than scrolled sideways. -->
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="0,4,0,0">
+                                <ItemsControl ItemsSource="{Binding KeyTiles}" Width="{Binding KeyboardWidth}" Height="{Binding KeyboardHeight}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style TargetType="ContentPresenter">
+                                            <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                            <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Width="{Binding Width}" Height="{Binding Height}" Cursor="Hand" ToolTip="{Binding ToolTip}"
+                                                    Command="{Binding DataContext.PressKeyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="KeyFace" CornerRadius="5" BorderThickness="2" BorderBrush="{Binding Brush}"
+                                                                Background="{DynamicResource SurfaceCard}">
+                                                            <TextBlock x:Name="Legend" Text="{Binding Label}" FontSize="11"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis" Margin="2,0"
+                                                                       Foreground="{DynamicResource TextPrimary}"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="KeyFace" Property="Background" Value="{DynamicResource SurfaceCardHover}"/>
+                                                            </Trigger>
+                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter TargetName="KeyFace" Property="BorderThickness" Value="4"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsBound}" Value="True">
+                                                                <Setter TargetName="Legend" Property="TextDecorations" Value="Underline"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Viewbox>
+                        </controls:SettingsRow.ContentBelow>
+                    </controls:SettingsRow>
+
+                    <controls:SettingsRow Header="{Binding SelectedKeyTitle}" Description="What the key sends. A rebound key is underlined."
+                                          Visibility="{Binding HasKeyBindings, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{Binding KeyBindingOptions}" DisplayMemberPath="Name" SelectedValuePath="Code"
+                                  IsSynchronizedWithCurrentItem="False" IsEnabled="{Binding CanBindSelectedKey}"
+                                  SelectedValue="{Binding KeyBinding, Mode=TwoWay}" MinWidth="240">
+                            <ComboBox.GroupStyle>
+                                <StaticResource ResourceKey="BindingGroupStyle"/>
+                            </ComboBox.GroupStyle>
+                        </ComboBox>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Program to launch" Description="Started by Arsenal when the key is pressed. A path, or a command with its arguments."
+                                          Visibility="{Binding IsLaunchBinding, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ui:TextBox Text="{Binding LaunchCommand, UpdateSourceTrigger=PropertyChanged}" MinWidth="320" PlaceholderText="C:\Path\To\App.exe"/>
+                    </controls:SettingsRow>
+
+                    <controls:SettingsGroup.Footer>
+                        <ui:Button Content="Reset every key" Icon="{ui:SymbolIcon ArrowReset24}" Appearance="Secondary"
+                                   HorizontalAlignment="Right" Command="{Binding ResetKeyBindingsCommand}"
+                                   Visibility="{Binding HasKeyBindings, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    </controls:SettingsGroup.Footer>
+                </controls:SettingsGroup>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Power" Icon="BatteryCharge24"
+                                        Visibility="{Binding HasPower, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow Header="Turn off when idle" Description="How long the keyboard waits before it sleeps."
+                                          Visibility="{Binding HasAutoPowerOff, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{x:Static vm:PeripheralViewModel.PowerOffOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding PowerOff, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Low-battery warning" Description="The keyboard warns when its charge falls to this."
+                                          Visibility="{Binding HasLowBatteryWarning, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:ValueSlider Minimum="0" Maximum="{Binding LowBatteryWarningMax}" TickFrequency="{Binding LowBatteryWarningStep}"
+                                              IsSnapToTickEnabled="True" Value="{Binding LowBatteryWarning}" ValueText="{Binding LowBatteryWarningText}"/>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Screen" Icon="Desktop24"
+                                        Description="The display built into the keyboard."
+                                        Visibility="{Binding HasOled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow Header="Shows">
+                        <ComboBox ItemsSource="{Binding OledModes}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding OledMode, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Brightness">
+                        <controls:ValueSlider Minimum="0" Maximum="100" TickFrequency="5"
+                                              Value="{Binding OledBrightness}" Format="{}{0}%"/>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+            </controls:SettingsGroup>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <ScrollViewer Style="{StaticResource PageScrollStyle}">
+        <StackPanel Style="{StaticResource PageBodyStyle}">
+
+            <Grid Style="{StaticResource PageHeaderStyle}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,24,0">
+                    <TextBlock Text="Peripherals" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="ASUS mice, mouse pads and keyboards connected to this PC" Style="{StaticResource PageSubtitleStyle}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Style="{StaticResource ActionBarStyle}">
+                    <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0" Content="Scan for peripherals"
+                               Command="{Binding ScanCommand}" IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBoolConverter}}"
+                               Appearance="Secondary" Icon="{ui:SymbolIcon ArrowSync24}"/>
+                </StackPanel>
+            </Grid>
+
+            <Border controls:SettingsGroup.HideInSubpage="True">
+                <TextBlock Text="No ASUS peripherals found. Connect one, then choose Scan for peripherals."
+                           Style="{StaticResource CaptionStyle}" Margin="2,0,0,16"
+                           Visibility="{Binding Peripherals.Count, Converter={StaticResource EmptyCountToVisibleConverter}}"/>
+            </Border>
+
+            <ItemsControl ItemsSource="{Binding Peripherals}" Focusable="False"/>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

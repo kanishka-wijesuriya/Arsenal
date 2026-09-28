@@ -750,7 +750,7 @@ namespace Arsenal.UI
             AddTrackedSingleton<DisplayViewModel>(services);
             AddTrackedSingleton<BatteryViewModel>(services);
             AddTrackedSingleton<LightingViewModel>(services);
-            AddTrackedSingleton<DevicesViewModel>(services);
+            AddTrackedSingleton<PeripheralsViewModel>(services);
             AddTrackedSingleton<AutomationViewModel>(services);
             AddTrackedSingleton<UpdatesViewModel>(services);
             AddTrackedSingleton<AdvancedViewModel>(services);
