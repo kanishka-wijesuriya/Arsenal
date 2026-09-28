@@ -32,6 +32,8 @@ namespace Arsenal.UI.Controls
         private Func<double, double> _easing = Linear;
         private Action<double>? _apply;
         private Action? _completed;
+        private bool _awaitingFirstFrame;
+        private TimeSpan? _armedAt;
 
         public bool IsRunning { get; private set; }
 
@@ -65,6 +67,13 @@ namespace Arsenal.UI.Controls
         /// outright, so callers that want continuity should pass the current on-screen
         /// value as <paramref name="from"/>.
         /// </summary>
+        /// <param name="afterFirstFrame">
+        /// Hold the start value until a frame showing it has been drawn, and only then
+        /// start the clock. For content that has just been put on screen: the frame that
+        /// first shows it also measures it, and a page can take 300ms to measure. A clock
+        /// started before that frame spends those 300ms unseen, and a 320ms arrival then
+        /// shows up already finished.
+        /// </param>
         public void Start(
             double from,
             double to,
@@ -72,7 +81,8 @@ namespace Arsenal.UI.Controls
             Func<double, double> easing,
             Action<double> apply,
             Action? completed = null,
-            double delayMs = 0d)
+            double delayMs = 0d,
+            bool afterFirstFrame = false)
         {
             _from = from;
             _to = to;
@@ -81,6 +91,8 @@ namespace Arsenal.UI.Controls
             _easing = easing;
             _apply = apply;
             _completed = completed;
+            _awaitingFirstFrame = afterFirstFrame;
+            _armedAt = null;
 
             apply(from);
             _clock.Restart();
@@ -120,6 +132,24 @@ namespace Arsenal.UI.Controls
             // its new height and the content host back at its old one.
             if (!IsRunning)
                 return;
+
+            // Rendering is raised at the top of a frame, before that frame's layout. The
+            // first one after Start is the frame that lays the new content out and draws
+            // it at the start value; the clock starts on the next, once that is done.
+            // Compared by frame time because the event can be raised more than once for
+            // the same frame.
+            if (_awaitingFirstFrame)
+            {
+                if (args is RenderingEventArgs rendering
+                    && (_armedAt is null || _armedAt == rendering.RenderingTime))
+                {
+                    _armedAt = rendering.RenderingTime;
+                    return;
+                }
+
+                _awaitingFirstFrame = false;
+                _clock.Restart();
+            }
 
             // A stagger holds the start value rather than jumping, which is what lets
             // several eases overlap into one composed transition.

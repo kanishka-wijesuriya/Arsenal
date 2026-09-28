@@ -294,36 +294,13 @@
 
                         <!-- Opening: the subpage arrives from the right, the direction
                              the chevron pointed. Coming back the list falls in from the
-                             left. Both stop rather than hold, so neither keeps the
-                             property the hover nudge needs. -->
+                             left. Both are run by SettingsGroup rather than by a
+                             storyboard here, because they have to wait for the frame
+                             that lays the section out; see AnimateOpenState. -->
                         <Trigger Property="IsOpen" Value="True">
                             <Setter TargetName="Closed" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="Opened" Property="Visibility" Value="Visible"/>
                             <Setter TargetName="HeaderHost" Property="Visibility" Value="Collapsed"/>
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard FillBehavior="Stop">
-                                        <DoubleAnimation Storyboard.TargetName="OpenedShift"
-                                                         Storyboard.TargetProperty="X" From="34" To="0"
-                                                         Duration="0:0:0.22"/>
-                                        <DoubleAnimation Storyboard.TargetName="Opened"
-                                                         Storyboard.TargetProperty="Opacity" From="0" To="1"
-                                                         Duration="0:0:0.22"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard FillBehavior="Stop">
-                                        <DoubleAnimation Storyboard.TargetName="ClosedReturn"
-                                                         Storyboard.TargetProperty="X" From="-26" To="0"
-                                                         Duration="0:0:0.22"/>
-                                        <DoubleAnimation Storyboard.TargetName="Closed"
-                                                         Storyboard.TargetProperty="Opacity" From="0" To="1"
-                                                         Duration="0:0:0.22"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
                         </Trigger>
 
                         <!-- A group its page has pinned is never a destination, and

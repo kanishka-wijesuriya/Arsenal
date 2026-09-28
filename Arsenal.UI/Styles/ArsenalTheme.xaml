@@ -419,47 +419,15 @@
 
                         <!-- Opening: the subpage arrives from the right, the direction
                              the chevron pointed, so the page reads as having moved
-                             forward rather than swapped. -->
+                             forward rather than swapped. Coming back the list falls in
+                             from the left, on its own transform so it never touches the
+                             one the hover nudge uses. Both motions are run by
+                             SettingsGroup, timed by PageDuration and PageEase above,
+                             because they have to wait for the frame that lays the
+                             section out; see AnimateOpenState. -->
                         <Trigger Property="IsOpen" Value="True">
                             <Setter TargetName="Closed" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="Opened" Property="Visibility" Value="Visible"/>
-                            <!-- Every animation here ends on the value the property
-                                 already holds and then lets go of it - FillBehavior
-                                 Stop, not the default. Each of these runs once and is
-                                 finished; holding the final value forever costs nothing
-                                 visibly and quietly takes the property away from
-                                 whatever animates it next. -->
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard FillBehavior="Stop">
-                                        <DoubleAnimation Storyboard.TargetName="OpenedShift"
-                                                         Storyboard.TargetProperty="X" From="34" To="0"
-                                                         Duration="{StaticResource PageDuration}"
-                                                         EasingFunction="{StaticResource PageEase}"/>
-                                        <DoubleAnimation Storyboard.TargetName="Opened"
-                                                         Storyboard.TargetProperty="Opacity" From="0" To="1"
-                                                         Duration="{StaticResource PageDuration}"
-                                                         EasingFunction="{StaticResource PageEase}"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <!-- Coming back the list falls in from the left, the
-                                 opposite of the way it left. On its own transform, so
-                                 this never touches the one the hover nudge uses. -->
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard FillBehavior="Stop">
-                                        <DoubleAnimation Storyboard.TargetName="ClosedReturn"
-                                                         Storyboard.TargetProperty="X" From="-26" To="0"
-                                                         Duration="{StaticResource PageDuration}"
-                                                         EasingFunction="{StaticResource PageEase}"/>
-                                        <DoubleAnimation Storyboard.TargetName="Closed"
-                                                         Storyboard.TargetProperty="Opacity" From="0" To="1"
-                                                         Duration="{StaticResource PageDuration}"
-                                                         EasingFunction="{StaticResource PageEase}"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
                         </Trigger>
 
                         <Trigger Property="Footer" Value="{x:Null}">

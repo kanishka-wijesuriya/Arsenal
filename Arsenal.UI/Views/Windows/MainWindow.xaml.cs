@@ -1004,12 +1004,27 @@ namespace Arsenal.UI.Views.Windows
         /// animate and the setting is inert.
         ///
         /// <para>Render-only, so it costs no layout and cannot disturb a page that is
-        /// measuring itself as it arrives. The animations are released on completion
-        /// rather than left holding their final value: pages are cached and shown again,
-        /// and a held animation would outrank anything that later set opacity on one.</para>
+        /// measuring itself as it arrives. Nothing is held on completion: pages are
+        /// cached and shown again, and a held value would outrank anything that later
+        /// set opacity on one.</para>
+        ///
+        /// <para>The clock starts once the page has been drawn, not when it is added.
+        /// The frame that first shows a page also measures it, and Drivers takes over
+        /// 300ms to measure when it comes back; started at the swap, its 320ms arrival
+        /// was spent before the first frame and the page simply appeared. That is what
+        /// made back and forward look as though they had no animation.</para>
         /// </remarks>
-        private static void AnimatePageIn(UIElement page)
+        private void AnimatePageIn(UIElement page)
         {
+            // A page still arriving when another is chosen is put straight into place,
+            // so it is not cached half faded.
+            if (_arrivingPage is { } previous && !ReferenceEquals(previous, page))
+            {
+                previous.ClearValue(UIElement.OpacityProperty);
+                previous.RenderTransform = Transform.Identity;
+            }
+            _arrivingPage = page;
+
             var shift = new TranslateTransform();
             page.RenderTransform = shift;
 
@@ -1017,24 +1032,27 @@ namespace Arsenal.UI.Views.Windows
             // first third and then crawls, which is what made a longer duration feel
             // slow without feeling smooth; a cubic distributes the movement more evenly
             // across the same time.
-            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-
-            var slide = new DoubleAnimation(PageTravel, 0, PageArrival) { EasingFunction = ease };
-            var fade = new DoubleAnimation(0, 1, PageArrival) { EasingFunction = ease };
-
-            fade.Completed += (_, _) =>
-            {
-                page.BeginAnimation(UIElement.OpacityProperty, null);
-                page.Opacity = 1;
-                page.RenderTransform = Transform.Identity;
-            };
-
+            //
             // Y, not X, and always upwards: a page rises into place the way a list of
             // results settles. Sideways is reserved for drilling into a subpage, which
             // is a different kind of movement.
-            shift.BeginAnimation(TranslateTransform.YProperty, slide);
-            page.BeginAnimation(UIElement.OpacityProperty, fade);
+            _pageArrival.Start(0, 1, PageArrival.TimeSpan.TotalMilliseconds, Controls.FrameEase.CubicOut,
+                progress =>
+                {
+                    page.Opacity = progress;
+                    shift.Y = PageTravel * (1 - progress);
+                },
+                () =>
+                {
+                    page.ClearValue(UIElement.OpacityProperty);
+                    page.RenderTransform = Transform.Identity;
+                    _arrivingPage = null;
+                },
+                afterFirstFrame: true);
         }
+
+        private readonly Controls.FrameEase _pageArrival = new();
+        private UIElement? _arrivingPage;
 
         private UIElement GetOrCreatePage(string tag)
         {

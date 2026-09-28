@@ -286,7 +286,7 @@ namespace Arsenal.UI.Controls
 
         private static readonly DependencyPropertyKey IsOpenPropertyKey =
             DependencyProperty.RegisterReadOnly(nameof(IsOpen), typeof(bool), typeof(SettingsGroup),
-                new PropertyMetadata(false));
+                new PropertyMetadata(false, (d, e) => ((SettingsGroup)d).AnimateOpenState((bool)e.NewValue)));
 
         public static readonly DependencyProperty IsOpenProperty = IsOpenPropertyKey.DependencyProperty;
 
@@ -349,6 +349,65 @@ namespace Arsenal.UI.Controls
             _open = null;
             OpenChanged?.Invoke(null);
             OpenGroupChanged?.Invoke(null);
+        }
+
+        private readonly FrameEase _openEase = new();
+        private UIElement? _easedPart;
+
+        /// <summary>
+        /// Brings the subpage in from the right on opening, and the card back in from
+        /// the left on closing.
+        /// </summary>
+        /// <remarks>
+        /// These were storyboards on the template's IsOpen trigger, and on a page with a
+        /// heavy section they did not visibly run. The trigger swaps which half of the
+        /// template is shown, the frame after that has to lay the newly shown half out,
+        /// and a storyboard's clock starts at the swap: whatever that layout cost came
+        /// off the start of a 220ms motion, so going back or forward into a subpage
+        /// often landed as a jump. The ease here holds the start position until that
+        /// frame has been drawn.
+        ///
+        /// <para>Duration and easing come from the theme, <c>PageDuration</c> and
+        /// <c>PageEase</c>, so each theme moves exactly as its storyboards did; a theme
+        /// that names neither used 220ms and no easing.</para>
+        /// </remarks>
+        private void AnimateOpenState(bool opening)
+        {
+            if (GetTemplateChild(opening ? "Opened" : "Closed") is not UIElement part
+                || GetTemplateChild(opening ? "OpenedShift" : "ClosedReturn") is not System.Windows.Media.TranslateTransform shift)
+                return;
+
+            // A reversal part way through leaves the other half where it stood; put it
+            // back before this one starts, so it is whole the next time it is shown.
+            if (_easedPart is { } previous && !ReferenceEquals(previous, part))
+            {
+                previous.ClearValue(OpacityProperty);
+                if (GetTemplateChild(opening ? "ClosedReturn" : "OpenedShift") is System.Windows.Media.TranslateTransform previousShift)
+                    previousShift.X = 0;
+            }
+            _easedPart = part;
+
+            double travel = opening ? 34 : -26;
+            double duration = TryFindResource("PageDuration") is Duration { HasTimeSpan: true } themed
+                ? themed.TimeSpan.TotalMilliseconds
+                : 220;
+            Func<double, double> easing = TryFindResource("PageEase") is System.Windows.Media.Animation.IEasingFunction ease
+                ? ease.Ease
+                : FrameEase.Linear;
+
+            _openEase.Start(0, 1, duration, easing,
+                progress =>
+                {
+                    part.Opacity = progress;
+                    shift.X = travel * (1 - progress);
+                },
+                () =>
+                {
+                    part.ClearValue(OpacityProperty);
+                    shift.X = 0;
+                    _easedPart = null;
+                },
+                afterFirstFrame: true);
         }
 
         private void OnOpenChanged(SettingsGroup? open)
