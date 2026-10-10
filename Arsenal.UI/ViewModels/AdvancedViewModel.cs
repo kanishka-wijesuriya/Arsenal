@@ -94,6 +94,9 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty] private bool _hardwareOverlayEnabled;
 
         public OverlaySettingsViewModel OverlaySettings { get; } = new();
+
+        /// <summary>The Ally's built-in controller, or null on anything else.</summary>
+        public HandheldControllerViewModel? Controller { get; } = AppConfig.IsAlly() ? new() : null;
         [ObservableProperty] private bool _overlayGameOnly;
         [ObservableProperty] private bool _hasHandheldControls;
         [ObservableProperty] private bool _autoTdpEnabled;

@@ -4,6 +4,18 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Arsenal.UI.Controls"
 >
+    <UserControl.Resources>
+        <!-- Binding targets, under their headings. -->
+        <GroupStyle x:Key="BindingGroupStyle">
+            <GroupStyle.HeaderTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Name}" Style="{StaticResource CaptionStyle}"
+                               FontWeight="SemiBold" Margin="10,8,10,2"/>
+                </DataTemplate>
+            </GroupStyle.HeaderTemplate>
+        </GroupStyle>
+    </UserControl.Resources>
+
     <ScrollViewer Style="{StaticResource PageScrollStyle}">
         <StackPanel Style="{StaticResource PageBodyStyle}">
 
@@ -187,6 +199,79 @@
                 <controls:SettingsRow Header="Frame-rate limit" Description="Cycle the AMD frame-rate limiter presets.">
                     <ui:Button Content="{Binding FpsLimit, StringFormat='{}{0} FPS'}"
                                Command="{Binding CycleFpsLimitCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowSync24}"/>
+                </controls:SettingsRow>
+            </controls:SettingsGroup>
+
+            <controls:SettingsGroup Header="Controller" Icon="Games24"
+                                    Description="Button bindings, turbo, deadzones and vibration for the built-in controller."
+                                    DataContext="{Binding Controller}"
+                                    Visibility="{Binding DataContext.HasHandheldControls, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <controls:SettingsRow Header="Button" Description="Choose a control, then what it does. Secondary is its second function, as Armoury Crate sets it up.">
+                    <ComboBox ItemsSource="{Binding ControlOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding SelectedControl, Mode=TwoWay}" MinWidth="200"/>
+                    <controls:SettingsRow.ContentBelow>
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Primary" Style="{StaticResource SettingLabelStyle}" VerticalAlignment="Center" Margin="0,0,12,6"/>
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding BindingOptions}" DisplayMemberPath="Name" SelectedValuePath="Code"
+                                      IsSynchronizedWithCurrentItem="False" SelectedValue="{Binding Primary, Mode=TwoWay}" Margin="0,0,12,6">
+                                <ComboBox.GroupStyle>
+                                    <StaticResource ResourceKey="BindingGroupStyle"/>
+                                </ComboBox.GroupStyle>
+                            </ComboBox>
+                            <TextBlock Grid.Column="2" Text="Turbo" Style="{StaticResource SettingLabelStyle}" VerticalAlignment="Center" Margin="0,0,12,6"/>
+                            <ComboBox Grid.Column="3" ItemsSource="{Binding TurboOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                      SelectedValue="{Binding TurboPrimary, Mode=TwoWay}" MinWidth="110" Margin="0,0,0,6"/>
+                            <TextBlock Grid.Row="1" Text="Secondary" Style="{StaticResource SettingLabelStyle}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding BindingOptions}" DisplayMemberPath="Name" SelectedValuePath="Code"
+                                      IsSynchronizedWithCurrentItem="False" SelectedValue="{Binding Secondary, Mode=TwoWay}" Margin="0,0,12,0">
+                                <ComboBox.GroupStyle>
+                                    <StaticResource ResourceKey="BindingGroupStyle"/>
+                                </ComboBox.GroupStyle>
+                            </ComboBox>
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="Turbo" Style="{StaticResource SettingLabelStyle}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <ComboBox Grid.Row="1" Grid.Column="3" ItemsSource="{Binding TurboOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                      SelectedValue="{Binding TurboSecondary, Mode=TwoWay}" MinWidth="110"/>
+                        </Grid>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Disable controller" Description="Turn the built-in controller off, for example while an external one is in use.">
+                    <ui:ToggleSwitch IsChecked="{Binding ControllerDisabled, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Vibration strength">
+                    <controls:ValueSlider Minimum="0" Maximum="100" TickFrequency="5" Value="{Binding Vibration}" Format="{}{0}%"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Enhanced vibration"
+                                      Visibility="{Binding IsXboxAlly, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding EnhancedVibration, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Deadzones" Description="The range of travel each stick and trigger answers over, from where it starts to where it reads as full.">
+                    <ui:Button Content="Reset" Icon="{ui:SymbolIcon ArrowReset24}" Appearance="Secondary" Command="{Binding ResetCommand}"/>
+                    <controls:SettingsRow.ContentBelow>
+                        <StackPanel Margin="0,8,0,0">
+                            <controls:ValueSlider Header="Left stick, start" HeaderWidth="140" Minimum="0" Maximum="100" Value="{Binding LeftStickMin}" Format="{}{0}%" Margin="0,0,0,4"/>
+                            <controls:ValueSlider Header="Left stick, end" HeaderWidth="140" Minimum="0" Maximum="100" Value="{Binding LeftStickMax}" Format="{}{0}%" Margin="0,0,0,4"/>
+                            <controls:ValueSlider Header="Right stick, start" HeaderWidth="140" Minimum="0" Maximum="100" Value="{Binding RightStickMin}" Format="{}{0}%" Margin="0,0,0,4"/>
+                            <controls:ValueSlider Header="Right stick, end" HeaderWidth="140" Minimum="0" Maximum="100" Value="{Binding RightStickMax}" Format="{}{0}%" Margin="0,0,0,4"/>
+                            <controls:ValueSlider Header="Left trigger, start" HeaderWidth="140" Minimum="0" Maximum="100" Value="{Binding LeftTriggerMin}" Format="{}{0}%" Margin="0,0,0,4"/>
+                            <controls:ValueSlider Header="Left trigger, end" HeaderWidth="140" Minimum="0" Maximum="100" Value="{Binding LeftTriggerMax}" Format="{}{0}%" Margin="0,0,0,4"/>
+                            <controls:ValueSlider Header="Right trigger, start" HeaderWidth="140" Minimum="0" Maximum="100" Value="{Binding RightTriggerMin}" Format="{}{0}%" Margin="0,0,0,4"/>
+                            <controls:ValueSlider Header="Right trigger, end" HeaderWidth="140" Minimum="0" Maximum="100" Value="{Binding RightTriggerMax}" Format="{}{0}%"/>
+                        </StackPanel>
+                    </controls:SettingsRow.ContentBelow>
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 

@@ -221,75 +221,81 @@ namespace Arsenal.Ally
                 (BindKBD, "Down-Arrow"),
                 (BindKBL, "Left-Arrow"),
                 (BindKBR, "Right-Arrow"),
-                ("02-80", "Insert"),
-                ("02-85", "Delete"),
-                ("02-82", "Home"),
-                ("02-87", "End"),
+                ("02-C2", "Insert"),
+                ("02-C0", "Delete"),
+                ("02-94", "Home"),
+                ("02-95", "End"),
             }),
             ("Function Keys", new (string, string)[]
             {
-                ("02-01", "F1"),
-                ("02-02", "F2"),
-                ("02-03", "F3"),
-                ("02-04", "F4"),
-                ("02-05", "F5"),
-                ("02-06", "F6"),
-                ("02-07", "F7"),
-                ("02-08", "F8"),
-                ("02-09", "F9"),
-                ("02-0A", "F10"),
-                ("02-0B", "F11"),
-                ("02-0C", "F12"),
+                ("02-05", "F1"),
+                ("02-06", "F2"),
+                ("02-04", "F3"),
+                ("02-0C", "F4"),
+                ("02-03", "F5"),
+                ("02-0B", "F6"),
+                ("02-80", "F7"),
+                ("02-0A", "F8"),
+                ("02-01", "F9"),
+                ("02-09", "F10"),
+                ("02-78", "F11"),
+                ("02-07", "F12"),
             }),
-            ("Letters", new (string, string)[]
+            ("Keyboard", new (string, string)[]
             {
-                ("02-14", "Q"),
-                ("02-1A", "W"),
-                ("02-08", "E"),
-                ("02-15", "R"),
-                ("02-17", "T"),
-                ("02-1C", "Y"),
-                ("02-18", "U"),
-                ("02-0C", "I"),
-                ("02-12", "O"),
-                ("02-13", "P"),
-                ("02-04", "A"),
-                ("02-16", "S"),
-                ("02-07", "D"),
-                ("02-09", "F"),
-                ("02-0A", "G"),
-                ("02-0B", "H"),
-                ("02-0D", "J"),
-                ("02-0E", "K"),
-                ("02-0F", "L"),
-                ("02-1D", "Z"),
-                ("02-1B", "X"),
-                ("02-06", "C"),
-                ("02-19", "V"),
-                ("02-05", "B"),
-                ("02-11", "N"),
-                ("02-10", "M"),
-            }),
-            ("Numbers", new (string, string)[]
-            {
-                ("02-27", "0"),
-                ("02-1E", "1"),
-                ("02-1F", "2"),
-                ("02-20", "3"),
-                ("02-21", "4"),
-                ("02-22", "5"),
-                ("02-23", "6"),
-                ("02-24", "7"),
-                ("02-25", "8"),
-                ("02-26", "9"),
+                ("02-0E", "`"),
+                ("02-16", "1"),
+                ("02-1E", "2"),
+                ("02-26", "3"),
+                ("02-25", "4"),
+                ("02-2E", "5"),
+                ("02-36", "6"),
+                ("02-3D", "7"),
+                ("02-3E", "8"),
+                ("02-46", "9"),
+                ("02-45", "0"),
+                ("02-4E", "-"),
+                ("02-55", "="),
+                ("02-15", "Q"),
+                ("02-1D", "W"),
+                ("02-24", "E"),
+                ("02-2D", "R"),
+                ("02-2C", "T"),
+                ("02-35", "Y"),
+                ("02-3C", "U"),
+                ("02-44", "O"),
+                ("02-4D", "P"),
+                ("02-54", "["),
+                ("02-5B", "]"),
+                ("02-5D", "|"),
+                ("02-1C", "A"),
+                ("02-1B", "S"),
+                ("02-23", "D"),
+                ("02-2B", "F"),
+                ("02-34", "G"),
+                ("02-33", "H"),
+                ("02-3B", "J"),
+                ("02-42", "k"),
+                ("02-4B", "l"),
+                ("02-4C", ";"),
+                ("02-52", "'"),
+                ("02-22", "X"),
+                ("02-1A", "Z"),
+                ("02-21", "C"),
+                ("02-2A", "V"),
+                ("02-32", "B"),
+                ("02-31", "N"),
+                ("02-3A", "M"),
+                ("02-41", ","),
+                ("02-49", "."),
             }),
             ("Numpad", new (string, string)[]
             {
                 ("02-77", "NumLock"),
-                ("02-84", "Num/"),
-                ("02-85", "Num*"),
-                ("02-86", "Num-"),
-                ("02-87", "Num+"),
+                ("02-90", "NumSlash"),
+                ("02-7C", "NumStar"),
+                ("02-7B", "NumHyphen"),
+                ("02-79", "NumPlus"),
                 ("02-81", "NumEnter"),
                 ("02-71", "NumPeriod"),
                 ("02-70", "Num0"),
@@ -650,11 +656,22 @@ namespace Arsenal.Ally
                 (byte)AppConfig.Get("vibra", 100),
                 (byte)AppConfig.Get("vibra", 100)
             }, null);
+
+            if (AppConfig.IsXboxAlly()) AsusHid.WriteInput(new byte[] { AsusHid.INPUT_ID, 0xd1, 0x1c, 2,
+                (byte)AppConfig.Get("vibra", 100),
+                (byte)AppConfig.Get("vibra", 100)
+            }, null);
         }
 
         public static void DisableXBoxController(bool disabled)
         {
             AsusHid.WriteInput([AsusHid.INPUT_ID, 0xD1, 0x0B, 0x01, disabled ? (byte)0x02 : (byte)0x01], $"ControllerDisabled: {disabled}");
+        }
+
+        public static void SetVibrationMode()
+        {
+            byte enhanced = (byte)(AppConfig.Is("vibra_enhanced") ? 1 : 0);
+            AsusHid.WriteInput([AsusHid.INPUT_ID, 0xD1, 0x1F, 0x01, enhanced], $"VibrationEnhanced: {enhanced}");
         }
 
         public static void ApplyMode(ControllerMode applyMode = ControllerMode.Auto, bool init = false)
@@ -703,6 +720,7 @@ namespace Arsenal.Ally
 
                 SetTurbo();
                 SetDeadzones();
+                if (AppConfig.IsXboxAlly()) SetVibrationMode();
 
                 if (init && AppConfig.Is("controller_disabled"))
                 {
