@@ -122,6 +122,25 @@
                 </controls:SettingsRow>
             </controls:SettingsGroup>
 
+            <controls:SettingsGroup Header="Key bindings" Icon="KeyboardShift24"
+                                    Description="What the laptop's extra keys do. A custom command runs whatever is typed beside it."
+                                    ItemsSource="{Binding Hotkeys.Keys}"
+                                    Visibility="{Binding Hotkeys.HasKeys, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <controls:SettingsGroup.ItemTemplate>
+                    <DataTemplate>
+                        <controls:SettingsRow Header="{Binding Label}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:TextBox Text="{Binding Command, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Command or program"
+                                            Width="200" Margin="0,0,12,0"
+                                            Visibility="{Binding IsCustom, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                <ComboBox ItemsSource="{Binding Options}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                          SelectedValue="{Binding Selected, Mode=TwoWay}" MinWidth="240"/>
+                            </StackPanel>
+                        </controls:SettingsRow>
+                    </DataTemplate>
+                </controls:SettingsGroup.ItemTemplate>
+            </controls:SettingsGroup>
+
             <controls:SettingsGroup Header="Hardware overlay" Icon="DataUsage24"
                                     Description="The on-screen readout of temperatures, clocks and power, and whether it appears only in games.">
                 <controls:SettingsRow Header="On-screen hardware monitor"
