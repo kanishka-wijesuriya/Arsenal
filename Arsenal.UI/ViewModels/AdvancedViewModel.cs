@@ -1,8 +1,10 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Arsenal.Application.Models;
 using Arsenal.Application.Services;
 using Arsenal.Application.Services.Contracts;
 using Arsenal.AutoUpdate;
+using Arsenal.Gpu;
 using Arsenal.Helpers;
 using Arsenal.Mode;
 using Arsenal.UI.Services;
@@ -157,7 +159,89 @@ namespace Arsenal.UI.ViewModels
             Ally.AllyControl.OnAutoTDPChanged += value => System.Windows.Application.Current?.Dispatcher.BeginInvoke(
                 () => SetFromHardware(() => AutoTdpEnabled = value));
             Ally.AllyControl.OnFPSLimitChanged += value => System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => FpsLimit = value);
+            InitIgpuMemory();
             _isReady = true;
+        }
+
+        // ===== iGPU memory ============================================================
+
+        /// <summary>
+        /// The sizes AMD firmware offers for the integrated GPU's share of RAM. Empty on
+        /// Intel, where the driver reads a registry value instead, and on the Ally, which
+        /// has a fixed set of its own.
+        /// </summary>
+        private int[] _vramOptions = [];
+
+        public bool HasIgpuMemory { get; private set; }
+        public List<PeripheralOptionModel> IgpuMemoryOptions { get; } = new();
+
+        [ObservableProperty]
+        private int _igpuMemory;
+
+        private void InitIgpuMemory()
+        {
+            int unitMb = 0;
+            if (PawnIO.CpuInfo.IsAMD) _vramOptions = Program.acpi.GetVramOptions(out unitMb);
+
+            if (_vramOptions.Length > 0)
+            {
+                for (int i = 0; i < _vramOptions.Length; i++)
+                    AddIgpuMemoryOption(i, _vramOptions[i] == 0 ? "Auto" : ((double)_vramOptions[i] * unitMb / 1024).ToString("0.#") + " GB");
+
+                int current = Program.acpi.GetVramMem();
+                if (current == 0) current = AppConfig.Get("vram_mem", 0);
+                IgpuMemory = Math.Max(0, Array.IndexOf(_vramOptions, current));
+            }
+            else if (IntelVram.Init())
+            {
+                AddIgpuMemoryOption(0, "Auto");
+                for (int i = 0; i < IntelVram.Sizes.Length; i++) AddIgpuMemoryOption(i + 1, IntelVram.Sizes[i] + " GB");
+                IgpuMemory = IntelVram.Index;
+            }
+            else
+            {
+                if (!AppConfig.IsAlly()) return;
+
+                int apuMem = Program.acpi.GetAPUMem();
+                if (apuMem < 0) return;
+
+                AddIgpuMemoryOption(0, "Auto");
+                for (int i = 1; i <= 8; i++) AddIgpuMemoryOption(i, i + " GB");
+                IgpuMemory = apuMem;
+            }
+
+            HasIgpuMemory = true;
+        }
+
+        private void AddIgpuMemoryOption(int index, string label) =>
+            IgpuMemoryOptions.Add(new PeripheralOptionModel { Value = index, Label = label });
+
+        partial void OnIgpuMemoryChanged(int value)
+        {
+            if (!_isReady || value < 0) return;
+
+            // The Intel size is a machine-wide registry value.
+            if (IntelVram.Supported && !ProcessHelper.IsUserAdministrator())
+            {
+                ProcessHelper.RunAsAdmin();
+                return;
+            }
+
+            if (IntelVram.Supported) IntelVram.SetIndex(value);
+            else if (_vramOptions.Length == 0) Program.acpi.SetAPUMem(value);
+            else
+            {
+                Program.acpi.SetVramMem(_vramOptions[value]);
+                AppConfig.Set("vram_mem", _vramOptions[value]);
+            }
+
+            var restart = new Arsenal.UI.Services.GpuModeConfirmationContent(
+                "Restart to apply",
+                "The integrated GPU takes its new share of memory when Windows starts. Save your work before restarting.",
+                "Restart now",
+                "Later");
+            if (Arsenal.UI.Services.GpuModeConfirmation.Show(System.Windows.Application.Current?.MainWindow, restart))
+                Process.Start(new ProcessStartInfo(ProcessHelper.SystemPath("shutdown"), "/r /t 1") { CreateNoWindow = true, UseShellExecute = false });
         }
 
         [RelayCommand]

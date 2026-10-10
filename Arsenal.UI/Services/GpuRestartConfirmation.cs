@@ -10,7 +10,7 @@ using Ui = Wpf.Ui.Controls;
 
 namespace Arsenal.UI.Services;
 
-internal sealed record GpuModeConfirmationContent(string Title, string Body, string Confirm);
+internal sealed record GpuModeConfirmationContent(string Title, string Body, string Confirm, string Cancel = "Cancel");
 
 internal static class GpuModeConfirmation
 {
@@ -48,9 +48,12 @@ internal static class GpuModeConfirmation
         Window? owner,
         int targetMode,
         GpuModeChangeConfirmation confirmation)
+        => Show(owner, CreateContent(targetMode, confirmation));
+
+    /// <summary>The same dialog for any other change that ends in a restart.</summary>
+    public static bool Show(Window? owner, GpuModeConfirmationContent content)
     {
         bool accepted = false;
-        GpuModeConfirmationContent content = CreateContent(targetMode, confirmation);
         var dialog = new Window
         {
             Title = content.Title,
@@ -106,7 +109,7 @@ internal static class GpuModeConfirmation
         layout.Children.Add(body);
 
         var actions = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
-        var cancel = new Ui.Button { Content = "Cancel", Appearance = Ui.ControlAppearance.Secondary, MinWidth = 92, Margin = new Thickness(0, 0, 8, 0) };
+        var cancel = new Ui.Button { Content = content.Cancel, Appearance = Ui.ControlAppearance.Secondary, MinWidth = 92, Margin = new Thickness(0, 0, 8, 0) };
         var confirm = new Ui.Button { Content = content.Confirm, Appearance = Ui.ControlAppearance.Primary, MinWidth = 132 };
         cancel.Click += (_, _) => dialog.Close();
         confirm.Click += (_, _) => { accepted = true; dialog.Close(); };

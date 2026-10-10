@@ -164,6 +164,13 @@
                     <ui:ToggleSwitch IsChecked="{Binding OptimizedUsbCEnabled}"/>
                 </controls:SettingsRow>
 
+                <controls:SettingsRow Header="Memory for integrated graphics"
+                                      Description="How much RAM the integrated GPU reserves for itself. Takes effect after a restart."
+                                      Visibility="{Binding HasIgpuMemory, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ComboBox ItemsSource="{Binding IgpuMemoryOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding IgpuMemory, Mode=TwoWay}" MinWidth="160"/>
+                </controls:SettingsRow>
+
                 <controls:SettingsRow Header="Disable panel overdrive automation"
                                       Description="Stop overdrive from changing whenever the refresh rate changes.">
                     <ui:ToggleSwitch IsChecked="{Binding DisableOverdrive}"/>
