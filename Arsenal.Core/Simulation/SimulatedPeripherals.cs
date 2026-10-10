@@ -1,37 +1,41 @@
+using Arsenal.Peripherals.Headset;
 using Arsenal.Peripherals.Keyboard;
 using Arsenal.Peripherals.Mouse;
 
 namespace Arsenal.Simulation;
 
 /// <summary>
-/// The mice and keyboards a profile plugs in, and what a pretend mouse says back.
+/// The mice, keyboards and headsets a profile plugs in, and what a pretend mouse says back.
 /// </summary>
 /// <remarks>
 /// Built from the same model classes the real detection uses, found by class name, so a
 /// simulated Chakram X has exactly the capabilities the real one is declared with: its
 /// DPI range, its lighting zones, its polling rates. Only the conversation is invented.
-/// Keyboards already have a test mode that answers with canned replies; mice get the
-/// same, answered here.
+/// Keyboards and headsets already have a test mode that answers with canned replies;
+/// mice get the same, answered here.
 /// </remarks>
 public static class SimulatedPeripherals
 {
     private static readonly Lazy<Dictionary<string, Type>> MouseTypes = new(() => FindTypes(typeof(AsusMouse)));
     private static readonly Lazy<Dictionary<string, Type>> KeyboardTypes = new(() => FindTypes(typeof(AsusKeyboard)));
+    private static readonly Lazy<Dictionary<string, Type>> HeadsetTypes = new(() => FindTypes(typeof(AsusHeadset)));
 
     /// <summary>Every model class that can be plugged in, for the profile editor and the tests.</summary>
     public static IEnumerable<string> MouseNames => MouseTypes.Value.Keys.Order();
     public static IEnumerable<string> KeyboardNames => KeyboardTypes.Value.Keys.Order();
+    public static IEnumerable<string> HeadsetNames => HeadsetTypes.Value.Keys.Order();
 
     public static bool IsKnown(string name) =>
-        MouseTypes.Value.ContainsKey(name) || KeyboardTypes.Value.ContainsKey(name);
+        MouseTypes.Value.ContainsKey(name) || KeyboardTypes.Value.ContainsKey(name) || HeadsetTypes.Value.ContainsKey(name);
 
     /// <summary>One model that can be plugged in, by class and by the name it shows.</summary>
-    public sealed record Model(string ClassName, string DisplayName, bool IsKeyboard);
+    public sealed record Model(string ClassName, string DisplayName, bool IsKeyboard, bool IsHeadset = false);
 
     private static readonly Lazy<IReadOnlyList<Model>> Models = new(() =>
     {
         List<Model> models = MouseTypes.Value.Select(pair => new Model(pair.Key, DisplayNameOf(pair.Value, pair.Key), false))
             .Concat(KeyboardTypes.Value.Select(pair => new Model(pair.Key, DisplayNameOf(pair.Value, pair.Key), true)))
+            .Concat(HeadsetTypes.Value.Select(pair => new Model(pair.Key, DisplayNameOf(pair.Value, pair.Key), false, true)))
             .ToList();
 
         // Some variants share a name with the model they differ from only in colour or
@@ -45,7 +49,7 @@ public static class SimulatedPeripherals
             .ToList();
     });
 
-    /// <summary>Every mouse, pad and keyboard the simulator can plug in, by display name.</summary>
+    /// <summary>Every mouse, pad, keyboard and headset the simulator can plug in, by display name.</summary>
     public static IReadOnlyList<Model> Catalogue() => Models.Value;
 
     /// <summary>
@@ -158,8 +162,16 @@ public static class SimulatedPeripherals
                 Arsenal.Peripherals.PeripheralsProvider.Disconnect(keyboard);
             }
 
+        foreach (AsusHeadset headset in Arsenal.Peripherals.PeripheralsProvider.SnapshotHeadsets())
+            if (headset.TestMode && !classNames.Contains(headset.GetType().Name))
+            {
+                Logger.WriteLine($"Simulator: unplugged {headset.GetDisplayName()}");
+                Arsenal.Peripherals.PeripheralsProvider.Disconnect(headset);
+            }
+
         Arsenal.Peripherals.PeripheralsProvider.DetectAllAsusMice();
         Arsenal.Peripherals.PeripheralsProvider.DetectAllAsusKeyboards();
+        Arsenal.Peripherals.PeripheralsProvider.DetectAllAsusHeadsets();
     }
 
     public static IEnumerable<AsusMouse> Mice()
@@ -188,6 +200,21 @@ public static class SimulatedPeripherals
             {
                 keyboard.TestMode = true;
                 yield return keyboard;
+            }
+        }
+    }
+
+    public static IEnumerable<AsusHeadset> Headsets()
+    {
+        if (DeviceSimulation.Profile is not { } profile) yield break;
+
+        foreach (string name in Plugged(profile))
+        {
+            if (!HeadsetTypes.Value.TryGetValue(name, out Type? type)) continue;
+            if (Activator.CreateInstance(type) is AsusHeadset headset)
+            {
+                headset.TestMode = true;
+                yield return headset;
             }
         }
     }

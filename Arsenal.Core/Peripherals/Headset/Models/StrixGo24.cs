@@ -85,6 +85,18 @@ namespace Arsenal.Peripherals.Headset.Models
             byte[] response = new byte[USBPacketSize()];
             response[0] = reportId;
 
+            // This dongle has its own protocol, so the shared test replies do not fit it:
+            // a charged battery at 3.9 V, not charging, sleeping after ten minutes.
+            if (TestMode)
+            {
+                response[1] = 0x1B;
+                response[11] = 3900 & 0xFF;
+                response[12] = 3900 >> 8;
+                response[21] = 600 & 0xFF;
+                response[22] = 600 >> 8;
+                return response;
+            }
+
             try
             {
                 _usbProvider?.Set(packet);

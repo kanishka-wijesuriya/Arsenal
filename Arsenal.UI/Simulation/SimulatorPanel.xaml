@@ -79,6 +79,21 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+
+                            <TextBlock Text="Headsets" Style="{StaticResource SettingLabelStyle}" Margin="0,12,0,6"/>
+                            <ItemsControl ItemsSource="{Binding HeadsetOptions}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Content="{Binding DisplayName}" IsChecked="{Binding IsPluggedIn, Mode=TwoWay}"
+                                                  Width="270" Margin="0,0,8,4" ToolTip="{Binding DisplayName}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </ScrollViewer>
                 </Border>

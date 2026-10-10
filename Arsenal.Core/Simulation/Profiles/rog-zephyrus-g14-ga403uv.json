@@ -34,5 +34,5 @@
     "00130022": 1
   },
   "accepts": ["00110022", "00110023"],
-  "peripherals": ["HarpeAceMiniWired"]
+  "peripherals": ["HarpeAceMiniWired", "DeltaII"]
 }

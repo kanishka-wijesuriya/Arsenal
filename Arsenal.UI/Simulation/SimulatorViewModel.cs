@@ -179,6 +179,11 @@ public partial class SimulatorViewModel : ObservableObject
     /// <summary>Every keyboard the simulator can plug in.</summary>
     public ObservableCollection<SimulatedPeripheralOption> KeyboardOptions { get; } = new();
 
+    /// <summary>Every headset the simulator can plug in.</summary>
+    public ObservableCollection<SimulatedPeripheralOption> HeadsetOptions { get; } = new();
+
+    private IEnumerable<SimulatedPeripheralOption> AllOptions => MouseOptions.Concat(KeyboardOptions).Concat(HeadsetOptions);
+
     [ObservableProperty]
     private string _peripheralsSummary = string.Empty;
 
@@ -189,12 +194,12 @@ public partial class SimulatorViewModel : ObservableObject
 
     private void LoadPeripherals()
     {
-        if (MouseOptions.Count == 0 && KeyboardOptions.Count == 0)
+        if (!AllOptions.Any())
         {
             foreach (SimulatedPeripherals.Model model in SimulatedPeripherals.Catalogue())
             {
                 var option = new SimulatedPeripheralOption(this, model);
-                (model.IsKeyboard ? KeyboardOptions : MouseOptions).Add(option);
+                (model.IsHeadset ? HeadsetOptions : model.IsKeyboard ? KeyboardOptions : MouseOptions).Add(option);
             }
         }
 
@@ -204,7 +209,7 @@ public partial class SimulatorViewModel : ObservableObject
             HashSet<string> chosen = SelectedProfile is { } profile
                 ? SimulatedPeripherals.ChosenFor(profile).ToHashSet()
                 : new HashSet<string>();
-            foreach (SimulatedPeripheralOption option in MouseOptions.Concat(KeyboardOptions))
+            foreach (SimulatedPeripheralOption option in AllOptions)
                 option.IsPluggedIn = chosen.Contains(option.ClassName);
         }
         finally
@@ -216,7 +221,7 @@ public partial class SimulatorViewModel : ObservableObject
 
     private void Summarise()
     {
-        var plugged = MouseOptions.Concat(KeyboardOptions).Where(option => option.IsPluggedIn).Select(option => option.DisplayName).ToList();
+        var plugged = AllOptions.Where(option => option.IsPluggedIn).Select(option => option.DisplayName).ToList();
         string list = plugged.Count == 0 ? "Nothing plugged in." : "Plugged in: " + string.Join(", ", plugged) + ".";
         string when = IsLive
             ? " Changes connect and disconnect them at once."
@@ -231,7 +236,7 @@ public partial class SimulatorViewModel : ObservableObject
     {
         if (_loadingPeripherals || SelectedProfile is not { } profile) return;
 
-        List<string> chosen = MouseOptions.Concat(KeyboardOptions)
+        List<string> chosen = AllOptions
             .Where(option => option.IsPluggedIn).Select(option => option.ClassName).ToList();
         SimulatedPeripherals.Choose(profile.Id, chosen);
         Summarise();

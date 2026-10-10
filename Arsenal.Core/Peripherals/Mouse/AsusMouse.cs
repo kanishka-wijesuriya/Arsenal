@@ -509,6 +509,7 @@ namespace Arsenal.Peripherals.Mouse
 
         public void StartEventListener()
         {
+            if (TestMode) return;
             events ??= new PeripheralEventListener(VendorID(), ProductID(), GetDisplayName(), OnEventReport);
             events.Start(path);
         }
@@ -564,6 +565,7 @@ namespace Arsenal.Peripherals.Mouse
 
         public bool IsDeviceConnected(IEnumerable<HidSharp.HidDevice> devices)
         {
+            if (TestMode) return true;
             return devices.Any(x => x.VendorID == VendorID() && x.ProductID == ProductID() && x.DevicePath.Contains(path));
         }
 

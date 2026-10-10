@@ -51,10 +51,12 @@ public static class Simulated
     public static UsbProvider? UsbProvider(ushort vendorId, ushort productId) =>
         IsActive ? new Simulation.SimulatedUsbProvider(vendorId, productId) : null;
 
-    /// <summary>The mice and keyboards the profile says are plugged in.</summary>
+    /// <summary>The mice, keyboards and headsets the profile says are plugged in.</summary>
     public static IEnumerable<Peripherals.Mouse.AsusMouse> Mice() => Simulation.SimulatedPeripherals.Mice();
 
     public static IEnumerable<Peripherals.Keyboard.AsusKeyboard> Keyboards() => Simulation.SimulatedPeripherals.Keyboards();
+
+    public static IEnumerable<Peripherals.Headset.AsusHeadset> Headsets() => Simulation.SimulatedPeripherals.Headsets();
 
     /// <summary>What a mouse in test mode answers, in place of a USB round trip.</summary>
     public static byte[]? MouseReply(Peripherals.Mouse.AsusMouse mouse, byte[] request, int size) =>
@@ -71,6 +73,7 @@ public static class Simulated
     public static UsbProvider? UsbProvider(ushort vendorId, ushort productId) => null;
     public static IEnumerable<Peripherals.Mouse.AsusMouse> Mice() => [];
     public static IEnumerable<Peripherals.Keyboard.AsusKeyboard> Keyboards() => [];
+    public static IEnumerable<Peripherals.Headset.AsusHeadset> Headsets() => [];
     public static byte[]? MouseReply(Peripherals.Mouse.AsusMouse mouse, byte[] request, int size) => null;
 #endif
 }

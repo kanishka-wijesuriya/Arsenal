@@ -340,6 +340,9 @@ namespace Arsenal.Peripherals
         /// </summary>
         public static void Disconnect(AsusKeyboard kb) => Keyboard_Disconnect(kb, EventArgs.Empty);
 
+        /// <summary>Takes a headset off the list as though it had been unplugged.</summary>
+        public static void Disconnect(AsusHeadset hs) => Headset_Disconnect(hs, EventArgs.Empty);
+
         private static void Keyboard_Disconnect(object? sender, EventArgs e)
         {
             if (sender is null)
@@ -611,6 +614,12 @@ namespace Arsenal.Peripherals
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static void DetectAllAsusHeadsets()
         {
+            if (Helpers.Simulated.IsActive)
+            {
+                foreach (AsusHeadset headset in Helpers.Simulated.Headsets()) DetectHeadset(headset);
+                return;
+            }
+
             if (AppConfig.Is("headset_test")) DetectHeadset(new DeltaII() { TestMode = true });
 
             DetectHeadset(new DeltaII());
