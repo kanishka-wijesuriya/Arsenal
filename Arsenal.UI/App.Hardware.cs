@@ -162,7 +162,7 @@ namespace Arsenal.UI
             {
                 Helpers.ProcessHelper.KillSmartDisplayControl();
                 USB.Aura.sessionLock = false;
-                USB.Aura.ApplyAura();
+                if (!AppConfig.Is("skip_aura")) USB.Aura.ApplyAura();
                 ScreenControl.AutoScreen();
             }
             else if (e.Reason == SessionSwitchReason.SessionLock)

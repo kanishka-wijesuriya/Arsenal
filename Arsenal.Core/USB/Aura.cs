@@ -118,6 +118,7 @@ namespace Arsenal.USB
         public static bool HasLogo { get; private set; }
         public static bool HasLightbar { get; private set; }
         public static bool HasRearglow { get; private set; }
+        static bool hasRearStrip = false;
         public static bool IsOldStrix { get; private set; }
 
         /// <summary>
@@ -388,6 +389,7 @@ namespace Arsenal.USB
             HasLogo = (feat1 & FEAT1_LOGO) != 0 || AppConfig.IsZ13();
             HasLightbar = (feat1 & FEAT1_LIGHTBAR) != 0;
             HasRearglow = (feat1 & (FEAT1_REARGLOW | FEAT1_VCUT)) != 0;
+            hasRearStrip = (feat1 & FEAT1_REARGLOW) != 0;
 
             isStrix4Zone = BacklightType == AuraBacklightType.MultiZone;
 
@@ -398,7 +400,7 @@ namespace Arsenal.USB
         {
             DetectBacklightType();
 
-            if (AppConfig.IsZ13())
+            if (AppConfig.IsZ13() && !AppConfig.Is("skip_aura"))
                 AsusHid.Write([AsusHid.AURA_ID, 0xC0, 0x03, 0x01], "Dynamic Lighting Init");
 
             if (AppConfig.IsProArt())
@@ -431,6 +433,7 @@ namespace Arsenal.USB
             {
                 if (!backlight) initDirect = true;
                 backlight = true;
+                if (Mode == AuraMode.GRADIENT) ApplyAura();
             }
         }
 
@@ -697,6 +700,7 @@ namespace Arsenal.USB
             const byte ledCount = 178;
             const ushort mapSize = 3 * ledCount;
             const byte ledsPerPacket = 16;
+            const byte rearCount = 39;
 
             byte[] buffer = new byte[64];
             byte[] keyBuf = new byte[mapSize];
@@ -771,6 +775,33 @@ namespace Arsenal.USB
 
             Buffer.BlockCopy(keyBuf, 3 * keySet, buffer, 9, 3 * (ledCount - keySet));
             AsusHid.SetFeatureAura(buffer);
+
+            if (!hasRearStrip) return;
+
+            buffer[4] = 0x05;
+
+            for (int i = 0; i < rearCount; i += ledsPerPacket)
+            {
+                byte leds = (byte)Math.Min(ledsPerPacket, rearCount - i);
+
+                buffer[6] = (byte)(i + 1);
+                buffer[7] = leds;
+
+                for (int n = 0; n < leds; n++)
+                {
+                    float f = (i + n) / (float)(rearCount - 1) * 3;
+                    int z = Math.Min(2, (int)f);
+                    Color c = ColorUtils.GetWeightedAverage(color[z], color[z + 1], f - z);
+
+                    buffer[9 + n * 3] = c.R;
+                    buffer[10 + n * 3] = c.G;
+                    buffer[11 + n * 3] = c.B;
+                }
+
+                Array.Clear(buffer, 9 + leds * 3, buffer.Length - 9 - leds * 3);
+                AsusHid.SetFeatureAura(buffer);
+                Thread.Sleep(1);
+            }
         }
 
         public static void ApplyDirectLightbar(Color[] color)
