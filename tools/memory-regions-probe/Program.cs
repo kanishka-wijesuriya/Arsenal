@@ -222,3 +222,10 @@ public static class Logger
 {
     public static void WriteLine(string message) => Console.WriteLine(message);
 }
+
+// The trim asks the config whether it may run. The probe has no config, and is here to
+// trim, so the answer is always yes.
+public static class AppConfig
+{
+    public static bool IsNotFalse(string name) => true;
+}

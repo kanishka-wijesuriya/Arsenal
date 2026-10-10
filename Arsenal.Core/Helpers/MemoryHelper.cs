@@ -98,6 +98,9 @@ namespace Arsenal.Helpers
         /// </remarks>
         public static void TrimWorkingSet()
         {
+            // "gc": 0 in the config turns trimming off, as it does upstream.
+            if (!AppConfig.IsNotFalse("gc")) return;
+
             try
             {
                 using var p = System.Diagnostics.Process.GetCurrentProcess();
