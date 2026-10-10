@@ -92,6 +92,8 @@ namespace Arsenal.UI.ViewModels
         [ObservableProperty] private bool _autoClamshellEnabled;
         [ObservableProperty] private int _hibernateAfterMinutes;
         [ObservableProperty] private bool _hardwareOverlayEnabled;
+
+        public OverlaySettingsViewModel OverlaySettings { get; } = new();
         [ObservableProperty] private bool _overlayGameOnly;
         [ObservableProperty] private bool _hasHandheldControls;
         [ObservableProperty] private bool _autoTdpEnabled;

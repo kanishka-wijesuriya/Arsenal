@@ -122,6 +122,59 @@
                     <ui:ToggleSwitch IsChecked="{Binding OverlayGameOnly}"
                                      IsEnabled="{Binding HardwareOverlayEnabled}"/>
                 </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Mode" DataContext="{Binding OverlaySettings}"
+                                      Description="Each mode keeps its own blocks. Ctrl + Shift + Alt and a click on the overlay steps through them; with the wheel it resizes, and dragging moves it.">
+                    <ComboBox ItemsSource="{Binding ModeOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding Mode, Mode=TwoWay}" MinWidth="160"/>
+                    <controls:SettingsRow.ContentBelow>
+                        <WrapPanel Margin="0,8,0,0">
+                            <CheckBox Content="FPS" IsChecked="{Binding ShowFps, Mode=TwoWay}" MinWidth="150" Margin="0,0,12,6"/>
+                            <CheckBox Content="Temperatures" IsChecked="{Binding ShowTemperatures, Mode=TwoWay}" MinWidth="150" Margin="0,0,12,6"/>
+                            <CheckBox Content="Fan speed" IsChecked="{Binding ShowFans, Mode=TwoWay}" MinWidth="150" Margin="0,0,12,6"/>
+                            <CheckBox Content="Chart" IsChecked="{Binding ShowChart, Mode=TwoWay}" MinWidth="150" Margin="0,0,12,6"/>
+                            <CheckBox Content="Power" IsChecked="{Binding ShowPower, Mode=TwoWay}" MinWidth="150" Margin="0,0,12,6"/>
+                            <CheckBox Content="Load" IsChecked="{Binding ShowLoad, Mode=TwoWay}" MinWidth="150" Margin="0,0,12,6"/>
+                            <CheckBox Content="RAM and VRAM" IsChecked="{Binding ShowRam, Mode=TwoWay}" MinWidth="150" Margin="0,0,12,6"/>
+                            <CheckBox Content="Labels" IsChecked="{Binding ShowLabels, Mode=TwoWay}" MinWidth="150" Margin="0,0,12,6"/>
+                        </WrapPanel>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Battery" Description="When this mode shows the battery block."
+                                      DataContext="{Binding OverlaySettings}">
+                    <ComboBox ItemsSource="{Binding BatteryOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding Battery, Mode=TwoWay}" MinWidth="160"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Size" DataContext="{Binding OverlaySettings}">
+                    <controls:ValueSlider Minimum="35" Maximum="300" TickFrequency="5" IsSnapToTickEnabled="True"
+                                          Value="{Binding Size}" Format="{}{0}%"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Background opacity" DataContext="{Binding OverlaySettings}">
+                    <controls:ValueSlider Minimum="0" Maximum="100" TickFrequency="5"
+                                          Value="{Binding Opacity}" Format="{}{0}%"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Colours" Description="The CPU and GPU rows."
+                                      DataContext="{Binding OverlaySettings}">
+                    <ui:Button Content="Reset overlay" Icon="{ui:SymbolIcon ArrowReset24}" Appearance="Secondary" Command="{Binding ResetCommand}"/>
+                    <controls:SettingsRow.ContentBelow>
+                        <WrapPanel Margin="0,8,0,0">
+                            <StackPanel Width="220" Margin="0,0,16,8">
+                                <TextBlock Text="CPU" Style="{StaticResource SettingLabelStyle}" Margin="0,0,0,8"/>
+                                <controls:ColorSpectrumPicker SelectedColor="{Binding CpuColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="120"/>
+                                <Border Height="24" Margin="0,8,0,0" CornerRadius="{DynamicResource RadiusControl}" Background="{Binding CpuColorBrush}"/>
+                            </StackPanel>
+                            <StackPanel Width="220" Margin="0,0,16,8">
+                                <TextBlock Text="GPU" Style="{StaticResource SettingLabelStyle}" Margin="0,0,0,8"/>
+                                <controls:ColorSpectrumPicker SelectedColor="{Binding GpuColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="120"/>
+                                <Border Height="24" Margin="0,8,0,0" CornerRadius="{DynamicResource RadiusControl}" Background="{Binding GpuColorBrush}"/>
+                            </StackPanel>
+                        </WrapPanel>
+                    </controls:SettingsRow.ContentBelow>
+                </controls:SettingsRow>
             </controls:SettingsGroup>
 
             <controls:SettingsGroup Header="ROG Ally" Icon="XboxController24"
