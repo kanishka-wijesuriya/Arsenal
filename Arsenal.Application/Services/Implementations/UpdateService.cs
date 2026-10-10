@@ -83,6 +83,14 @@ namespace Arsenal.Application.Services.Implementations
         public async Task<List<UpdateInfo>> CheckAsusUpdatesAsync()
         {
             var (_, model) = AppConfig.GetBiosAndModel();
+            // NUC drivers are listed under the full model name up to its SKU suffix,
+            // not under the model the BIOS reports.
+            if (AppConfig.ContainsModel("NUC"))
+            {
+                string full = AppConfig.GetModel();
+                int trim = full.LastIndexOf('_');
+                model = trim > 0 ? full[..trim] : full;
+            }
             string rogParam = AppConfig.IsROG() ? "&systemCode=rog" : string.Empty;
             string driversUrl = $"https://rog.asus.com/support/webapi/product/GetPDDrivers?website=global&model={Uri.EscapeDataString(model)}&cpu={Uri.EscapeDataString(model)}&osid=52{rogParam}";
 

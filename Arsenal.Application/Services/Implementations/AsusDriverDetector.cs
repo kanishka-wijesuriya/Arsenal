@@ -82,7 +82,7 @@ namespace Arsenal.Application.Services.Implementations
 
                 int major = Major(item.LatestVersion);
                 List<LocalDriver> pool = matched.Where(driver => Major(driver.Version) == major).ToList();
-                if (pool.Count == 0) pool = matched.Where(driver => !driver.IsExtension).ToList();
+                if (pool.Count == 0) pool = matched.Where(driver => !driver.IsExtension || Major(driver.Version) > major).ToList();
                 if (pool.Count == 0) pool = matched;
                 return MaxVersion(pool.Select(driver => driver.Version));
             }
