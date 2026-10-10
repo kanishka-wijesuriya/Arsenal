@@ -720,6 +720,9 @@ namespace Arsenal.Input
                 case "touchscreen":
                     ToggleTouchScreen();
                     break;
+                case "touchpad":
+                    ToggleTouchpadEvent(true);
+                    break;
                 default:
                     break;
             }
@@ -729,7 +732,17 @@ namespace Arsenal.Input
         static void MuteLED()
         {
             Thread.Sleep(500);
-            Program.acpi.DeviceSet(AsusACPI.SoundMuteLed, Audio.IsMuted() ? 1 : 0, "SoundLed");
+            MuteLED(Audio.IsMuted());
+        }
+
+        static void MuteLED(bool muted)
+        {
+            Program.acpi.DeviceSet(AsusACPI.SoundMuteLed, muted ? 1 : 0, "SoundLed");
+        }
+
+        static void MicMuteLED(bool muted)
+        {
+            if (AppConfig.IsDUO()) AsusHid.WriteInput([AsusHid.INPUT_ID, 0xD0, 0x7C, muted ? (byte)0x01 : (byte)0x00], "USB MicmuteLed");
         }
 
         public static void ToggleTouchScreen()
@@ -748,13 +761,15 @@ namespace Arsenal.Input
             bool muteStatus = Audio.ToggleMicMute();
             Program.toast.RunToast(muteStatus ? "Muted" : "Unmuted", muteStatus ? ToastIcon.MicrophoneMute : ToastIcon.Microphone);
             if (AppConfig.IsVivoZenbook()) Program.acpi.DeviceSet(AsusACPI.MicMuteLed, muteStatus ? 1 : 0, "MicmuteLed");
+            MicMuteLED(muteStatus);
         }
 
         static void MuteLEDInit()
         {
             if (!AppConfig.IsVivoZenbook()) return;
             if (Program.acpi.IsSupported(AsusACPI.MicMuteLed)) Program.acpi.DeviceSet(AsusACPI.MicMuteLed, Audio.IsMicMuted() ? 1 : 0, "MicmuteLedInit");
-            if (Program.acpi.IsSupported(AsusACPI.SoundMuteLed)) Program.acpi.DeviceSet(AsusACPI.SoundMuteLed, Audio.IsMuted() ? 1 : 0, "SoundLedInit");
+            MicMuteLED(Audio.IsMicMuted());
+            if (Program.acpi.IsSupported(AsusACPI.SoundMuteLed)) Audio.SubscribeMute(MuteLED);
         }
 
         /// <summary>
@@ -1280,11 +1295,11 @@ namespace Arsenal.Input
             AppConfig.Set("camera_status", status);
             if (toast)
             {
-                string statusText = cameraLedStatus switch
+                string statusText = status switch
                 {
                     0 => "On",
                     1 => "Off",
-                    _ => status switch
+                    _ => cameraLedStatus switch
                     {
                         0 => "On",
                         1 => "Off",
