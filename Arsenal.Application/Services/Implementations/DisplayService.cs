@@ -138,6 +138,14 @@ namespace Arsenal.Application.Services.Implementations
             ScreenControl.ToogleMiniled();
         }
 
+        public int ElmbState => ScreenELMB.Get();
+
+        public void SetElmb(bool enabled)
+        {
+            AppConfig.Set("elmb", enabled ? 1 : 0);
+            ScreenELMB.Set(enabled ? 1 : 0);
+        }
+
         public void SetBrightness(int brightness)
         {
             if (!IsColorPipelineEnabled) return;

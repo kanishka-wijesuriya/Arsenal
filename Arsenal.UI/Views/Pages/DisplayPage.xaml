@@ -135,6 +135,12 @@
                     <ui:ToggleSwitch IsChecked="{Binding IsMiniLed, Mode=TwoWay}"/>
                 </controls:SettingsRow>
 
+                <controls:SettingsRow Header="Extreme Low Motion Blur"
+                                      Description="Strobe the backlight to sharpen fast motion, at some cost in brightness."
+                                      Visibility="{Binding IsElmbSupported, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding IsElmb, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
                 <controls:SettingsRow Header="Panel brightness"
                                       Description="{Binding PanelBrightnessDescription}">
                     <controls:ValueSlider Minimum="0" Maximum="100" Value="{Binding PanelBrightness}" Format="{}{0}%"

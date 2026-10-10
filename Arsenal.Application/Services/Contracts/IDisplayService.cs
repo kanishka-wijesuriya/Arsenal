@@ -40,6 +40,12 @@ namespace Arsenal.Application.Services.Contracts
         /// </summary>
         bool IsColorPipelineEnabled { get; }
         int MiniLedMode { get; } // 0=Off/Single, 1=MultiZone
+
+        /// <summary>
+        /// Extreme Low Motion Blur as the panel reports it: 1 on, 0 off, negative on a
+        /// panel without it. Read over the display's AUX channel, so it can be slow.
+        /// </summary>
+        int ElmbState { get; }
         int Brightness { get; }
         int PanelBrightness { get; }
         int CurrentVisualProfile { get; }
@@ -65,6 +71,7 @@ namespace Arsenal.Application.Services.Contracts
         void SetAutoRefresh(bool enabled);
         void SetOverdrive(bool enable);
         void ToggleMiniLed();
+        void SetElmb(bool enabled);
         void SetBrightness(int brightness);
         void SetPanelBrightness(int brightness);
         void SetVisualProfile(int profileId);

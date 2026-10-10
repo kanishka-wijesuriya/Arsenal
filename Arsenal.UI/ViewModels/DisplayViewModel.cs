@@ -109,6 +109,9 @@ namespace Arsenal.UI.ViewModels
         private bool _isMiniLed = false;
 
         [ObservableProperty]
+        private bool _isElmb = false;
+
+        [ObservableProperty]
         private bool _isHdr = false;
 
         /// <summary>
@@ -184,6 +187,7 @@ namespace Arsenal.UI.ViewModels
         private string _colorProfileStatus = "Checking installed profiles…";
 
         public bool IsMiniLedSupported { get; }
+        public bool IsElmbSupported { get; }
         public bool IsOverdriveSupported { get; }
         public bool IsMuxSupported { get; }
         public bool IsEcoSupported { get; }
@@ -234,6 +238,9 @@ namespace Arsenal.UI.ViewModels
             SelectedGamut = _displayService.CurrentGamut;
             CurrentGpuMode = _gpuService.CurrentGpuMode;
             IsMiniLedSupported = _displayService.IsMiniLedSupported;
+            int elmb = _displayService.ElmbState;
+            IsElmbSupported = elmb >= 0;
+            IsElmb = elmb == 1;
             IsOverdriveSupported = _displayService.IsOverdriveSupported;
             IsMuxSupported = _gpuService.IsMuxSupported;
             IsEcoSupported = _gpuService.IsEcoSupported;
@@ -448,6 +455,11 @@ namespace Arsenal.UI.ViewModels
             OnPropertyChanged(nameof(IsLowRefreshRate));
             OnPropertyChanged(nameof(IsMaximumRefreshRate));
             OnPropertyChanged(nameof(IsMaximumRefreshRateWithOverdrive));
+        }
+
+        partial void OnIsElmbChanged(bool value)
+        {
+            if (_isReady) _displayService.SetElmb(value);
         }
 
         partial void OnIsMiniLedChanged(bool value)

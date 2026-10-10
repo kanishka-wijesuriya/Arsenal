@@ -161,6 +161,16 @@ namespace Arsenal.Display
                 if (ScreenCCD.IsHDR()) SetHDRControl(AppConfig.Get("hdr_control"));
                 else SetMiniled(AppConfig.Get("miniled"));
             }
+
+            InitELMB();
+        }
+
+        public static void InitELMB()
+        {
+            if (!AppConfig.IsELMB()) return;
+
+            int elmb = AppConfig.Get("elmb");
+            if (elmb >= 0 && !ScreenCCD.IsHDR()) ScreenELMB.Set(elmb);
         }
 
         public static void InitOptimalBrightness()
