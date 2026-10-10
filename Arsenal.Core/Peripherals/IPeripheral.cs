@@ -4,7 +4,8 @@ namespace Arsenal.Peripherals
     public enum PeripheralType
     {
         Mouse,
-        Keyboard
+        Keyboard,
+        Headset
     }
 
     public interface IPeripheral

@@ -106,5 +106,17 @@ namespace Arsenal.Peripherals.Keyboard.Models
             return 64;
         }
     }
-}
 
+    public class StrixScopeII96RXWirelessOmni : StrixScopeII96WirelessOmni
+    {
+        public override string GetDisplayName()
+        {
+            return "ROG Strix Scope II 96 RX (OMNI)";
+        }
+
+        protected override string? LayoutName()
+        {
+            return IsIsoLayout ? "StrixScopeII96RxISO" : "StrixScopeII96Rx";
+        }
+    }
+}

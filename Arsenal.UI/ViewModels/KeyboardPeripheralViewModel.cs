@@ -44,7 +44,11 @@ namespace Arsenal.UI.ViewModels
             AsusKeyboard? keyboard = Service.FindKeyboard(device.Id);
             if (keyboard is not null && !ReferenceEquals(keyboard, _keyboard))
             {
-                if (_keyboard is not null) _keyboard.BatteryUpdated -= OnBatteryUpdated;
+                if (_keyboard is not null)
+                {
+                    _keyboard.BatteryUpdated -= OnBatteryUpdated;
+                    StopListening();
+                }
                 _keyboard = keyboard;
                 _keyboard.BatteryUpdated += OnBatteryUpdated;
                 _keyTiles.Clear();
@@ -52,6 +56,29 @@ namespace Arsenal.UI.ViewModels
             }
             base.Update(device);
         }
+
+        protected override void StartListening()
+        {
+            if (_keyboard is not { } k) return;
+            k.ProfileChanged -= OnProfileReported;
+            k.ProfileChanged += OnProfileReported;
+            k.StartEventListener();
+        }
+
+        protected override void StopListening()
+        {
+            if (_keyboard is not { } k) return;
+            k.StopEventListener();
+            k.ProfileChanged -= OnProfileReported;
+        }
+
+        /// <summary>The keyboard's own profile key was pressed.</summary>
+        private void OnProfileReported(object? sender, EventArgs e) =>
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+            {
+                if (_keyboard is not { } k || !k.HasProfiles() || Profile == k.Profile) return;
+                Load();
+            });
 
         private void OnBatteryUpdated(object? sender, EventArgs e) =>
             System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
@@ -428,15 +455,24 @@ namespace Arsenal.UI.ViewModels
             System.Drawing.Color paint = ToDrawing(PaintColor);
             int first = tile.Led;
             int span = tile.LedSpan;
+            bool changed = false;
             for (int i = 0; i < span; i++)
-                if (first + i < _keyColors.Length) _keyColors[first + i] = paint;
+            {
+                if (first + i < _keyColors.Length && _keyColors[first + i].ToArgb() != paint.ToArgb())
+                {
+                    _keyColors[first + i] = paint;
+                    changed = true;
+                }
+            }
+            if (!changed) return;
+
             tile.Color = PaintColor;
             _unsaved = true;
 
-            Run(() =>
-            {
-                for (int i = 0; i < span; i++) k.SetLedColor(first + i, paint);
-            });
+            // The whole map goes each time, as upstream does: a keyboard painted one
+            // colour all over is then sent as a static effect instead of key by key.
+            System.Drawing.Color[] colors = (System.Drawing.Color[])_keyColors.Clone();
+            Run(() => k.SetLedColors(colors));
             ScheduleSave();
         }
 

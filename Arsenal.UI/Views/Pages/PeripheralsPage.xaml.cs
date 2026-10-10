@@ -17,8 +17,14 @@ namespace Arsenal.UI.Views.Pages
                 SettingsGroup.OpenGroupChanged -= OnOpenGroupChanged;
                 SettingsGroup.OpenGroupChanged += OnOpenGroupChanged;
             };
-            Unloaded += (_, _) => SettingsGroup.OpenGroupChanged -= OnOpenGroupChanged;
+            Unloaded += (_, _) =>
+            {
+                SettingsGroup.OpenGroupChanged -= OnOpenGroupChanged;
+                SetOpen(null);
+            };
         }
+
+        private PeripheralViewModel? _open;
 
         /// <summary>
         /// Reads a device again each time its page is opened, as G-Helper does each time
@@ -26,8 +32,15 @@ namespace Arsenal.UI.Views.Pages
         /// </summary>
         private void OnOpenGroupChanged(SettingsGroup? group)
         {
-            if (group?.DataContext is PeripheralViewModel peripheral && IsAncestorOf(group))
-                peripheral.Opened();
+            SetOpen(group?.DataContext is PeripheralViewModel peripheral && IsAncestorOf(group) ? peripheral : null);
+        }
+
+        private void SetOpen(PeripheralViewModel? peripheral)
+        {
+            if (ReferenceEquals(peripheral, _open)) return;
+            _open?.Closed();
+            _open = peripheral;
+            _open?.Opened();
         }
     }
 }

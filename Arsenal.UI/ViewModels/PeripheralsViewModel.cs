@@ -9,7 +9,7 @@ using Wpf.Ui.Controls;
 namespace Arsenal.UI.ViewModels
 {
     /// <summary>
-    /// The Peripherals page: one entry per connected ASUS mouse, mouse pad or keyboard,
+    /// The Peripherals page: one entry per connected ASUS mouse, mouse pad, keyboard or headset,
     /// each of which opens onto that device's own settings.
     /// </summary>
     /// <remarks>
@@ -52,8 +52,8 @@ namespace Arsenal.UI.ViewModels
 
                 if (entry is null)
                 {
-                    entry = device.IsKeyboard
-                        ? new KeyboardPeripheralViewModel(_service, device)
+                    entry = device.IsKeyboard ? new KeyboardPeripheralViewModel(_service, device)
+                        : device.IsHeadset ? new HeadsetPeripheralViewModel(_service, device)
                         : new MousePeripheralViewModel(_service, device);
                     Peripherals.Insert(Math.Min(index, Peripherals.Count), entry);
                 }
@@ -75,6 +75,7 @@ namespace Arsenal.UI.ViewModels
                 {
                     PeripheralsProvider.DetectAllAsusMice();
                     PeripheralsProvider.DetectAllAsusKeyboards();
+                    PeripheralsProvider.DetectAllAsusHeadsets();
                     _service.RefreshDevices();
                 });
             }

@@ -1,3 +1,5 @@
+using Arsenal.Peripherals.Headset;
+using Arsenal.Peripherals.Headset.Models;
 using Arsenal.Peripherals.Keyboard;
 using Arsenal.Peripherals.Keyboard.Models;
 using Arsenal.Peripherals.Mouse;
@@ -16,6 +18,7 @@ namespace Arsenal.Peripherals
 
         public static List<AsusMouse> ConnectedMice = new List<AsusMouse>();
         public static List<AsusKeyboard> ConnectedKeyboards = new List<AsusKeyboard>();
+        public static List<AsusHeadset> ConnectedHeadsets = new List<AsusHeadset>();
 
         public static bool IsAuraSync { get; private set; } = AppConfig.IsAuraSync();
 
@@ -26,11 +29,18 @@ namespace Arsenal.Peripherals
         }
 
         public static bool IsKeyboardAuraSync { get; private set; } = AppConfig.IsKeyboardAuraSync();
+        public static bool IsHeadsetAuraSync { get; private set; } = AppConfig.IsHeadsetAuraSync();
 
         public static void SetKeyboardAuraSync(bool enabled)
         {
             AppConfig.Set("keyboard_aura_sync", enabled ? 1 : 0);
             IsKeyboardAuraSync = enabled;
+        }
+
+        public static void SetHeadsetAuraSync(bool enabled)
+        {
+            AppConfig.Set("headset_aura_sync", enabled ? 1 : 0);
+            IsHeadsetAuraSync = enabled;
         }
 
         public static event EventHandler? DeviceChanged;
@@ -66,9 +76,17 @@ namespace Arsenal.Peripherals
             }
         }
 
+        public static bool IsHeadsetConnected()
+        {
+            lock (_LOCK)
+            {
+                return ConnectedHeadsets.Count > 0;
+            }
+        }
+
         public static bool IsAnyPeripheralConnect()
         {
-            return IsMouseConnected() || IsKeyboardConnected();
+            return IsMouseConnected() || IsKeyboardConnected() || IsHeadsetConnected();
         }
 
         public static List<IPeripheral> AllPeripherals()
@@ -78,6 +96,7 @@ namespace Arsenal.Peripherals
             {
                 l.AddRange(ConnectedMice);
                 l.AddRange(ConnectedKeyboards);
+                l.AddRange(ConnectedHeadsets);
             }
             return l;
         }
@@ -95,6 +114,14 @@ namespace Arsenal.Peripherals
             lock (_LOCK)
             {
                 return new List<AsusKeyboard>(ConnectedKeyboards);
+            }
+        }
+
+        public static List<AsusHeadset> SnapshotHeadsets()
+        {
+            lock (_LOCK)
+            {
+                return new List<AsusHeadset>(ConnectedHeadsets);
             }
         }
 
@@ -140,6 +167,12 @@ namespace Arsenal.Peripherals
         {
             if (!IsAuraSync) return;
             ForEachAsync(ConnectedMice, m => m.SyncFromKeyboardAura(), "Failed to sync with keyboard aura");
+        }
+
+        public static void SyncHeadsetsWithAura()
+        {
+            if (!IsHeadsetAuraSync) return;
+            ForEachAsync(ConnectedHeadsets, hs => hs.SyncFromLaptopAura(), "Failed to sync with laptop aura");
         }
 
         public static void SyncKeyboardsWithAura()
@@ -321,6 +354,71 @@ namespace Arsenal.Peripherals
             UpdateSettingsView();
         }
 
+        public static void Connect(AsusHeadset hs)
+        {
+            if (IsDeviceConnected(hs))
+            {
+                return;
+            }
+
+            try
+            {
+                hs.Connect();
+            }
+            catch (IOException e)
+            {
+                Logger.WriteLine(hs.GetDisplayName() + " failed to connect to device: " + e);
+                return;
+            }
+
+            int tries = 0;
+            while (!hs.IsDeviceReady && tries < 3)
+            {
+                Thread.Sleep(250);
+                Logger.WriteLine(hs.GetDisplayName() + " synchronising. Try " + (tries + 1));
+                hs.SynchronizeDevice();
+                ++tries;
+            }
+
+            lock (_LOCK)
+            {
+                ConnectedHeadsets.Add(hs);
+            }
+            Logger.WriteLine(hs.GetDisplayName() + " added to the list: " + ConnectedHeadsets.Count + " headsets are connected.");
+
+            hs.Disconnect += Headset_Disconnect;
+            hs.HeadsetReadyChanged += PeripheralReadyChanged;
+            hs.BatteryUpdated += BatteryUpdated;
+
+            if (DeviceChanged is not null)
+            {
+                DeviceChanged(hs, EventArgs.Empty);
+            }
+            UpdateSettingsView();
+        }
+
+        private static void Headset_Disconnect(object? sender, EventArgs e)
+        {
+            if (sender is null)
+            {
+                return;
+            }
+
+            AsusHeadset hs = (AsusHeadset)sender;
+            hs.Disconnect -= Headset_Disconnect;
+            hs.HeadsetReadyChanged -= PeripheralReadyChanged;
+            hs.BatteryUpdated -= BatteryUpdated;
+            lock (_LOCK)
+            {
+                ConnectedHeadsets.Remove(hs);
+            }
+
+            Logger.WriteLine(hs.GetDisplayName() + " reported disconnect. " + ConnectedHeadsets.Count + " headsets are connected.");
+            hs.Dispose();
+
+            UpdateSettingsView();
+        }
+
         private static void BatteryUpdated(object? sender, EventArgs e)
         {
             UpdateSettingsView();
@@ -378,9 +476,13 @@ namespace Arsenal.Peripherals
             OnPeripheralsChanged?.Invoke();
         }
 
+        private static List<HidDevice> asusHidDevices = new();
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static void DetectAllAsusMice()
         {
+            asusHidDevices = DeviceList.Local.GetHidDevices(0x0B05).ToList();
+
             //Add one line for every supported mouse class here to support them.
             DedectOmniMouse();
             DetectHarpeIIWireless();
@@ -442,19 +544,25 @@ namespace Arsenal.Peripherals
             DetectMouse(new MD200());
             DetectMouse(new BalteusQi());
             DetectMouse(new Balteus());
+            DetectMouse(new BulwarkDock());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static void DetectAllAsusKeyboards()
         {
+            asusHidDevices = DeviceList.Local.GetHidDevices(0x0B05).ToList();
+
             if (AppConfig.Is("keyboard_test")) DetectKeyboard(new Azoth() { TestMode = true });
 
             DetectKeyboard(new Azoth());
             DetectKeyboard(new AzothExtreme());
+            DetectKeyboard(new AzothExtremeSE());
             DetectKeyboard(new AzothWireless());
             DetectKeyboard(new AzothX());
             DetectKeyboard(new AzothXWireless());
             DetectKeyboard(new StrixFlare());
+            DetectKeyboard(new StrixFlareCOD());
+            DetectKeyboard(new StrixFlarePNK());
             DetectKeyboard(new StrixFlareII());
             DetectKeyboard(new StrixFlareIIAnimate());
             DetectKeyboard(new StrixScopeII());
@@ -464,6 +572,8 @@ namespace Arsenal.Peripherals
             DetectKeyboard(new StrixScopeRXTKLWireless());
             DetectKeyboard(new StrixScopeRXTKLWired());
             DetectKeyboard(new StrixScopeRX());
+            DetectKeyboard(new StrixScopeRXEVA());
+            DetectKeyboard(new StrixScopeRXEVA02());
             DetectKeyboard(new Falchion());
             DetectKeyboard(new FalchionWireless());
             DetectKeyboard(new FalchionRX());
@@ -472,7 +582,32 @@ namespace Arsenal.Peripherals
             DetectKeyboard(new TUFK1());
             DetectKeyboard(new TUFK3());
             DetectKeyboard(new TUFK3GenII());
+            DetectKeyboard(new TUFK3GenIIMiku());
+            DetectKeyboard(new TX98());
             DetectKeyboard(new ClaymoreII());
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public static void DetectAllAsusHeadsets()
+        {
+            if (AppConfig.Is("headset_test")) DetectHeadset(new DeltaII() { TestMode = true });
+
+            DetectHeadset(new DeltaII());
+            DetectHeadset(new DeltaIIKjp());
+            DetectHeadset(new Pelta());
+            DetectHeadset(new CetraSpeedNova());
+            DetectHeadset(new Clavis());
+            DetectHeadset(new CetraRgb());
+            DetectHeadset(new StrixGo24());
+        }
+
+        public static void DetectHeadset(AsusHeadset hs)
+        {
+            if (hs.IsDeviceConnected() && !IsDeviceConnected(hs))
+            {
+                Logger.WriteLine("Detected a new " + hs.GetDisplayName() + (hs.TestMode ? " (Test)" : "") + " . Connecting...");
+                Connect(hs);
+            }
         }
 
         private static int KeyboardTestPid()
@@ -491,7 +626,7 @@ namespace Arsenal.Peripherals
         {
             if (KeyboardTestPid() == kb.ProductID()) kb.TestMode = true;
 
-            if (kb.IsDeviceConnected() && !IsDeviceConnected(kb))
+            if (kb.IsDeviceConnected(asusHidDevices) && !IsDeviceConnected(kb))
             {
                 Logger.WriteLine("Detected a new " + kb.GetDisplayName() + (kb.TestMode ? " (Test)" : "") + " . Connecting...");
                 Connect(kb);
@@ -500,8 +635,8 @@ namespace Arsenal.Peripherals
 
         public static void DedectOmniMouse()
         {
-            var omnis = DeviceList.Local.GetHidDevices(0x0B05, OMNI_PID).Where(x => x.DevicePath.Contains("mi_02&col01"));
-            var devices = DeviceList.Local.GetHidDevices(0x0B05, OMNI_PID).Where(x => x.DevicePath.Contains("mi_02&col03")).ToList();
+            var omnis = asusHidDevices.Where(x => x.ProductID == OMNI_PID && x.DevicePath.Contains("mi_02&col01"));
+            var devices = asusHidDevices.Where(x => x.ProductID == OMNI_PID && x.DevicePath.Contains("mi_02&col03")).ToList();
             foreach (var omni in omnis)
                 DedectOmniMouse(omni, devices.FirstOrDefault(x => OmniInstance(x.DevicePath) == OmniInstance(omni.DevicePath)));
         }
@@ -547,8 +682,8 @@ namespace Arsenal.Peripherals
                 {
                     // keyboard traffic goes on the receiver's col02 (0xFF00) channel, not the
                     // mouse's col03 (0xFF01) one that this method otherwise uses
-                    var keyboardDevice = DeviceList.Local.GetHidDevices(0x0B05, OMNI_PID)
-                        .FirstOrDefault(x => x.DevicePath.Contains("mi_02&col02")
+                    var keyboardDevice = asusHidDevices
+                        .FirstOrDefault(x => x.ProductID == OMNI_PID && x.DevicePath.Contains("mi_02&col02")
                             && OmniInstance(x.DevicePath) == OmniInstance(omni.DevicePath));
 
                     if (keyboardDevice is not null)
@@ -634,14 +769,16 @@ namespace Arsenal.Peripherals
         {
             0x1A85 => new AzothOmni(),
             0x1B42 => new AzothExtremeOmni(),
+            0x1CF1 => new AzothExtremeSEOmni(),
             0x1AB0 => new StrixScopeII96WirelessOmni(),
+            0x1B7A => new StrixScopeII96RXWirelessOmni(),
             0x1B06 => new FalchionRXLowProfileOmni(),
             _ => null,
         };
 
         public static void DetectHarpeIIWireless()
         {
-            var device = DeviceList.Local.GetHidDevices(0x0B05, 0x1AD0).FirstOrDefault();
+            var device = asusHidDevices.FirstOrDefault(x => x.ProductID == 0x1AD0);
             if (device is null) return;
 
             string product = "";
@@ -670,7 +807,7 @@ namespace Arsenal.Peripherals
 
         public static void DetectMouse(AsusMouse am)
         {
-            if (am.IsDeviceConnected() && !IsDeviceConnected(am))
+            if (am.IsDeviceConnected(asusHidDevices) && !IsDeviceConnected(am))
             {
                 Logger.WriteLine("Detected a new" + am.GetDisplayName() + " . Connecting...");
                 Connect(am);
@@ -695,9 +832,10 @@ namespace Arsenal.Peripherals
         private static void DeviceTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
             timer.Stop();
-            Logger.WriteLine("HID Device Event: Checking for new ASUS Mice");
+            Logger.WriteLine("HID Device Event: Checking for ASUS peripherals");
             DetectAllAsusMice();
             DetectAllAsusKeyboards();
+            DetectAllAsusHeadsets();
 
             // This runs on a timer thread in response to a device arriving, which can
             // happen before the dispatcher is constructed or after shutdown has cleared

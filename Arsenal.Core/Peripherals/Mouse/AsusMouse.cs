@@ -211,6 +211,7 @@ namespace Arsenal.Peripherals.Mouse
         public event EventHandler? Disconnect;
         public event EventHandler? BatteryUpdated;
         public event EventHandler? MouseReadyChanged;
+        public event EventHandler? ProfileChanged;
 
         private string path;
 
@@ -491,8 +492,33 @@ namespace Arsenal.Peripherals.Mouse
         public override void Dispose()
         {
             Logger.WriteLine(GetDisplayName() + ": Disposing");
+            StopEventListener();
             HidSharp.DeviceList.Local.Changed -= Device_Changed;
             base.Dispose();
+        }
+
+        private PeripheralEventListener? events;
+
+        public void StartEventListener()
+        {
+            events ??= new PeripheralEventListener(VendorID(), ProductID(), GetDisplayName(), OnEventReport);
+            events.Start(path);
+        }
+
+        public void StopEventListener()
+        {
+            events?.Stop();
+        }
+
+        // 12 01 is the raw button bitmap and precedes the state change it causes
+        private void OnEventReport(byte[] buffer, int count)
+        {
+            if (count < 3 || buffer[1] != 0x12 || buffer[2] == 0x01) return;
+
+            int was = Profile;
+            int wasDpi = DpiProfile;
+            ReadProfile();
+            if (Profile != was || DpiProfile != wasDpi) ProfileChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void Device_Changed(object? sender, HidSharp.DeviceListChangedEventArgs e)
@@ -506,6 +532,11 @@ namespace Arsenal.Peripherals.Mouse
         //This function should automatically disconnect the device in Arsenal if the device is no longer there or the pipe is broken.
         public virtual void CheckConnection()
         {
+            if (!IsDeviceConnected())
+            {
+                OnDisconnect();
+                return;
+            }
             ReadBattery();
         }
 
@@ -520,6 +551,11 @@ namespace Arsenal.Peripherals.Mouse
             {
                 return false;
             }
+        }
+
+        public bool IsDeviceConnected(IEnumerable<HidSharp.HidDevice> devices)
+        {
+            return devices.Any(x => x.VendorID == VendorID() && x.ProductID == ProductID() && x.DevicePath.Contains(path));
         }
 
         public virtual int USBTimeout()
@@ -682,6 +718,12 @@ namespace Arsenal.Peripherals.Mouse
         public PeripheralType DeviceType()
         {
             return PeripheralType.Mouse;
+        }
+
+        // A dock or stand on the mouse protocol: no sensor, so not a mouse pad either.
+        public virtual bool IsDock()
+        {
+            return false;
         }
 
         public virtual void SynchronizeDevice()
@@ -2310,6 +2352,8 @@ namespace Arsenal.Peripherals.Mouse
             (0x01E7, "Target Focus" ),
             (0x01E8, "Scroll Up"    ),
             (0x01E9, "Scroll Down"  ),
+            (0x01C0, "RapidFire (Toggle)"),
+            (0x01C1, "RapidFire (Hold)"  ),
             (0x0000, "Disabled"     ),
         };
 
@@ -2428,6 +2472,12 @@ namespace Arsenal.Peripherals.Mouse
             {
                 int offset = 5 + slot * 2;
                 string slotName = slots.TryGetValue(slot, out var def) ? def.Name : $"Slot {slot}";
+                if (WriteOnlySlots.Contains(slot))
+                {
+                    ButtonBindings[slot] = LoadWriteOnlySlot(slot, def.SourceCode);
+                    Logger.WriteLine(GetDisplayName() + $": Slot {slot} ({slotName}): {LabelForActionCode(ButtonBindings[slot])} (0x{ButtonBindings[slot]:X4}) [write-only]");
+                    continue;
+                }
                 if (offset + 1 >= response.Length)
                 {
                     Logger.WriteLine(GetDisplayName() + $": Slot {slot} ({slotName}): out of range");
@@ -2510,6 +2560,13 @@ namespace Arsenal.Peripherals.Mouse
             ushort sourceCode = slotDef.SourceCode;
 
             WriteForResponse(GetSetButtonBindingPacket(sourceCode, actionCode));
+            if (actionCode == 0x01C0 || actionCode == 0x01C1)
+            {
+                ushort l = (ushort)AppConfig.Get("mouse_rapidfire_left", 50);
+                ushort r = (ushort)AppConfig.Get("mouse_rapidfire_right", 0);
+                ushort s = (ushort)AppConfig.Get("mouse_rapidfire_scroll", 0);
+                WriteForResponse(new byte[] { reportId, 0x51, 0x22, 0x00, 0x00, (byte)l, (byte)(l >> 8), (byte)r, (byte)(r >> 8), (byte)s, (byte)(s >> 8) });
+            }
             FlushSettings();
 
             Logger.WriteLine(GetDisplayName()

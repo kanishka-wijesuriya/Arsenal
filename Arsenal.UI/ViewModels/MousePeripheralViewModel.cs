@@ -42,19 +42,43 @@ namespace Arsenal.UI.ViewModels
             Load();
         }
 
-        public override SymbolRegular Icon => IsPad ? SymbolRegular.RectangleLandscape24 : SymbolRegular.Cursor24;
+        public override SymbolRegular Icon => IsDock ? SymbolRegular.PlugConnected24
+            : IsPad ? SymbolRegular.RectangleLandscape24 : SymbolRegular.Cursor24;
 
         public override void Update(PeripheralDeviceModel device)
         {
             AsusMouse? mouse = Service.FindMouse(device.Id);
             if (mouse is not null && !ReferenceEquals(mouse, _mouse))
             {
-                if (_mouse is not null) _mouse.BatteryUpdated -= OnBatteryUpdated;
+                if (_mouse is not null)
+                {
+                    _mouse.BatteryUpdated -= OnBatteryUpdated;
+                    StopListening();
+                }
                 _mouse = mouse;
                 _mouse.BatteryUpdated += OnBatteryUpdated;
             }
             base.Update(device);
         }
+
+        protected override void StartListening()
+        {
+            if (_mouse is not { } m) return;
+            m.ProfileChanged -= OnProfileReported;
+            m.ProfileChanged += OnProfileReported;
+            m.StartEventListener();
+        }
+
+        protected override void StopListening()
+        {
+            if (_mouse is not { } m) return;
+            m.StopEventListener();
+            m.ProfileChanged -= OnProfileReported;
+        }
+
+        /// <summary>The profile or DPI button on the mouse itself was pressed.</summary>
+        private void OnProfileReported(object? sender, EventArgs e) =>
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(Load);
 
         private void OnBatteryUpdated(object? sender, EventArgs e) =>
             System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
@@ -64,13 +88,16 @@ namespace Arsenal.UI.ViewModels
             });
 
         /// <summary>A pad reports as a mouse but has no sensor.</summary>
-        public bool IsPad => _mouse is not null && _mouse.DPIProfileCount() == 0;
+        public bool IsPad => _mouse is not null && _mouse.DPIProfileCount() == 0 && !IsDock;
+
+        /// <summary>A dock speaks the mouse protocol for its lighting and nothing else.</summary>
+        public bool IsDock => _mouse?.IsDock() == true;
 
         protected override string Describe(PeripheralDeviceModel device)
         {
-            string kind = IsPad ? "Mouse pad" : _mouse?.Wireless == true ? "Wireless mouse" : "Mouse";
+            string kind = IsDock ? "Dock" : IsPad ? "Mouse pad" : _mouse?.Wireless == true ? "Wireless mouse" : "Mouse";
             if (HasBattery) return $"{kind}, battery {BatteryText}";
-            if (IsPad || _mouse is null) return kind;
+            if (IsPad || IsDock || _mouse is null) return kind;
             return $"{kind}, {_mouse.DpiSettings.ElementAtOrDefault(Math.Max(0, _mouse.DpiProfile - 1))?.DPI ?? 0} DPI at {_mouse.PollingRateDisplayString(_mouse.PollingRate)}";
         }
 
@@ -92,7 +119,7 @@ namespace Arsenal.UI.ViewModels
         {
             foreach (string name in new[]
             {
-                nameof(IsPad), nameof(Icon), nameof(HasProfiles), nameof(CanExport),
+                nameof(IsPad), nameof(IsDock), nameof(Icon), nameof(HasProfiles), nameof(CanExport),
                 nameof(HasPerformance), nameof(HasDpiColors), nameof(CanSetPollingRate), nameof(HasMotionSync),
                 nameof(HasZoneMode), nameof(HasAngleSnapping), nameof(HasAngleTuning), nameof(HasAngleSettings),
                 nameof(HasLiftOff), nameof(HasDebounce), nameof(HasAcceleration), nameof(HasDeceleration),

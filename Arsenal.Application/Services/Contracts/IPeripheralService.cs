@@ -32,5 +32,8 @@ namespace Arsenal.Application.Services.Contracts
 
         /// <summary>The keyboard behind a listed device, or null once it has gone.</summary>
         Arsenal.Peripherals.Keyboard.AsusKeyboard? FindKeyboard(string deviceId);
+
+        /// <summary>The headset behind a listed device, or null once it has gone.</summary>
+        Arsenal.Peripherals.Headset.AsusHeadset? FindHeadset(string deviceId);
     }
 }

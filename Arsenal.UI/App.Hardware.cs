@@ -94,6 +94,7 @@ namespace Arsenal.UI
                 }
                 PeripheralsProvider.DetectAllAsusMice();
                 PeripheralsProvider.DetectAllAsusKeyboards();
+                PeripheralsProvider.DetectAllAsusHeadsets();
                 global::Startup.StartupCheck();
 
                 // Release unneeded startup allocations once hardware initialization has settled.

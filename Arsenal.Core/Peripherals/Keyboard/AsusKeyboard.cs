@@ -28,6 +28,7 @@ namespace Arsenal.Peripherals.Keyboard
         public event EventHandler? Disconnect;
         public event EventHandler? BatteryUpdated;
         public event EventHandler? KeyboardReadyChanged;
+        public event EventHandler? ProfileChanged;
 
         private string? path;
 
@@ -147,6 +148,14 @@ namespace Arsenal.Peripherals.Keyboard
             return false;
         }
 
+        public bool IsDeviceConnected(IEnumerable<HidDevice> devices)
+        {
+            if (TestMode) return true;
+            foreach (var device in devices)
+                if (device.VendorID == VendorID() && device.ProductID == ProductID() && (path is null || device.DevicePath.Contains(path))) return true;
+            return false;
+        }
+
         public override void SetProvider()
         {
             var candidates = FindVendorDevices();
@@ -209,8 +218,44 @@ namespace Arsenal.Peripherals.Keyboard
         public override void Dispose()
         {
             Logger.WriteLine(GetDisplayName() + ": Disposing");
+            StopEventListener();
             DeviceList.Local.Changed -= Device_Changed;
             base.Dispose();
+        }
+
+        protected virtual byte EventReportId => 0x70;
+
+        private PeripheralEventListener? events;
+
+        public void StartEventListener()
+        {
+            if (TestMode) return;
+            events ??= new PeripheralEventListener(VendorID(), ProductID(), GetDisplayName(), OnEventReport);
+            events.Start(path);
+        }
+
+        public void StopEventListener()
+        {
+            events?.Stop();
+        }
+
+        private void OnEventReport(byte[] buffer, int count)
+        {
+            if (count < 5 || buffer[1] != EventReportId) return;
+
+            int reported = 0;
+            for (int i = 1; i <= ProfileCount(); i++)
+                if (buffer[4] == 1 << i) reported = i;
+
+            if (reported == 0) return;
+
+            int profile = reported == ProfileCount() ? 0 : reported;
+            if (profile == Profile) return;
+
+            Profile = profile;
+            AppConfig.Set(ProfileConfigKey, profile);
+            Logger.WriteLine(GetDisplayName() + ": Active profile " + (profile + 1));
+            ProfileChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void Device_Changed(object? sender, DeviceListChangedEventArgs e)
@@ -707,12 +752,6 @@ namespace Arsenal.Peripherals.Keyboard
         // Direct per-key: C0 81 count 00, then (led, R, G, B) per key; 15 entries need 65
         // bytes, one over the 64-byte Omni report (last key loses B), so max 14 per packet
         private byte Dim(byte channel) => (byte)(channel * StoredBrightness / 100);
-
-        public bool SetLedColor(int led, Color color)
-        {
-            byte[] packet = new byte[] { reportId, 0xC0, 0x81, 0x01, 0x00, LedId(Layout().LedIds, led), Dim(color.R), Dim(color.G), Dim(color.B) };
-            return WriteForResponse(packet) is not null;
-        }
 
         public bool SetLedColors(Color[] colors)
         {

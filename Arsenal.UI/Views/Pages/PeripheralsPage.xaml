@@ -506,6 +506,145 @@
                 </controls:SettingsGroup>
             </controls:SettingsGroup>
         </DataTemplate>
+
+        <!-- ===================================================================
+             A headset, following G-Helper's headset window.
+             =================================================================== -->
+        <DataTemplate DataType="{x:Type vm:HeadsetPeripheralViewModel}">
+            <controls:SettingsGroup IsDestination="True" HostsSections="True"
+                                    Header="{Binding Name}" Description="{Binding Summary}" Icon="{Binding Icon}">
+
+                <TextBlock Text="Reading settings from the device…" Style="{StaticResource CaptionStyle}" Margin="2,0,0,12"
+                           Visibility="{Binding IsReading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Device" Icon="Info24">
+                    <controls:SettingsRow Header="Battery"
+                                          Visibility="{Binding HasBattery, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="{Binding BatteryText}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimary}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Read from the headset" Description="Show what the headset holds now, if it was changed on another PC or with its own buttons.">
+                        <ui:Button Content="Read again" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Secondary" Command="{Binding SynchronizeCommand}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Factory settings" Description="Put every setting on the headset back to how it shipped."
+                                          Visibility="{Binding HasReset, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ui:Button Content="Reset" Icon="{ui:SymbolIcon ArrowReset24}" Appearance="Secondary" Command="{Binding ResetCommand}"/>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Lighting" Icon="Color24"
+                                        Visibility="{Binding HasLighting, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow Header="Sync with laptop Aura" Description="Follow the laptop keyboard's effect and colour.">
+                        <ui:ToggleSwitch IsChecked="{Binding AuraSync, Mode=TwoWay}"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Effect" IsEnabled="{Binding IsManualLighting}">
+                        <ComboBox ItemsSource="{Binding LightingModes}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding SelectedMode, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Brightness"
+                                          Visibility="{Binding HasBrightness, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:ValueSlider Minimum="0" Maximum="100" TickFrequency="5"
+                                              Value="{Binding Brightness}" Format="{}{0}%"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Colour" IsEnabled="{Binding IsManualLighting}"
+                                          Visibility="{Binding ShowsColor, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:SettingsRow.ContentBelow>
+                            <StackPanel Width="260" Margin="0,8,0,8" HorizontalAlignment="Left">
+                                <controls:ColorSpectrumPicker SelectedColor="{Binding Color, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="140"/>
+                                <Border Height="30" Margin="0,8,0,0" CornerRadius="{DynamicResource RadiusControl}" Background="{Binding ColorBrush}">
+                                    <TextBlock Text="{Binding ColorHex}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                </Border>
+                            </StackPanel>
+                        </controls:SettingsRow.ContentBelow>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Audio" Icon="Speaker224"
+                                        Visibility="{Binding HasAudio, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow Header="Equalizer" Description="Choose a preset, or move the bands. Moving a band on a custom preset keeps it there."
+                                          Visibility="{Binding HasEqualizer, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <ComboBox ItemsSource="{Binding EqualizerPresets}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                      SelectedValue="{Binding EqualizerPreset, Mode=TwoWay}" MinWidth="160" Margin="0,0,12,0"/>
+                            <ui:ToggleSwitch IsChecked="{Binding EqualizerEnabled, Mode=TwoWay}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <controls:SettingsRow.ContentBelow>
+                            <ItemsControl ItemsSource="{Binding Bands}" Focusable="False" Margin="0,8,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <controls:ValueSlider Header="{Binding Label}" HeaderWidth="64" Minimum="0"
+                                                              Maximum="{Binding DataContext.MaxEqualizerGain, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                              TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Gain}" Margin="0,0,0,4"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </controls:SettingsRow.ContentBelow>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Sidetone" Description="Hear your own voice in the headset while you talk."
+                                          Visibility="{Binding HasSidetone, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <controls:ValueSlider Minimum="0" Maximum="{Binding MaxSidetone}" TickFrequency="1" IsSnapToTickEnabled="True"
+                                                  Value="{Binding Sidetone}" Width="220" Margin="0,0,12,0"/>
+                            <ui:ToggleSwitch IsChecked="{Binding SidetoneEnabled, Mode=TwoWay}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Microphone noise reduction"
+                                          Visibility="{Binding HasNoiseReduction, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <ComboBox ItemsSource="{Binding NoiseReductionOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                      SelectedValue="{Binding NoiseReduction, Mode=TwoWay}" MinWidth="140" Margin="0,0,12,0"
+                                      Visibility="{Binding HasNoiseReductionLevel, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            <ui:ToggleSwitch IsChecked="{Binding NoiseReductionEnabled, Mode=TwoWay}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Microphone"
+                                          Visibility="{Binding HasMicrophoneType, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{Binding MicrophoneTypeOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding MicrophoneType, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Voice prompts" Description="What the headset plays when it powers on, connects or runs low."
+                                          Visibility="{Binding HasVoicePrompt, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{Binding VoicePromptOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding VoicePrompt, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Noise cancelling" Icon="HeadphonesSoundWave24"
+                                        Visibility="{Binding HasAncSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow Header="Active noise cancelling" Description="Ambient lets outside sound through instead."
+                                          Visibility="{Binding HasAnc, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ComboBox ItemsSource="{Binding AncOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding AncMode, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Cancelling level" Description="Adaptive follows the noise around you."
+                                          IsEnabled="{Binding IsAncOn}"
+                                          Visibility="{Binding HasAnc, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <ComboBox ItemsSource="{Binding AncLevelOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                      SelectedValue="{Binding AncLevel, Mode=TwoWay}" MinWidth="140" Margin="0,0,12,0"/>
+                            <CheckBox Content="Adaptive" IsChecked="{Binding AdaptiveAnc, Mode=TwoWay}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Dirac" Description="The headset's own Dirac audio tuning."
+                                          Visibility="{Binding HasDirac, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ui:ToggleSwitch IsChecked="{Binding Dirac, Mode=TwoWay}"/>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+
+                <controls:SettingsGroup AlwaysOpen="True" Header="Power" Icon="BatteryCharge24"
+                                        Visibility="{Binding HasPower, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:SettingsRow Header="Turn off when idle" Description="How long the headset waits before it sleeps.">
+                        <ComboBox ItemsSource="{Binding SleepOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                  SelectedValue="{Binding SleepTimer, Mode=TwoWay}" MinWidth="200"/>
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Header="Low-battery warning" Description="The headset warns you when its charge falls to this."
+                                          Visibility="{Binding HasLowBatteryWarning, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <controls:ValueSlider Minimum="0" Maximum="50" TickFrequency="10"
+                                              IsSnapToTickEnabled="True" Value="{Binding LowBatteryWarning}" Format="{}{0}%"/>
+                    </controls:SettingsRow>
+                </controls:SettingsGroup>
+            </controls:SettingsGroup>
+        </DataTemplate>
     </UserControl.Resources>
 
     <ScrollViewer Style="{StaticResource PageScrollStyle}">
@@ -518,7 +657,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Margin="0,0,24,0">
                     <TextBlock Text="Peripherals" Style="{StaticResource PageTitleStyle}"/>
-                    <TextBlock Text="ASUS mice, mouse pads and keyboards connected to this PC" Style="{StaticResource PageSubtitleStyle}"/>
+                    <TextBlock Text="ASUS mice, mouse pads, keyboards and headsets connected to this PC" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Style="{StaticResource ActionBarStyle}">
                     <ui:Button Style="{DynamicResource ActionButtonStyle}" Margin="0" Content="Scan for peripherals"

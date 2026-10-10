@@ -215,6 +215,7 @@ namespace Arsenal.Application.Models
         public bool HasMouseLightingZones => MouseLightingZones.Count > 1;
 
         public bool IsKeyboard => DeviceType == "Keyboard";
+        public bool IsHeadset => DeviceType == "Headset";
         public bool HasBattery { get; set; }
         public bool HasKeyboardLighting { get; set; }
         public bool HasKeyboardPower { get; set; }
@@ -227,6 +228,8 @@ namespace Arsenal.Application.Models
             ? "ASUS mouse pad"
             : IsMouse
             ? $"Polling {PollingRate} Hz"
+            : IsHeadset
+            ? HasBattery ? "Wireless ASUS headset" : "ASUS headset"
             : HasBattery ? "Wireless ASUS keyboard" : "ASUS keyboard";
 
         public List<PeripheralOptionModel> LightingModes { get; set; } = new();

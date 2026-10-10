@@ -4,6 +4,7 @@ using Arsenal.Display;
 using Arsenal.Fan;
 using Arsenal.Helpers;
 using Arsenal.Peripherals;
+using Arsenal.Peripherals.Headset;
 using Arsenal.Peripherals.Keyboard;
 using Arsenal.Peripherals.Keyboard.Models;
 using Arsenal.Peripherals.Mouse;
@@ -18,6 +19,7 @@ namespace Arsenal.Application.Services.Implementations
         private readonly List<PeripheralDeviceModel> _devices = new();
         private readonly Dictionary<string, AsusMouse> _mice = new();
         private readonly Dictionary<string, AsusKeyboard> _keyboards = new();
+        private readonly Dictionary<string, AsusHeadset> _headsets = new();
         public IReadOnlyList<PeripheralDeviceModel> Devices
         {
             get { lock (_devicesGate) return _devices.ToArray(); }
@@ -36,6 +38,7 @@ namespace Arsenal.Application.Services.Implementations
             var devices = new List<PeripheralDeviceModel>();
             var mice = new Dictionary<string, AsusMouse>();
             var keyboards = new Dictionary<string, AsusKeyboard>();
+            var headsets = new Dictionary<string, AsusHeadset>();
             foreach (var dev in PeripheralsProvider.SnapshotMice())
             {
                 string id = RuntimeHelpers.GetHashCode(dev).ToString();
@@ -133,6 +136,22 @@ namespace Arsenal.Application.Services.Implementations
                 });
             }
 
+            foreach (var headset in PeripheralsProvider.SnapshotHeadsets())
+            {
+                string id = RuntimeHelpers.GetHashCode(headset).ToString();
+                headsets[id] = headset;
+                devices.Add(new PeripheralDeviceModel
+                {
+                    Id = id,
+                    Name = headset.GetDisplayName(),
+                    DeviceType = "Headset",
+                    BatteryPercentage = headset.Battery,
+                    IsCharging = headset.Charging,
+                    IsConnected = headset.IsDeviceReady,
+                    HasBattery = headset.HasBattery()
+                });
+            }
+
             lock (_devicesGate)
             {
                 _devices.Clear();
@@ -141,6 +160,8 @@ namespace Arsenal.Application.Services.Implementations
                 foreach (var pair in mice) _mice[pair.Key] = pair.Value;
                 _keyboards.Clear();
                 foreach (var pair in keyboards) _keyboards[pair.Key] = pair.Value;
+                _headsets.Clear();
+                foreach (var pair in headsets) _headsets[pair.Key] = pair.Value;
             }
             DevicesChanged?.Invoke();
         }
@@ -345,6 +366,11 @@ namespace Arsenal.Application.Services.Implementations
         public AsusKeyboard? FindKeyboard(string deviceId)
         {
             lock (_devicesGate) return _keyboards.TryGetValue(deviceId, out AsusKeyboard? keyboard) ? keyboard : null;
+        }
+
+        public AsusHeadset? FindHeadset(string deviceId)
+        {
+            lock (_devicesGate) return _headsets.TryGetValue(deviceId, out AsusHeadset? headset) ? headset : null;
         }
 
         private static int PollingRateToHz(PollingRate rate) => rate switch

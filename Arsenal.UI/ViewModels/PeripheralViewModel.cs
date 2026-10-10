@@ -82,7 +82,19 @@ namespace Arsenal.UI.ViewModels
                 Load();
                 IsReading = false;
             });
+            StartListening();
         }
+
+        /// <summary>Called when the device's page is left.</summary>
+        public void Closed() => StopListening();
+
+        /// <summary>
+        /// Follows changes made with the device's own buttons while its page is open,
+        /// as G-Helper does while its window for one is open.
+        /// </summary>
+        protected virtual void StartListening() { }
+
+        protected virtual void StopListening() { }
 
         protected abstract void ReadDevice();
 
@@ -99,6 +111,18 @@ namespace Arsenal.UI.ViewModels
         }
 
         protected abstract void LoadValues();
+
+        /// <summary>
+        /// Puts values on screen that the device already has, so they are not written
+        /// back to it as though the user had changed them.
+        /// </summary>
+        protected void Show(Action apply)
+        {
+            bool wasLoading = Loading;
+            Loading = true;
+            try { apply(); }
+            finally { Loading = wasLoading; }
+        }
 
         /// <summary>
         /// Puts a list's selection back after its options were cleared and refilled.
