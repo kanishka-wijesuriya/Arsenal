@@ -322,6 +322,13 @@ namespace Arsenal.Gpu
                             // If dGPU is heavily in use, skip auto eco or proceed based on preference
                             if (!AppConfig.Is("force_auto_eco")) return false;
                         }
+                        else if (GpuAuto && Program.acpi.IsExternalDisplayConnected())
+                        {
+                            // A display on the dGPU's own HDMI or DisplayPort would go dark.
+                            // G-Helper asks here; an automatic switch has nobody to ask.
+                            Logger.WriteLine("Skipping Eco: display connected to the dGPU");
+                            if (!AppConfig.Is("force_auto_eco")) return false;
+                        }
 
                         if (delay > 0) Thread.Sleep(delay);
                         SetGPUEco(1);

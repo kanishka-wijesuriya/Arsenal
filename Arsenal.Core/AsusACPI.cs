@@ -77,6 +77,7 @@ public class AsusACPI : IDisposable
 
     public const uint GPUXGConnected = 0x00090018;
     public const uint GPUXG = 0x00090019;
+    public const uint GPUDisplayConnect = 0x00090030;
 
     public const uint GPUMuxROG = 0x00090016;
     public const uint GPUMuxVivo = 0x00090026;
@@ -789,6 +790,12 @@ public class AsusACPI : IDisposable
     public bool IsXGConnected()
     {
         return IsSupported(GPUXGConnected) && DeviceGet(GPUXGConnected) == 1;
+    }
+
+    public bool IsExternalDisplayConnected()
+    {
+        int status = DeviceGet(GPUDisplayConnect);
+        return status >= 0 && ((status >> 4) & status & 0xF) > 0;
     }
 
     public bool IsAllAmdPPT()
