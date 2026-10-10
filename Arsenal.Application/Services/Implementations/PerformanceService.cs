@@ -39,6 +39,13 @@ namespace Arsenal.Application.Services.Implementations
         // past any useful curve, so the ceiling is a sanity bound rather than a limit.
         public ControlRange FanHysteresisRange => new(0, 20);
 
+        public bool IsCrossLoadSupported => Program.acpi.IsSupported(AsusACPI.PPT_CROSS9F);
+        public bool IsGpuToCpuSupported => Program.acpi.IsSupported(AsusACPI.PPT_GPUCPU9C);
+        public bool IsFirmwareCpuTempSupported => Program.acpi.IsSupported(AsusACPI.PPT_TEMP9E);
+        public ControlRange CrossLoadRange => new(AsusACPI.MinCrossLoad, AsusACPI.MaxCrossLoad);
+        public ControlRange GpuToCpuRange => new(AsusACPI.MinGPUtoCPU, AsusACPI.MaxGPUtoCPU);
+        public ControlRange FirmwareCpuTempRange => new(AsusACPI.MinCPUTemp, AsusACPI.MaxCPUTemp);
+
         public PerformanceService()
         {
             ModeControl.OnModeChanged += (mode) => ModeChanged?.Invoke(mode);
@@ -67,6 +74,9 @@ namespace Arsenal.Application.Services.Implementations
                 Sppt = AppConfig.GetMode("limit_slow"),
                 Fppt = AppConfig.GetMode("limit_fast"),
                 CpuTempLimit = AppConfig.GetMode("cpu_temp"),
+                CrossLoad = AppConfig.GetMode("limit_crossload"),
+                GpuToCpu = AppConfig.GetMode("limit_gpucpu"),
+                FirmwareCpuTemp = AppConfig.GetMode("limit_cputemp"),
                 CpuUndervolt = AppConfig.GetMode("cpu_uv"),
                 IgpuUndervolt = AppConfig.GetMode("igpu_uv"),
                 GpuCoreOffset = AppConfig.GetMode("gpu_core") == -1 ? 0 : AppConfig.GetMode("gpu_core"),
@@ -124,6 +134,9 @@ namespace Arsenal.Application.Services.Implementations
             if (profile.Sppt > 0) AppConfig.SetMode("limit_slow", profile.Sppt);
             if (profile.Fppt > 0) AppConfig.SetMode("limit_fast", profile.Fppt);
             if (profile.CpuTempLimit > 0) AppConfig.SetMode("cpu_temp", profile.CpuTempLimit);
+            if (profile.CrossLoad >= 0 && IsCrossLoadSupported) AppConfig.SetMode("limit_crossload", profile.CrossLoad);
+            if (profile.GpuToCpu >= 0 && IsGpuToCpuSupported) AppConfig.SetMode("limit_gpucpu", profile.GpuToCpu);
+            if (profile.FirmwareCpuTemp > 0 && IsFirmwareCpuTempSupported) AppConfig.SetMode("limit_cputemp", profile.FirmwareCpuTemp);
             AppConfig.SetMode("cpu_uv", profile.CpuUndervolt);
             AppConfig.SetMode("igpu_uv", profile.IgpuUndervolt);
 
@@ -150,6 +163,9 @@ namespace Arsenal.Application.Services.Implementations
             AppConfig.RemoveMode("limit_fast");
             AppConfig.RemoveMode("limit_total");
             AppConfig.RemoveMode("cpu_temp");
+            AppConfig.RemoveMode("limit_crossload");
+            AppConfig.RemoveMode("limit_gpucpu");
+            AppConfig.RemoveMode("limit_cputemp");
             AppConfig.RemoveMode("cpu_uv");
             AppConfig.RemoveMode("igpu_uv");
             AppConfig.RemoveMode("gpu_core");

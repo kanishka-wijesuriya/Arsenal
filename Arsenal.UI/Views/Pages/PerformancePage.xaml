@@ -106,6 +106,25 @@
                                           Value="{Binding CpuTempLimit}" Format="{}{0}°C"/>
                 </controls:SettingsRow>
 
+                <controls:SettingsRow Header="Cross-loading power" Description="What the CPU may draw while the GPU is also under load. Set by the firmware."
+                                      Visibility="{Binding IsCrossLoadSupported, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:ValueSlider Minimum="{Binding CrossLoadRange.Minimum}" Maximum="{Binding CrossLoadRange.Maximum}"
+                                          Value="{Binding CrossLoad}" Format="{}{0} W"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="GPU to CPU dynamic boost" Description="How much of the GPU's power budget the firmware may hand to the CPU."
+                                      Visibility="{Binding IsGpuToCpuSupported, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:ValueSlider Minimum="{Binding GpuToCpuRange.Minimum}" Maximum="{Binding GpuToCpuRange.Maximum}"
+                                          TickFrequency="5" IsSnapToTickEnabled="True"
+                                          Value="{Binding GpuToCpu}" Format="{}{0} W"/>
+                </controls:SettingsRow>
+
+                <controls:SettingsRow Header="Firmware temperature limit" Description="The CPU temperature the firmware holds the chassis to."
+                                      Visibility="{Binding IsFirmwareCpuTempSupported, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <controls:ValueSlider Minimum="{Binding FirmwareCpuTempRange.Minimum}" Maximum="{Binding FirmwareCpuTempRange.Maximum}"
+                                          Value="{Binding FirmwareCpuTemp}" Format="{}{0}°C"/>
+                </controls:SettingsRow>
+
                 <controls:SettingsRow Header="CPU undervolt" Description="Curve Optimizer offset. Too aggressive a value can destabilise the system."
                                       Visibility="{Binding IsUndervoltSupported, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <controls:ValueSlider Minimum="{Binding CpuUndervoltRange.Minimum}" Maximum="{Binding CpuUndervoltRange.Maximum}"

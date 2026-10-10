@@ -9,6 +9,9 @@ namespace Arsenal.Application.Models
         public int Sppt { get; set; } = -1; // Slow Package Power Tracking (W)
         public int Fppt { get; set; } = -1; // Fast Package Power Tracking (W)
         public int CpuTempLimit { get; set; } = -1;
+        public int CrossLoad { get; set; } = -1; // Cross-loading processor power (W), firmware 9F
+        public int GpuToCpu { get; set; } = -1; // GPU to CPU dynamic boost (W), firmware 9C
+        public int FirmwareCpuTemp { get; set; } = -1; // CPU temperature limit (°C), firmware 9E
         public int CpuUndervolt { get; set; } = 0; // mV offset (negative)
         public int IgpuUndervolt { get; set; } = 0;
         public int GpuCoreOffset { get; set; } = 0; // MHz

@@ -50,6 +50,15 @@ namespace Arsenal.UI.ViewModels
         private int _cpuTempLimit = 95;
 
         [ObservableProperty]
+        private int _crossLoad;
+
+        [ObservableProperty]
+        private int _gpuToCpu;
+
+        [ObservableProperty]
+        private int _firmwareCpuTemp;
+
+        [ObservableProperty]
         private int _cpuUndervolt = 0;
 
         [ObservableProperty]
@@ -181,6 +190,12 @@ namespace Arsenal.UI.ViewModels
         /// </summary>
         public ControlRange PowerLimitRange { get; }
         public ControlRange CpuTempRange { get; }
+        public ControlRange CrossLoadRange { get; }
+        public ControlRange GpuToCpuRange { get; }
+        public ControlRange FirmwareCpuTempRange { get; }
+        public bool IsCrossLoadSupported { get; }
+        public bool IsGpuToCpuSupported { get; }
+        public bool IsFirmwareCpuTempSupported { get; }
         public ControlRange CpuUndervoltRange { get; }
         public ControlRange IgpuUndervoltRange { get; }
         public ControlRange FanHysteresisRange { get; }
@@ -209,6 +224,12 @@ namespace Arsenal.UI.ViewModels
 
             PowerLimitRange = _performanceService.PowerLimitRange;
             CpuTempRange = _performanceService.CpuTempRange;
+            CrossLoadRange = _performanceService.CrossLoadRange;
+            GpuToCpuRange = _performanceService.GpuToCpuRange;
+            FirmwareCpuTempRange = _performanceService.FirmwareCpuTempRange;
+            IsCrossLoadSupported = _performanceService.IsCrossLoadSupported;
+            IsGpuToCpuSupported = _performanceService.IsGpuToCpuSupported;
+            IsFirmwareCpuTempSupported = _performanceService.IsFirmwareCpuTempSupported;
             CpuUndervoltRange = _performanceService.CpuUndervoltRange;
             IgpuUndervoltRange = _performanceService.IgpuUndervoltRange;
             FanHysteresisRange = _performanceService.FanHysteresisRange;
@@ -265,6 +286,10 @@ namespace Arsenal.UI.ViewModels
             Sppt = PowerLimitRange.Clamp(profile.Sppt > 0 ? profile.Sppt : 65);
             Fppt = PowerLimitRange.Clamp(profile.Fppt > 0 ? profile.Fppt : 80);
             CpuTempLimit = CpuTempRange.Clamp(profile.CpuTempLimit > 0 ? profile.CpuTempLimit : CpuTempRange.Maximum);
+            // Unset means the firmware's own maximum, as upstream shows it.
+            CrossLoad = CrossLoadRange.Clamp(profile.CrossLoad >= 0 ? profile.CrossLoad : CrossLoadRange.Maximum);
+            GpuToCpu = GpuToCpuRange.Clamp(profile.GpuToCpu >= 0 ? profile.GpuToCpu : GpuToCpuRange.Maximum);
+            FirmwareCpuTemp = FirmwareCpuTempRange.Clamp(profile.FirmwareCpuTemp > 0 ? profile.FirmwareCpuTemp : FirmwareCpuTempRange.Maximum);
             CpuUndervolt = CpuUndervoltRange.Clamp(profile.CpuUndervolt);
             IgpuUndervolt = IgpuUndervoltRange.Clamp(profile.IgpuUndervolt);
             ApplyUndervolt = profile.ApplyUndervolt;
@@ -462,6 +487,9 @@ namespace Arsenal.UI.ViewModels
                 Sppt = Sppt,
                 Fppt = Fppt,
                 CpuTempLimit = CpuTempLimit,
+                CrossLoad = CrossLoad,
+                GpuToCpu = GpuToCpu - GpuToCpu % AsusACPI.StepGPUtoCPU,
+                FirmwareCpuTemp = FirmwareCpuTemp,
                 CpuUndervolt = CpuUndervolt,
                 IgpuUndervolt = IgpuUndervolt,
                 ApplyUndervolt = ApplyUndervolt,

@@ -303,6 +303,12 @@ internal static class Program
         public ControlRange CpuUndervoltRange { get; set; } = new(-40, 0);
         public ControlRange IgpuUndervoltRange { get; set; } = new(-30, 0);
         public ControlRange FanHysteresisRange { get; set; } = new(0, 20);
+        public bool IsCrossLoadSupported => true;
+        public bool IsGpuToCpuSupported => true;
+        public bool IsFirmwareCpuTempSupported => true;
+        public ControlRange CrossLoadRange { get; set; } = new(0, 40);
+        public ControlRange GpuToCpuRange { get; set; } = new(0, 10);
+        public ControlRange FirmwareCpuTempRange { get; set; } = new(75, 97);
     }
 
     private sealed class StubGpu : IGpuService

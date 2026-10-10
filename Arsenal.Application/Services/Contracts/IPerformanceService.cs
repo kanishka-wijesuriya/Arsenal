@@ -56,5 +56,19 @@ namespace Arsenal.Application.Services.Contracts
 
         /// <summary>Fan hysteresis in degrees. Zero means "leave the firmware alone".</summary>
         ControlRange FanHysteresisRange { get; }
+
+        /// <summary>
+        /// The firmware's own CPU limits on newer chassis: cross-loading power, the share
+        /// of the GPU's dynamic boost handed to the CPU, and a temperature limit. Each is
+        /// there only where the firmware answers for it.
+        /// </summary>
+        bool IsCrossLoadSupported { get; }
+        bool IsGpuToCpuSupported { get; }
+        bool IsFirmwareCpuTempSupported { get; }
+        ControlRange CrossLoadRange { get; }
+
+        /// <summary>Taken in 5 W steps.</summary>
+        ControlRange GpuToCpuRange { get; }
+        ControlRange FirmwareCpuTempRange { get; }
     }
 }
