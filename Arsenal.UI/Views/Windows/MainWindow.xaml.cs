@@ -377,6 +377,7 @@ namespace Arsenal.UI.Views.Windows
         {
             base.OnSourceInitialized(e);
             App.ApplyWindowSurface(this);
+            Controls.TouchpadScroll.Attach(this);
         }
 
         protected override void OnClosing(CancelEventArgs e)

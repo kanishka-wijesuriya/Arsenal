@@ -184,6 +184,12 @@ namespace Arsenal.UI.Controls
         private static ScrollChase? GetChase(ScrollViewer viewer)
             => viewer.GetValue(AnimatorProperty) as ScrollChase;
 
+        /// <summary>
+        /// Drops a wheel chase still running on the viewer, for a scroll source that is
+        /// about to take over the offset.
+        /// </summary>
+        internal static void CancelChase(ScrollViewer viewer) => GetChase(viewer)?.Cancel();
+
         private static ScrollChase EnsureChase(ScrollViewer viewer)
         {
             if (GetChase(viewer) is { } existing)
@@ -261,7 +267,7 @@ namespace Arsenal.UI.Controls
         /// An in-page drag such as a slider thumb also captures the mouse, so the test
         /// is what holds the capture rather than that a capture exists at all.
         /// </summary>
-        private static bool IsPopupCapturingInput()
+        internal static bool IsPopupCapturingInput()
         {
             if (Mouse.Captured is not DependencyObject captured)
                 return false;
