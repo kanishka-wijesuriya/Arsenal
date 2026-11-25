@@ -120,7 +120,7 @@ namespace Arsenal.UI.ViewModels
 
         private HeadsetLightingMode Mode => (HeadsetLightingMode)SelectedMode;
 
-        public bool ShowsColor => Mode is HeadsetLightingMode.Static or HeadsetLightingMode.Breathing or HeadsetLightingMode.Strobing;
+        public bool ShowsColor => Mode is HeadsetLightingMode.Static or HeadsetLightingMode.Breathing or HeadsetLightingMode.Strobing or HeadsetLightingMode.Music;
 
         private void LoadLighting(AsusHeadset h)
         {
@@ -184,6 +184,7 @@ namespace Arsenal.UI.ViewModels
             HeadsetLightingMode.ColorCycle => "Colour cycle",
             HeadsetLightingMode.Rainbow => "Rainbow",
             HeadsetLightingMode.MqaIndicator => "MQA indicator",
+            HeadsetLightingMode.Music => "Music",
             _ => mode.ToString(),
         };
 

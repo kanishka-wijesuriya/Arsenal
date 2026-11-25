@@ -1,4 +1,5 @@
 using Arsenal.AnimeMatrix.Communication.Platform;
+using Arsenal.Helpers;
 using Arsenal.USB;
 using HidSharp;
 using System.Runtime.CompilerServices;
@@ -13,7 +14,8 @@ namespace Arsenal.Peripherals.Headset
         Strobing = 3,
         ColorCycle = 4,
         Rainbow = 5,
-        MqaIndicator = 6
+        MqaIndicator = 6,
+        Music = 7
     }
 
     public abstract class AsusHeadset : AnimeMatrix.Communication.Device, IPeripheral
@@ -66,6 +68,12 @@ namespace Arsenal.Peripherals.Headset
 
         private bool lowBatteryPrompt = true;
         protected HeadsetLightingMode effect = HeadsetLightingMode.Static;
+
+        private volatile Action<double[]>? musicHandler;
+        private readonly AudioLevels audioLevels = new() { DecayMultiplier = 1.3 };
+
+        private string MusicKey => "headset_music_" + GetType().Name;
+        private string MusicColorKey => "headset_music_color_" + GetType().Name;
 
         protected AsusHeadset(ushort vendorId, ushort productId) : base(vendorId, productId)
         {
@@ -281,6 +289,7 @@ namespace Arsenal.Peripherals.Headset
         public override void Dispose()
         {
             Logger.WriteLine(GetDisplayName() + ": Disposing");
+            UnsubscribeMusic();
             DeviceList.Local.Changed -= Device_Changed;
             base.Dispose();
         }
@@ -440,6 +449,11 @@ namespace Arsenal.Peripherals.Headset
 
             if (!IsDeviceReady) return;
             ReadLighting();
+            if (SupportedLightingModes().Contains(HeadsetLightingMode.Music) && AppConfig.Is(MusicKey) && StartMusic())
+            {
+                LightingColor = Color.FromArgb(AppConfig.Get(MusicColorKey, LightingColor.ToArgb()));
+                LightingMode = HeadsetLightingMode.Music;
+            }
             ReadAudio();
         }
 
@@ -491,6 +505,8 @@ namespace Arsenal.Peripherals.Headset
         {
             if (!HasRGB()) return;
 
+            if (mode != HeadsetLightingMode.Music) StopMusic();
+
             if (mode == HeadsetLightingMode.Off)
             {
                 TurnLightingOff();
@@ -499,14 +515,86 @@ namespace Arsenal.Peripherals.Headset
             {
                 if (LightingMode == HeadsetLightingMode.Off) TurnLightingOn();
 
-                WriteLighting(mode, brightness, color);
-                effect = mode;
+                if (mode == HeadsetLightingMode.Music)
+                {
+                    if (!SupportedLightingModes().Contains(mode) || !StartMusic()) return;
+                    AppConfig.Set(MusicColorKey, color.ToArgb());
+                }
+                else
+                {
+                    WriteLighting(mode, brightness, color);
+                    effect = mode;
+                }
                 Brightness = brightness;
                 LightingColor = color;
             }
 
             LightingMode = mode;
             Logger.WriteLine(GetDisplayName() + $": Lighting {mode} brightness={brightness} color={color.R},{color.G},{color.B}");
+        }
+
+        protected virtual void EnterMusic()
+        {
+        }
+
+        protected virtual void ExitMusic()
+        {
+        }
+
+        protected virtual void WriteMusicColor(Color color)
+        {
+            WriteStream(LightingPacket(HeadsetLightingMode.Static, Brightness, color));
+        }
+
+        // music frames are not logged and their echoes are left for the next Drain
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        protected void WriteStream(byte[] packet)
+        {
+            if (musicHandler is null) return;
+            Array.Resize(ref packet, USBPacketSize());
+            try { Write(packet); } catch { }
+        }
+
+        private bool StartMusic()
+        {
+            if (musicHandler is not null) return true;
+
+            audioLevels.Reset();
+            Action<double[]> handler = OnAudioSpectrum;
+            if (!AudioVisualizer.Shared.Subscribe(handler)) return false;
+            try { EnterMusic(); }
+            catch
+            {
+                AudioVisualizer.Shared.Unsubscribe(handler);
+                throw;
+            }
+            musicHandler = handler;
+            AppConfig.Set(MusicKey, 1);
+            return true;
+        }
+
+        private bool UnsubscribeMusic()
+        {
+            Action<double[]>? handler = musicHandler;
+            if (handler is null) return false;
+
+            musicHandler = null;
+            AudioVisualizer.Shared.Unsubscribe(handler);
+            return true;
+        }
+
+        private void StopMusic()
+        {
+            if (UnsubscribeMusic()) ExitMusic();
+            if (AppConfig.Is(MusicKey)) AppConfig.Set(MusicKey, 0);
+        }
+
+        private void OnAudioSpectrum(double[] fftMag)
+        {
+            if (musicHandler is null || !IsDeviceReady) return;
+            if (!audioLevels.Update(fftMag)) return;
+
+            WriteMusicColor(audioLevels.DominantColor(LightingColor));
         }
 
         public bool SyncFromLaptopAura()

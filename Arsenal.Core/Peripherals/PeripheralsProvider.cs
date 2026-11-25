@@ -181,6 +181,16 @@ namespace Arsenal.Peripherals
             ForEachAsync(ConnectedKeyboards, kb => kb.SyncFromLaptopAura(), "Failed to sync with laptop aura");
         }
 
+        public static void RestoreKeyboardLighting()
+        {
+            if (IsKeyboardAuraSync) return;
+            ForEachAsync(ConnectedKeyboards, keyboard =>
+            {
+                if (keyboard.GetType() == typeof(StrixScopeII) && keyboard.HasTransientLighting)
+                    keyboard.ApplyStoredLighting();
+            }, "Failed to restore keyboard lighting");
+        }
+
         public static void RefreshBatteryForAllDevices(bool force)
         {
             //Polling the battery every 20s should be enough
@@ -512,6 +522,7 @@ namespace Arsenal.Peripherals
             DetectMouse(new GladiusIIOriginPink());
             DetectMouse(new GladiusIIOriginCOD());
             DetectMouse(new GladiusII());
+            DetectMouse(new GladiusIICore());
             DetectMouse(new GladiusIIWireless());
             DetectMouse(new KerisWireless());
             DetectMouse(new KerisWirelessWired());
@@ -532,6 +543,7 @@ namespace Arsenal.Peripherals
             DetectMouse(new HarpeAceAimLabEditionWired());
             DetectMouse(new HarpeAceExtremeWeird());
             DetectMouse(new HarpeAceMiniWired());
+            DetectMouse(new HarpeMiniCore());
             DetectMouse(new HarpeIIAceWired());
             DetectMouse(new TUFM3());
             DetectMouse(new TUFM3GenII());
@@ -560,6 +572,8 @@ namespace Arsenal.Peripherals
             DetectMouse(new TUFGamingMiniMikuWired());
             DetectMouse(new Pugio());
             DetectMouse(new MD200());
+            DetectMouse(new MD301());
+            DetectMouse(new MD301Wired());
             DetectMouse(new BalteusQi());
             DetectMouse(new Balteus());
             DetectMouse(new BulwarkDock());
@@ -602,6 +616,7 @@ namespace Arsenal.Peripherals
             DetectKeyboard(new FalchionWireless());
             DetectKeyboard(new FalchionRX());
             DetectKeyboard(new FalchionAceHFX());
+            DetectKeyboard(new FalchionAce75HE());
             DetectKeyboard(new FalchionAce());
             DetectKeyboard(new TUFK1());
             DetectKeyboard(new TUFK3());
@@ -627,6 +642,7 @@ namespace Arsenal.Peripherals
             DetectHeadset(new Pelta());
             DetectHeadset(new CetraSpeedNova());
             DetectHeadset(new Clavis());
+            DetectHeadset(new DeltaS());
             DetectHeadset(new CetraRgb());
             DetectHeadset(new StrixGo24());
         }
@@ -870,7 +886,11 @@ namespace Arsenal.Peripherals
             // This runs on a timer thread in response to a device arriving, which can
             // happen before the dispatcher is constructed or after shutdown has cleared
             // it. An exception here has nothing above it to catch it.
-            if (AppConfig.IsDetachableKeyboard()) Program.inputDispatcher?.Init();
+            if (AppConfig.IsDetachableKeyboard() && Program.inputDispatcher is { } input)
+            {
+                input.Init();
+                Input.InputDispatcher.InitFNLock();
+            }
             XGM.Init();
         }
     }
