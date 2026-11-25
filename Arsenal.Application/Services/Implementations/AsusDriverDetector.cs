@@ -21,17 +21,18 @@ namespace Arsenal.Application.Services.Implementations
         {
             List<LocalDriver> inventory = BuildInventory();
             var installed = new string?[updates.Count];
-            var stagedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
             for (int index = 0; index < updates.Count; index++)
             {
                 token.ThrowIfCancellationRequested();
                 installed[index] = ResolveInstalledVersion(inventory, updates[index]);
-                if (installed[index] is null)
-                    foreach (string id in updates[index].HardwareIds) stagedIds.Add(id);
             }
 
-            HideAbsentAdapterAlternatives(updates, inventory, installed, stagedIds);
+            HideAbsentAdapterAlternatives(updates, inventory, installed);
+            var stagedIds = Enumerable.Range(0, updates.Count)
+                .Where(index => !updates[index].IsHidden && (installed[index] is not string version
+                    || Major(version) != Major(updates[index].LatestVersion)))
+                .SelectMany(index => updates[index].HardwareIds)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
             Dictionary<string, string>? staged = stagedIds.Count == 0 ? null : BuildStagedVersions(stagedIds, token);
             HashSet<string>? storePackages = null;
 
@@ -41,12 +42,12 @@ namespace Arsenal.Application.Services.Implementations
                 if (item.IsHidden) continue;
 
                 string? version = installed[index];
-                if (version is null && staged is not null && item.HardwareIds.Count > 0)
+                if ((version is null || Major(version) != Major(item.LatestVersion)) && staged is not null && item.HardwareIds.Count > 0)
                 {
                     version = MaxVersion(item.HardwareIds
                         .Where(staged.ContainsKey)
                         .Select(id => staged[id])
-                        .Where(value => Major(value) == Major(item.LatestVersion)));
+                        .Where(value => Major(value) == Major(item.LatestVersion))) ?? version;
                 }
                 if (version is null && item.HardwareIds.Count == 0)
                     version = FindStagedVersionByTitle(item.Title, item.LatestVersion, token);
@@ -101,8 +102,7 @@ namespace Arsenal.Application.Services.Implementations
         private static void HideAbsentAdapterAlternatives(
             IList<UpdateInfo> updates,
             List<LocalDriver> inventory,
-            string?[] installed,
-            HashSet<string> stagedIds)
+            string?[] installed)
         {
             string[][] adapterGroups =
             {
@@ -118,7 +118,7 @@ namespace Arsenal.Application.Services.Implementations
                     .Where(index => updates[index].HardwareIds.Count > 0
                         && keys.Any(key => updates[index].Title.Contains(key, StringComparison.OrdinalIgnoreCase)))
                     .ToList();
-                if (members.Count < 2) continue;
+                if (members.Count == 0) continue;
 
                 LocalDriver? detected = inventory
                     .Where(driver => !driver.IsExtension && keys.Any(key => driver.Entry.Contains(key, StringComparison.OrdinalIgnoreCase)))
@@ -135,7 +135,6 @@ namespace Arsenal.Application.Services.Implementations
                     || (sameMajor && Major(updates[index].LatestVersion) != Major(installed[index]!))))
                 {
                     updates[index].IsHidden = true;
-                    foreach (string id in updates[index].HardwareIds) stagedIds.Remove(id);
                 }
             }
         }
