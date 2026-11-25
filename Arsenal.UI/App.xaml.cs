@@ -345,6 +345,7 @@ namespace Arsenal.UI
 
             if (_hardwareInitialized)
             {
+                Input.AmbientLight.Stop();
                 try { PeripheralsProvider.UnregisterForDeviceEvents(); } catch { }
                 try { Program.clamshellControl?.UnregisterDisplayEvents(); } catch { }
                 try { Program.gpuControl?.StandardModeFix(); } catch { }

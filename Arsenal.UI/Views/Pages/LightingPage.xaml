@@ -34,6 +34,12 @@
                     </WrapPanel>
                 </controls:SettingsRow>
 
+                <controls:SettingsRow Header="Adjust brightness to room light"
+                                      Description="Use the light sensor to dim the keyboard. The selected brightness is the maximum."
+                                      Visibility="{Binding HasAmbientLightSensor, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ui:ToggleSwitch IsChecked="{Binding UseAmbientBacklight, Mode=TwoWay}"/>
+                </controls:SettingsRow>
+
                 <!--
                      The keyboard itself, drawn to scale and lit by whichever effect is
                      selected. Placed above the effect list rather than below it, so

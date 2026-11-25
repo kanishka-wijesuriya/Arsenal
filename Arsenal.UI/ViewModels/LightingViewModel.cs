@@ -70,6 +70,17 @@ namespace Arsenal.UI.ViewModels
         /// battery, and only taste on the wall. Zero leaves the backlight on.
         /// </summary>
         [ObservableProperty] private int _keyboardTimeoutSeconds;
+        [ObservableProperty] private bool _useAmbientBacklight;
+
+        public bool HasAmbientLightSensor { get; }
+
+        partial void OnUseAmbientBacklightChanged(bool value)
+        {
+            if (!_isReady) return;
+            AppConfig.Set("backlight_ambient", value ? 1 : 0);
+            Input.AmbientLight.ApplySetting();
+            if (!value) Input.InputDispatcher.SetBacklightAuto();
+        }
 
         [ObservableProperty] private int _keyboardAcTimeoutSeconds;
 
@@ -311,6 +322,8 @@ namespace Arsenal.UI.ViewModels
                 SelectedMode = mode;
                 UpdateSelection(AuraModes, mode);
             });
+            HasAmbientLightSensor = Input.AmbientLight.IsSupported();
+            UseAmbientBacklight = AppConfig.Is("backlight_ambient");
             KeyboardTimeoutSeconds = Math.Max(0, AppConfig.Get("keyboard_timeout", 60));
             KeyboardAcTimeoutSeconds = Math.Max(0, AppConfig.Get("keyboard_ac_timeout", 0));
 

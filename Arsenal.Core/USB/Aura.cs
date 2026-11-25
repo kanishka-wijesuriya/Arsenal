@@ -116,6 +116,7 @@ namespace Arsenal.USB
         public static AuraBacklightType BacklightType { get; private set; } = AuraBacklightType.Unknown;
 
         public static bool HasLogo { get; private set; }
+        private static bool _hasWheel;
         public static bool HasLightbar { get; private set; }
         public static bool HasRearglow { get; private set; }
         static bool hasRearStrip = false;
@@ -387,6 +388,7 @@ namespace Arsenal.USB
             IsOldStrix = feat1 == 0 && AppConfig.IsStrix();
             if (IsOldStrix) feat1 = FEAT1_LOGO | FEAT1_LIGHTBAR;
             HasLogo = (feat1 & FEAT1_LOGO) != 0 || AppConfig.IsZ13();
+            _hasWheel = (feat2 & FEAT2_RGB_WHEEL) != 0;
             HasLightbar = (feat1 & FEAT1_LIGHTBAR) != 0;
             HasRearglow = (feat1 & (FEAT1_REARGLOW | FEAT1_VCUT)) != 0;
             hasRearStrip = (feat1 & FEAT1_REARGLOW) != 0;
@@ -901,6 +903,11 @@ namespace Arsenal.USB
 
             int _speed = (Speed == AuraSpeed.Normal) ? 0xeb : (Speed == AuraSpeed.Fast) ? 0xf5 : 0xe1;
             AsusHid.Write(new List<byte[]> { AuraMessage(RearMode, RearColor, RearColor, _speed), MESSAGE_SET, MESSAGE_APPLY }, "Rear", AsusHid.REAR_LIGHT_PIDS);
+        }
+
+        public static void ApplyWheel()
+        {
+            if (_hasWheel) AsusHid.Write([AsusHid.AURA_ID, 0xBA, 0xC6, 0x64], "Wheel");
         }
 
         public static void ApplyAura()

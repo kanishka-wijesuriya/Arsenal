@@ -123,6 +123,7 @@ namespace Arsenal.Input
             }
 
             InitBacklightTimer();
+            AmbientLight.ApplySetting();
             MuteLEDInit();
         }
 
@@ -1157,6 +1158,7 @@ namespace Arsenal.Input
             {
                 Aura.ApplyPower();
                 SetBacklightAuto();
+                Aura.ApplyWheel();
                 Aura.ApplyAura();
             } else
             {
@@ -1170,6 +1172,7 @@ namespace Arsenal.Input
             if (lidClose || tentMode) return;
             Aura.ApplyBrightness(GetBacklight(), "Auto");
             backlightActivity = true;
+            AmbientLight.Reset();
         }
 
         public static void StartupBacklight()
@@ -1201,6 +1204,7 @@ namespace Arsenal.Input
             if (force || !AsusService.IsAsusOptimizationRunning())
             {
                 Aura.ApplyBrightness(backlight, "HotKey");
+                AmbientLight.Reset();
             }
 
             if (!AsusService.IsOSDRunning())
