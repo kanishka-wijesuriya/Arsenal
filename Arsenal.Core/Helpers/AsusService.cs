@@ -159,14 +159,18 @@ namespace Arsenal.Helpers
             _ => service
         };
 
-        public static void StopOnStartup()
+        public static Task<bool> StopOnStartupAsync()
         {
-            if (AppConfig.Is("services_skip")) return;
-            if (!AppConfig.Is("services_disabled") || !ProcessHelper.IsUserAdministrator()) return;
-            if (GetRunningCount() == 0) return;
+            if (AppConfig.Is("services_skip") || !AppConfig.Is("services_disabled") || !ProcessHelper.IsUserAdministrator())
+                return Task.FromResult(false);
 
-            Logger.WriteLine("ASUS services revived, re-stopping on startup");
-            Task.Run(() => StopAsusServices());
+            return Task.Run(() =>
+            {
+                if (GetRunningCount() == 0) return false;
+                Logger.WriteLine("ASUS services revived, re-stopping on startup");
+                StopAsusServices();
+                return true;
+            });
         }
 
     }

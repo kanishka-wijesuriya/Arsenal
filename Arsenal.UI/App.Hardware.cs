@@ -23,6 +23,7 @@ namespace Arsenal.UI
     public partial class App
     {
         private bool _hardwareInitialized;
+        private int _restoreAfterResume;
         private readonly System.Timers.Timer _powerSettleTimer = new() { AutoReset = false };
 
         private void InitHardwareCore()
@@ -34,7 +35,6 @@ namespace Arsenal.UI
                 Program.currentSource = Program.ReadPowerSource();
 
                 ProcessHelper.KillSmartDisplayControl();
-                AsusService.StopOnStartup();
                 ScreenControl.InitScreen();
 
                 Program.inputDispatcher?.Init();
@@ -68,10 +68,24 @@ namespace Arsenal.UI
 
                 PeripheralsProvider.RegisterForDeviceEvents();
                 _hardwareInitialized = true;
+                _ = RestoreHotkeysAfterServicesStopAsync();
             }
             catch (Exception ex)
             {
                 Logger.WriteLine("InitHardwareCore error: " + ex.Message);
+            }
+        }
+
+        private async Task RestoreHotkeysAfterServicesStopAsync()
+        {
+            try
+            {
+                if (await AsusService.StopOnStartupAsync() && !Dispatcher.HasShutdownStarted)
+                    Program.inputDispatcher?.Init();
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine("ASUS startup services: " + ex.Message);
             }
         }
 
@@ -110,6 +124,8 @@ namespace Arsenal.UI
         {
             if (e.Mode == PowerModes.Suspend)
             {
+                Interlocked.Exchange(ref _restoreAfterResume, 0);
+                _powerSettleTimer.Stop();
                 GPUModeControl.suspended = true;
                 Program.gpuControl?.StandardModeFix();
                 Program.modeControl?.ShutdownReset();
@@ -119,7 +135,10 @@ namespace Arsenal.UI
             }
 
             if (e.Mode == PowerModes.Resume)
+            {
                 GPUModeControl.suspended = false;
+                Interlocked.Exchange(ref _restoreAfterResume, 1);
+            }
 
             SchedulePowerCheck();
         }
@@ -140,18 +159,28 @@ namespace Arsenal.UI
 
         private void OnPowerSettled(object? sender, System.Timers.ElapsedEventArgs e)
         {
-            // Second guard, also from the original: act only on a real transition. A
-            // burst that settles back to the same source is not a charger change.
-            var source = Program.ReadPowerSource();
-            if (source == Program.currentSource) return;
+            if (GPUModeControl.suspended) return;
 
-            Logger.WriteLine($"Power source: {Program.currentSource} -> {source}");
-            Program.currentSource = source;
+            bool resumed = Interlocked.Exchange(ref _restoreAfterResume, 0) != 0;
+            var source = Program.ReadPowerSource();
+            bool sourceChanged = source != Program.currentSource;
+            if (!sourceChanged && !resumed) return;
+
+            if (sourceChanged)
+            {
+                Logger.WriteLine($"Power source: {Program.currentSource} -> {source}");
+                Program.currentSource = source;
+            }
 
             BatteryControl.AutoBattery();
             if (Services.GetRequiredService<IProfileService>().IsAutoSwitchEnabled)
                 Program.modeControl?.AutoPerformance(true);
             ApplyKeyboardBacklight();
+            if (resumed)
+            {
+                Input.InputDispatcher.InitFNLock();
+                PeripheralsProvider.RestoreKeyboardLighting();
+            }
             Program.gpuControl?.AutoGPUMode(delay: 1000);
             ScreenControl.AutoScreen();
         }

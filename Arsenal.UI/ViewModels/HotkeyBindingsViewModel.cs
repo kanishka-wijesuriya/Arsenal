@@ -35,9 +35,9 @@ namespace Arsenal.UI.ViewModels
                 Add("m4", zenPro ? "Fn+F12" : AppConfig.IsStrix() ? "M5 / ROG" : "M4 / ROG");
             if (AppConfig.IsStrix()) Add("m5", "M4");
             if (!arcnm && !noMKeys && !zenPro && !AppConfig.MediaKeys()) Add("fnf4", "Fn+F4");
-            Add("fnc", "Fn+C");
-            if (!AppConfig.IsNoFNV()) Add("fnv", "Fn+V");
-            if (AppConfig.IsTUF()) Add("fne", "Fn+Num Enter");
+            if (!AppConfig.IsProArt()) Add("fnc", "Fn+C");
+            if (AppConfig.IsProArt() || !AppConfig.IsNoFNV()) Add("fnv", AppConfig.IsProArt() ? "Fn+C" : "Fn+V");
+            if (AppConfig.IsTUF() && !AppConfig.ContainsModel("FA401W")) Add("fne", "Fn+Num Enter");
         }
 
         private void Add(string name, string label) => Keys.Add(new HotkeyBindingViewModel(name, label));
