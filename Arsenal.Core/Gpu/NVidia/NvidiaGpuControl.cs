@@ -57,7 +57,13 @@ public class NvidiaGpuControl : IGpuControl
 
     private GpuState _lastState = GpuState.Off;
     private long _lastStateTime = -StateCacheMs;
-    private const int StateCacheMs = 500; 
+    private const int StateCacheMs = 500;
+    private static readonly long NvmlIntervalMs = Math.Max(AppConfig.Get("nv_interval", 0), 0) * 1000L;
+    private readonly object _nvmlReadLock = new();
+    private long _powerReadAt = -NvmlIntervalMs;
+    private long _vramReadAt = -NvmlIntervalMs;
+    private float _power;
+    private (long usedMb, long totalMb)? _vram;
 
     private GpuState GetGpuState()
     {
@@ -368,21 +374,42 @@ public class NvidiaGpuControl : IGpuControl
     public float? GetGpuPower()
     {
         if (!IsValid) return null;
-        var state = GetGpuState();
-        if (state == GpuState.Off)
+        lock (_nvmlReadLock)
         {
-            NvmlHelper.Shutdown();
-            return null;
+            var state = GetGpuState();
+            if (state != GpuState.Active)
+            {
+                _powerReadAt = -NvmlIntervalMs;
+                if (state == GpuState.Asleep) return 0f;
+                NvmlHelper.Shutdown();
+                return null;
+            }
+
+            long now = Environment.TickCount64;
+            if (now - _powerReadAt < NvmlIntervalMs) return _power;
+            _power = NvmlHelper.GetGpuPower() ?? 0f;
+            _powerReadAt = now;
+            return _power;
         }
-        if (state != GpuState.Active) return 0f;
-        return NvmlHelper.GetGpuPower() ?? 0f;
     }
 
     public (long usedMb, long totalMb)? GetVramInfo()
     {
         if (!IsValid) return null;
-        if (GetGpuState() != GpuState.Active) return null;
-        return NvmlHelper.GetMemoryInfo();
+        lock (_nvmlReadLock)
+        {
+            if (GetGpuState() != GpuState.Active)
+            {
+                _vramReadAt = -NvmlIntervalMs;
+                return null;
+            }
+
+            long now = Environment.TickCount64;
+            if (now - _vramReadAt < NvmlIntervalMs) return _vram;
+            _vram = NvmlHelper.GetMemoryInfo();
+            _vramReadAt = now;
+            return _vram;
+        }
     }
 
 }
