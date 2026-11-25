@@ -39,7 +39,8 @@ namespace Arsenal.Application.Services.Implementations
         // past any useful curve, so the ceiling is a sanity bound rather than a limit.
         public ControlRange FanHysteresisRange => new(0, 20);
 
-        public bool IsCrossLoadSupported => Program.acpi.IsSupported(AsusACPI.PPT_CROSS9F);
+        public bool IsCrossLoadSupported => Program.acpi.IsSupported(AsusACPI.PPT_CROSS9F)
+            || Program.acpi.IsSupported(AsusACPI.PPT_TOTAL9A);
         public bool IsGpuToCpuSupported => Program.acpi.IsSupported(AsusACPI.PPT_GPUCPU9C);
         public bool IsFirmwareCpuTempSupported => Program.acpi.IsSupported(AsusACPI.PPT_TEMP9E);
         public ControlRange CrossLoadRange => new(AsusACPI.MinCrossLoad, AsusACPI.MaxCrossLoad);

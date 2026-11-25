@@ -38,12 +38,11 @@ namespace Arsenal.Application.Services.Implementations
             };
 
             byte[]? data = AppConfig.GetFanConfig(fan);
-            if (data == null || data.Length < 16)
-            {
-                return FanCurveModel.CreateDefault(fanIndex, fanName);
-            }
-
-            return FanCurveModel.FromByteArray(fanIndex, fanName, data);
+            FanCurveModel curve = data == null || data.Length < 16
+                ? FanCurveModel.CreateDefault(fanIndex, fanName)
+                : FanCurveModel.FromByteArray(fanIndex, fanName, data);
+            curve.FirmwareFloor = Program.acpi.GetFanFloor(fan);
+            return curve;
         }
 
         public void SaveFanCurve(int fanIndex, int modeIndex, FanCurveModel curve)

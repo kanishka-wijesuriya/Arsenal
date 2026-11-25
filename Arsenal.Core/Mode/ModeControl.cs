@@ -426,6 +426,9 @@ namespace Arsenal.Mode
             if (crossload >= AsusACPI.MinCrossLoad && crossload <= AsusACPI.MaxCrossLoad && Program.acpi.IsSupported(AsusACPI.PPT_CROSS9F))
                 Program.acpi.DeviceSet(AsusACPI.PPT_CROSS9F, crossload, "PowerLimit 9F (Cross Loading)");
 
+            if (crossload >= AsusACPI.MinCrossLoad && crossload <= AsusACPI.MaxCrossLoad && Program.acpi.IsSupported(AsusACPI.PPT_TOTAL9A))
+                Program.acpi.DeviceSet(AsusACPI.PPT_TOTAL9A, crossload, "PowerLimit 9A (Cross Loading)");
+
             if (cputemp >= AsusACPI.MinCPUTemp && cputemp <= AsusACPI.MaxCPUTemp && Program.acpi.IsSupported(AsusACPI.PPT_TEMP9E))
                 Program.acpi.DeviceSet(AsusACPI.PPT_TEMP9E, cputemp, "PowerLimit 9E (CPU Temp)");
         }
@@ -558,7 +561,7 @@ namespace Arsenal.Mode
                         {
                             SmuStatus s = smu.SetCoPer(core, -uv);
                             Logger.WriteLine($"UV core {core}: {-uv} {s}");
-                            if (s == SmuStatus.OK) _cpuUV = -uv;
+                            if (s == SmuStatus.OK && uv != 0) _cpuUV = -uv;
                         }
                         core++;
                     }

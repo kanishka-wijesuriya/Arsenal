@@ -20,6 +20,7 @@ namespace Arsenal.Application.Models
         public int FanIndex { get; set; }
         public string FanName { get; set; } = "CPU Fan";
         public ObservableCollection<FanPoint> Points { get; set; } = new();
+        public IReadOnlyList<byte> FirmwareFloor { get; set; } = Array.Empty<byte>();
 
         public static FanCurveModel CreateDefault(int fanIndex, string name)
         {

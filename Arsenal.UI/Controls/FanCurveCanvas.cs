@@ -146,6 +146,23 @@ namespace Arsenal.UI.Controls
             areaGeometry.Freeze();
             dc.DrawGeometry(_areaBrush, null, areaGeometry);
 
+            if (CurveModel.FirmwareFloor.Count == 8)
+            {
+                var floorPen = new Pen(axisBrush, 1.5) { DashStyle = DashStyles.Dash };
+                var previous = new Point(padLeft + 0.3 * graphW,
+                    padTop + (1.0 - CurveModel.FirmwareFloor[0] / 100.0) * graphH);
+                for (int i = 1; i < CurveModel.FirmwareFloor.Count; i++)
+                {
+                    var point = new Point(padLeft + (30 + 10 * i) / 100.0 * graphW,
+                        padTop + (1.0 - CurveModel.FirmwareFloor[i] / 100.0) * graphH);
+                    dc.DrawLine(floorPen, previous, point);
+                    previous = point;
+                }
+                var legend = new FormattedText("Firmware minimum", CultureInfo.InvariantCulture,
+                    FlowDirection.LeftToRight, typeFace, 11, axisBrush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                dc.DrawText(legend, new Point(padLeft + 6, padTop + 4));
+            }
+
             for (int i = 0; i < screenPoints.Count - 1; i++)
             {
                 dc.DrawLine(_linePen, screenPoints[i], screenPoints[i + 1]);

@@ -87,7 +87,7 @@ namespace Arsenal.Display
 
         public static bool IsEReading()
         {
-            return File.Exists(AppConfig.IsVivoZenPro() ? GetVivobookPath() : GetGameVisualPath() + "\\Asus_Monochrome.icm");
+            return File.Exists(Path.Combine(AppConfig.IsVivoZenPro() ? GetVivobookPath() : GetGameVisualPath(), "Asus_Monochrome.icm"));
         }
 
         public static bool IsOledPowerOptimization() => AppConfig.IsOLED() && CpuInfo.IsAMD && HardwareControl.AmdApu().GetOledPowerOptimization();

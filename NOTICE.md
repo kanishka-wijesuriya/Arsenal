@@ -27,9 +27,12 @@ version 3 or later**. The full licence text is in [`LICENSE`](LICENSE).
 **Arsenal's hardware layer is G-Helper.** This is not a case of shared ideas or a
 handful of borrowed routines: `Arsenal.Core` is a direct derivative of
 [G-Helper](https://github.com/seerge/g-helper) by Serge (@seerge), carried across
-with the namespace renamed from `GHelper` to `Arsenal`. A line-level comparison of
-the 110 files common to both projects finds 26,493 of 27,399 upstream lines present
+with the namespace renamed from `GHelper` to `Arsenal`. At the initial import,
+26,493 of the 27,399 upstream lines in the 110 shared files were present
 verbatim, or **96.7%**.
+
+Arsenal has since adapted hardware updates from G-Helper, including selected
+changes through [the 22 November 2026 snapshot](https://github.com/seerge/g-helper/commit/a3c3ccae51f005d92d8d4ee161e6661ab511274d).
 
 Everything Arsenal knows about ASUS hardware came from that work:
 
