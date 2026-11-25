@@ -95,18 +95,21 @@ namespace Arsenal.Input
                 Marshal.ReleaseComObject(sensor);
                 return true;
             }
-            catch (COMException) { return false; }
+            catch (Exception ex) when (ex is COMException or UnauthorizedAccessException) { return false; }
         }
 
         public static void ApplySetting()
         {
-            if (AppConfig.Is("backlight_ambient") && !Simulated.IsActive)
+            lock (Sync)
             {
-                if (!Timer.Enabled && IsSupported()) Timer.Start();
-                return;
-            }
+                if (AppConfig.Is("backlight_ambient") && !Simulated.IsActive)
+                {
+                    if (!Timer.Enabled && IsSupported()) Timer.Start();
+                    return;
+                }
 
-            Stop();
+                Stop();
+            }
         }
 
         public static void Stop()
@@ -148,7 +151,7 @@ namespace Arsenal.Input
                 }
                 finally { Marshal.ReleaseComObject(report); }
             }
-            catch (COMException)
+            catch (Exception ex) when (ex is COMException or UnauthorizedAccessException)
             {
                 ReleaseSensor();
                 return -1;
